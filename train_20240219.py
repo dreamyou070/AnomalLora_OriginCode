@@ -210,13 +210,13 @@ def main(args):
 
             if args.do_attn_loss:
                 normal_cls_loss, normal_trigger_loss, anormal_cls_loss, anormal_trigger_loss = normal_activator.generate_attention_loss()
-                if type(normal_cls_loss) == float :
-                    attn_loss = args.anormal_weight * anormal_trigger_loss.mean()
+                if type(anormal_cls_loss) == float :
+                    attn_loss = args.normal_weight * normal_trigger_loss.mean()
                 else:
                     attn_loss = args.normal_weight * normal_cls_loss.mean() + args.anormal_weight * anormal_cls_loss.mean()
                 if args.do_cls_train:
-                    if type(normal_trigger_loss) == float:
-                        attn_loss = args.anormal_weight * anormal_cls_loss.mean()
+                    if type(anormal_trigger_loss) == float:
+                        attn_loss = args.normal_weight * normal_cls_loss.mean()
                     else:
                         attn_loss += args.normal_weight * normal_cls_loss.mean() + args.anormal_weight * anormal_cls_loss.mean()
                 loss += attn_loss
