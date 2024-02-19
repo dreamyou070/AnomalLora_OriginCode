@@ -193,7 +193,7 @@ def main(args):
                 if args.do_cls_train:
                     attn_loss += args.anormal_weight * anormal_cls_loss.mean()
                 loss += attn_loss
-            loss_dict['attn_loss'] = attn_loss.item()
+                loss_dict['attn_loss'] = attn_loss.item()
             loss = loss.to(weight_dtype)
             current_loss = loss.detach().item()
             if epoch == args.start_epoch:
