@@ -81,7 +81,7 @@ def main(args):
     network.prepare_grad_etc(text_encoder, unet)
     vae.to(accelerator.device, dtype=weight_dtype)
 
-    print(f'\n step 8. Training !')
+    print(f'\n step 9. Training !')
     if args.max_train_epochs is not None:
         args.max_train_steps = args.max_train_epochs * math.ceil(
             len(train_dataloader) / accelerator.num_processes / args.gradient_accumulation_steps)

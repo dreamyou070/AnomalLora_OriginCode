@@ -9,14 +9,13 @@ def arg_as_list(arg):
         raise argparse.ArgumentTypeError("Argument \"%s\" is not a list" % (arg))
     return v
 
-DEFAULT_EPOCH_NAME = "epoch"
-EPOCH_FILE_NAME = "{}-{:06d}"
+
 def default_if_none(value, default):
     return default if value is None else value
 
 def get_epoch_ckpt_name(args, ext: str, epoch_no: int):
-    model_name = default_if_none(args.output_name, DEFAULT_EPOCH_NAME)
-    return EPOCH_FILE_NAME.format(model_name, epoch_no) + ext
+    EPOCH_FILE_NAME = "{}-{:06d}"
+    return EPOCH_FILE_NAME.format("epoch", epoch_no) + ext
 
 
 def save_model(args, ckpt_name, unwrapped_nw, save_dtype):

@@ -6,10 +6,8 @@ import torch
 import os
 from attention_store import AttentionStore
 from attention_store.normal_activator import NormalActivator
-from model.diffusion_model import load_target_model, transform_models_if_DDP
-from model.lora import create_network
+from model.diffusion_model import transform_models_if_DDP
 from model.unet import unet_passing_argument
-from model.pe import PositionalEmbedding
 from utils import get_epoch_ckpt_name, save_model, prepare_dtype, arg_as_list
 from utils.attention_control import passing_argument, register_attention_control
 from utils.accelerator_utils import prepare_accelerator
@@ -18,6 +16,8 @@ from utils.model_utils import prepare_scheduler_for_custom_training, get_noise_n
 from utils.model_utils import pe_model_save
 from utils.utils_loss import FocalLoss
 from data.prepare_dataset import call_dataset
+from model import call_model_package
+
 
 def main(args):
 
@@ -43,27 +43,9 @@ def main(args):
     accelerator = prepare_accelerator(args)
     is_main_process = accelerator.is_main_process
 
-    print(f'\n step 4. model')
+    print(f'\n step 4. model ')
     weight_dtype, save_dtype = prepare_dtype(args)
-    vae_dtype = weight_dtype
-    print(f' (4.1) base model')
-    text_encoder, vae, unet, _ = load_target_model(args, weight_dtype, accelerator)
-    text_encoders = text_encoder if isinstance(text_encoder, list) else [text_encoder]
-    print(' (4.2) lora model')
-    net_kwargs = {}
-    if args.network_args is not None:
-        for net_arg in args.network_args:
-            key, value = net_arg.split("=")
-            net_kwargs[key] = value
-    network = create_network(1.0, args.network_dim, args.network_alpha,
-                             vae, text_encoder, unet, neuron_dropout=args.network_dropout, **net_kwargs, )
-    train_unet, train_text_encoder = args.train_unet, args.train_text_encoder
-    network.apply_to(text_encoder, unet, train_text_encoder, train_unet)
-    if args.network_weights is not None:
-        info = network.load_weights(args.network_weights)
-        accelerator.print(f"load network weights from {args.network_weights}: {info}")
-    print(' (4.3) positional embedding model')
-    position_embedder = PositionalEmbedding(max_len=args.latent_res * args.latent_res, d_model=args.d_dim)
+    text_encoder, vae, unet, network, position_embedder = call_model_package(args, weight_dtype, accelerator)
 
     print(f'\n step 5. optimizer')
     trainable_params = network.prepare_optimizer_params(args.text_encoder_lr, args.unet_lr, args.learning_rate)
@@ -78,33 +60,19 @@ def main(args):
     loss_l2 = torch.nn.modules.loss.MSELoss(reduction='none')
     normal_activator = NormalActivator(loss_focal, loss_l2, args.use_focal_loss)
 
-    print(f'\n step 8. weight dtype and network to accelerate preparing')
-    if args.full_fp16:
-        assert (args.mixed_precision == "fp16"), "full_fp16 requires mixed precision='fp16'"
-        accelerator.print("enable full fp16 training.")
-        network.to(weight_dtype)
-    elif args.full_bf16:
-        assert (args.mixed_precision == "bf16"), "full_bf16 requires mixed precision='bf16' / mixed_precision='bf16'"
-        accelerator.print("enable full bf16 training.")
-        network.to(weight_dtype)
-    unet.requires_grad_(False)
-    unet.to(dtype=weight_dtype)
-    for t_enc in text_encoders:
-        t_enc.requires_grad_(False)
-    if train_unet and train_text_encoder:
-        unet, text_encoder, network, optimizer, train_dataloader, lr_scheduler, position_embedder = accelerator.prepare(
-            unet, text_encoder, network, optimizer, train_dataloader, lr_scheduler, position_embedder)
-        text_encoders = [text_encoder]
-    text_encoders = transform_models_if_DDP(text_encoders)
+    print(f'\n step 8. model to device')
+    unet, text_encoder, network, optimizer, train_dataloader, lr_scheduler, position_embedder = accelerator.prepare(
+        unet, text_encoder, network, optimizer, train_dataloader, lr_scheduler, position_embedder)
+    text_encoders = transform_models_if_DDP([text_encoder])
     unet, network = transform_models_if_DDP([unet, network])
     if args.gradient_checkpointing:
         unet.train()
         position_embedder.train()
         for t_enc in text_encoders:
             t_enc.train()
-            if train_text_encoder:
+            if args.train_text_encoder:
                 t_enc.text_model.embeddings.requires_grad_(True)
-        if not train_text_encoder:  # train U-Net only
+        if not args.train_text_encoder:  # train U-Net only
             unet.parameters().__next__().requires_grad_(True)
     else:
         unet.eval()
@@ -112,18 +80,11 @@ def main(args):
             t_enc.eval()
     del t_enc
     network.prepare_grad_etc(text_encoder, unet)
-    vae.requires_grad_(False)
-    vae.eval()
-    vae.to(accelerator.device, dtype=vae_dtype)
+    vae.to(accelerator.device, dtype=weight_dtype)
 
-    print(f'\n step 8. Training !')
-    if args.max_train_epochs is not None:
-        args.max_train_steps = args.max_train_epochs * math.ceil(
-            len(train_dataloader) / accelerator.num_processes / args.gradient_accumulation_steps)
-        accelerator.print(f"override steps. steps for {args.max_train_epochs} epochs / {args.max_train_steps}")
+    print(f'\n step 9. Training !')
     max_train_steps = len(train_dataloader) * args.max_train_epochs
-    progress_bar = tqdm(range(max_train_steps),
-                        smoothing=0,
+    progress_bar = tqdm(range(max_train_steps), smoothing=0,
                         disable=not accelerator.is_local_main_process, desc="steps")
     global_step = 0
     noise_scheduler = DDPMScheduler(beta_start=0.00085, beta_end=0.012, beta_schedule="scaled_linear",
@@ -275,7 +236,7 @@ def main(args):
                 with open(logging_file, 'a') as f:
                     f.write(logging_info + '\n')
                 progress_bar.set_postfix(**loss_dict)
-            if global_step >= args.max_train_steps:
+            if global_step >= max_train_steps:
                 break
         # ----------------------------------------------------------------------------------------------------------- #
         # [6] epoch final
@@ -286,21 +247,18 @@ def main(args):
             if position_embedder is not None:
                 position_embedder_base_save_dir = os.path.join(args.output_dir, 'position_embedder')
                 os.makedirs(position_embedder_base_save_dir, exist_ok=True)
-                p_save_dir = os.path.join(position_embedder_base_save_dir,
-                                          f'position_embedder_{epoch + 1}.safetensors')
-                pe_model_save(accelerator.unwrap_model(position_embedder), save_dtype, p_save_dir)
+                pe_model_save(accelerator.unwrap_model(position_embedder), save_dtype,
+                           os.path.join(position_embedder_base_save_dir, f'position_embedder_{epoch + 1}.safetensors'))
 
     accelerator.end_training()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-
     # step 1. setting
     parser.add_argument('--seed', type=int, default=42)
     parser.add_argument('--output_dir', type=str, default='output')
     # step 2. dataset
     parser.add_argument('--data_path', type=str, default=r'../../../MyData/anomaly_detection/MVTec3D-AD')
-    parser.add_argument('--use_sharpen_aug', action='store_true')
     parser.add_argument('--obj_name', type=str, default='bottle')
     parser.add_argument("--anomal_source_path", type=str)
     parser.add_argument('--batch_size', type=int, default=1)
@@ -310,22 +268,20 @@ if __name__ == "__main__":
     parser.add_argument("--anomal_only_on_object", action='store_true')
     parser.add_argument("--reference_check", action='store_true')
     parser.add_argument("--latent_res", type=int, default=64)
+    parser.add_argument("--use_small_anomal", action='store_true')
+    parser.add_argument("--beta_scale_factor", type=float, default=0.8)
+    parser.add_argument("--bgrm_test", action='store_true')
     # step 3. preparing accelerator
     parser.add_argument("--mixed_precision", type=str, default="no", choices=["no", "fp16", "bf16"], )
     parser.add_argument("--save_precision", type=str, default=None, choices=[None, "float", "fp16", "bf16"], )
     parser.add_argument("--gradient_accumulation_steps", type=int, default=1, )
     parser.add_argument("--log_with", type=str, default=None, choices=["tensorboard", "wandb", "all"], )
     parser.add_argument("--log_prefix", type=str, default=None)
-    parser.add_argument("--full_fp16", action="store_true", help="fp16 training including gradients")
-    parser.add_argument("--full_bf16", action="store_true", help="bf16 training including gradients")
     parser.add_argument("--lowram", action="store_true", )
     parser.add_argument("--no_half_vae", action="store_true",
                         help="do not use fp16/bf16 VAE in mixed precision (use float VAE) / mixed precision", )
-    parser.add_argument("--use_small_anomal", action='store_true')
     parser.add_argument("--position_embedding_layer", type=str)
     parser.add_argument("--d_dim", default=320, type=int)
-    parser.add_argument("--beta_scale_factor", type=float, default=0.8)
-    parser.add_argument("--bgrm_test", action='store_true')
     # step 4. model
     parser.add_argument('--pretrained_model_name_or_path', type=str, default='facebook/diffusion-dalle')
     parser.add_argument("--clip_skip", type=int, default=None,
@@ -336,25 +292,15 @@ if __name__ == "__main__":
     parser.add_argument("--network_weights", type=str, default=None, help="pretrained weights for network")
     parser.add_argument("--network_dim", type=int, default=64, help="network dimensions (depends on each network) ")
     parser.add_argument("--network_alpha", type=float, default=4, help="alpha for LoRA weight scaling, default 1 ", )
-    parser.add_argument("--network_dropout", type=float, default=None,
-                        help="Drops neurons out of training every step", )
-    parser.add_argument("--network_args", type=str, default=None, nargs="*",
-                        help="additional argmuments for network (key=value)")
-    parser.add_argument("--dim_from_weights", action="store_true",
-                        help="automatically determine dim (rank) from network_weights / dim ", )
-    parser.add_argument("--scale_weight_norms", type=float, default=None,
-                        help="Scale the weight of each key pair to help prevent overtraing via exploding gradients. ", )
-    parser.add_argument("--base_weights", type=str, default=None, nargs="*",
-                        help="network weights to merge into the model before training", )
-    parser.add_argument("--base_weights_multiplier", type=float, default=None, nargs="*",
-                        help="multiplier for network weights to merge into the model before training ", )
+    parser.add_argument("--network_dropout", type=float, default=None,)
+    parser.add_argument("--network_args", type=str, default=None, nargs="*",)
+    parser.add_argument("--dim_from_weights", action="store_true",)
     # step 5. optimizer
     parser.add_argument("--optimizer_type", type=str, default="AdamW",
-                        help="AdamW , AdamW8bit, PagedAdamW8bit, PagedAdamW32bit, Lion8bit, PagedLion8bit, Lion, SGDNesterov, "
-                             "SGDNesterov8bit, DAdaptation(DAdaptAdamPreprint), DAdaptAdaGrad, DAdaptAdam, DAdaptAdan, DAdaptAdanIP, "
-                             "DAdaptLion, DAdaptSGD, AdaFactor", )
-    parser.add_argument("--use_8bit_adam", action="store_true",
-                        help="use 8bit AdamW optimizer(requires bitsandbytes)", )
+            help="AdamW , AdamW8bit, PagedAdamW8bit, PagedAdamW32bit, Lion8bit, PagedLion8bit, Lion, SGDNesterov,"
+            "SGDNesterov8bit, DAdaptation(DAdaptAdamPreprint), DAdaptAdaGrad, DAdaptAdam, DAdaptAdan, DAdaptAdanIP,"
+             "DAdaptLion, DAdaptSGD, AdaFactor", )
+    parser.add_argument("--use_8bit_adam", action="store_true", help="use 8bit AdamW optimizer(requires bitsandbytes)",)
     parser.add_argument("--use_lion_optimizer", action="store_true",
                         help="use Lion optimizer (requires lion-pytorch)", )
     parser.add_argument("--max_grad_norm", default=1.0, type=float, help="Max gradient norm, 0 for no clipping")
@@ -377,34 +323,28 @@ if __name__ == "__main__":
     parser.add_argument('--train_unet', action='store_true')
     parser.add_argument('--train_text_encoder', action='store_true')
     # step 8. training
-    parser.add_argument("--output_name", type=str, default=None, help="base name of trained model file ")
     parser.add_argument("--save_model_as", type=str, default="safetensors",
               choices=[None, "ckpt", "pt", "safetensors"], help="format to save the model (default is .safetensors)",)
-    parser.add_argument("--training_comment", type=str, default=None,)
     parser.add_argument("--start_epoch", type=int, default=0)
-    parser.add_argument("--max_train_steps", type=int, default=1600, help="training steps")
     parser.add_argument("--max_train_epochs", type=int, default=None, )
     parser.add_argument("--gradient_checkpointing", action="store_true", help="enable gradient checkpointing")
+    # [1]
+    parser.add_argument("--do_object_detection", action='store_true')
+    parser.add_argument("--do_normal_sample", action='store_true')
     parser.add_argument("--do_anomal_sample", action='store_true')
     parser.add_argument("--do_background_masked_sample", action='store_true')
-
+    # [2]
     parser.add_argument("--do_dist_loss", action='store_true')
     parser.add_argument("--dist_loss_weight", type=float, default=1.0)
-
     parser.add_argument("--do_attn_loss", action='store_true')
     parser.add_argument("--do_cls_train", action='store_true')
     parser.add_argument("--attn_loss_weight", type=float, default=1.0)
     parser.add_argument("--anormal_weight", type=float, default=1.0)
     parser.add_argument('--normal_weight', type=float, default=1.0)
     parser.add_argument("--trg_layer_list", type=arg_as_list, default=[])
-
     parser.add_argument("--do_map_loss", action='store_true')
     parser.add_argument("--use_focal_loss", action='store_true')
-    parser.add_argument("--adv_focal_loss", action='store_true')
-    parser.add_argument("--do_normal_sample", action='store_true')
-    parser.add_argument("--do_object_detection", action='store_true')
-
-
+    # [3]
     args = parser.parse_args()
     unet_passing_argument(args)
     passing_argument(args)
