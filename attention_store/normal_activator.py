@@ -76,6 +76,7 @@ class NormalActivator(nn.Module):
         if self.use_focal_loss:
             if len(self.trigger_score) > 0:
                 trigger_score = self.trigger_score[0]
+                cls_score = self.cls_score[0]
                 self.trigger_score = []
                 self.cls_score = []
             else:
@@ -84,11 +85,13 @@ class NormalActivator(nn.Module):
                 cls_score, trigger_score = cls_score.mean(dim=0), trigger_score.mean(dim=0)  # pix_num
 
             res = int(attn_score.shape[0] ** 0.5)
-            cls_score_map = cls_score.view(res, res).unsqueeze(0).unsqueeze(0)
-            trigger_score_map = trigger_score.view(res, res).unsqueeze(0).unsqueeze(0)
-            focal_loss_in = torch.cat([cls_score_map, trigger_score_map], 1)
+            focal_loss_in = torch.cat([cls_score.view(res, res).unsqueeze(0).unsqueeze(0),
+                                       trigger_score.view(res, res).unsqueeze(0).unsqueeze(0)], 1)
+
+            # [2] target
             focal_loss_trg = anomal_position_vector.view(res, res).unsqueeze(0).unsqueeze(0)
-            map_loss = self.loss_focal(focal_loss_in, focal_loss_trg.to(dtype=trigger_score_map.dtype))
+            map_loss = self.loss_focal(focal_loss_in,
+                                       focal_loss_trg.to(dtype=trigger_score.dtype))
 
         else:
 

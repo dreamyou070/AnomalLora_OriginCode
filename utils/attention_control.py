@@ -81,9 +81,8 @@ def register_attention_control(unet: nn.Module,controller: AttentionStore):
 
             if trg_layer_list is not None and layer_name in trg_layer_list :
                 if argument.use_focal_loss :
-                    attention_scores = attention_scores[:, :, :2]
-                    attention_probs = attention_scores.softmax(dim=-1).to(value.dtype)
-                    trg_map = attention_probs[:, :, :2]
+                    attention_probs = attention_scores[:, :, :2].softmax(dim=-1).to(value.dtype)
+                    trg_map = attention_probs
                     controller.store(trg_map, layer_name)
                 else :
                     trg_map = attention_probs[:, :, :2]
