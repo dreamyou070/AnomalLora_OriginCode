@@ -1,12 +1,12 @@
 # !/bin/bash
 
-port_number=50031
+port_number=50036
 
 obj_name='carrot'
 trigger_word='carrot'
 bench_mark='MVTec3D-AD'
 
-accelerate launch --config_file ../../../gpu_config/gpu_0_config \
+accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_5_config \
  --main_process_port $port_number ../train_student_model.py \
  --log_with wandb \
  --output_dir "../../result/${bench_mark}/${obj_name}/0_2_student_model_without_attn_loss" \
@@ -21,5 +21,4 @@ accelerate launch --config_file ../../../gpu_config/gpu_0_config \
  --start_epoch 0 --max_train_epochs 30 \
  --do_normal_sample \
  --do_anomal_sample \
- --do_background_masked_sample \
- --do_attn_loss
+ --do_background_masked_sample
