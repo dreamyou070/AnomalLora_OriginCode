@@ -48,6 +48,7 @@ def main(args):
     text_encoder, vae, unet, network, position_embedder = call_model_package(args, weight_dtype, accelerator)
 
     print(f'\n step 5. optimizer')
+    args.max_train_steps = len(train_dataloader) * args.max_train_epochs
     trainable_params = network.prepare_optimizer_params(args.text_encoder_lr, args.unet_lr, args.learning_rate)
     trainable_params.append({"params": position_embedder.parameters(), "lr": args.learning_rate})
     optimizer_name, optimizer_args, optimizer = get_optimizer(args, trainable_params)
@@ -83,8 +84,7 @@ def main(args):
     vae.to(accelerator.device, dtype=weight_dtype)
 
     print(f'\n step 9. Training !')
-    max_train_steps = len(train_dataloader) * args.max_train_epochs
-    progress_bar = tqdm(range(max_train_steps), smoothing=0,
+    progress_bar = tqdm(range(args.max_train_steps), smoothing=0,
                         disable=not accelerator.is_local_main_process, desc="steps")
     global_step = 0
     noise_scheduler = DDPMScheduler(beta_start=0.00085, beta_end=0.012, beta_schedule="scaled_linear",
@@ -236,7 +236,7 @@ def main(args):
                 with open(logging_file, 'a') as f:
                     f.write(logging_info + '\n')
                 progress_bar.set_postfix(**loss_dict)
-            if global_step >= max_train_steps:
+            if global_step >= args.max_train_steps:
                 break
         # ----------------------------------------------------------------------------------------------------------- #
         # [6] epoch final
