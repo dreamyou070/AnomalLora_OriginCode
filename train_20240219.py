@@ -1,7 +1,6 @@
 import argparse, math, random, json
 from tqdm import tqdm
 from accelerate.utils import set_seed
-from diffusers import DDPMScheduler
 import torch
 import os
 from attention_store import AttentionStore
@@ -87,14 +86,9 @@ def main(args):
     progress_bar = tqdm(range(args.max_train_steps), smoothing=0,
                         disable=not accelerator.is_local_main_process, desc="steps")
     global_step = 0
-    noise_scheduler = DDPMScheduler(beta_start=0.00085, beta_end=0.012, beta_schedule="scaled_linear",
-                                    num_train_timesteps=1000, clip_sample=False)
-    prepare_scheduler_for_custom_training(noise_scheduler, accelerator.device)
     loss_list = []
-
     controller = AttentionStore()
     register_attention_control(unet, controller)
-
     if is_main_process:
         logging_info = f"'step', 'normal dist mean', 'normal dist max'"
         with open(logging_file, 'a') as f:
@@ -121,15 +115,9 @@ def main(args):
                 with torch.no_grad():
                     latents = vae.encode(
                         batch["image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
-                if args.use_noise_scheduler:
-                    noise, noisy_latents, timesteps = get_noise_noisy_latents_and_timesteps(args, noise_scheduler, latents)
-                else :
-                    noisy_latents = latents
-                    timesteps = 0
                 object_position = batch['object_mask'].squeeze().flatten()
                 with torch.set_grad_enabled(True):
-                    unet(noisy_latents, timesteps, encoder_hidden_states, trg_layer_list=args.trg_layer_list,
-                         noise_type=position_embedder)
+                    unet(latents, 0, encoder_hidden_states, trg_layer_list=args.trg_layer_list, noise_type=position_embedder)
                 query_dict, attn_dict = controller.query_dict, controller.step_store
                 controller.reset()
                 for trg_layer in args.trg_layer_list:
@@ -147,16 +135,8 @@ def main(args):
                 with torch.no_grad():
                     latents = vae.encode(
                         batch["image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
-                if args.use_noise_scheduler:
-                    noise, noisy_latents, timesteps = get_noise_noisy_latents_and_timesteps(args, noise_scheduler,
-                                                                                            latents)
-                else:
-                    noisy_latents = latents
-                    timesteps = 0
-
                 with torch.set_grad_enabled(True):
-                    unet(noisy_latents, timesteps, encoder_hidden_states, trg_layer_list=args.trg_layer_list,
-                         noise_type=position_embedder)
+                    unet(latents, 0, encoder_hidden_states, trg_layer_list=args.trg_layer_list, noise_type=position_embedder)
                 query_dict, attn_dict = controller.query_dict, controller.step_store
                 controller.reset()
                 for trg_layer in args.trg_layer_list:
@@ -176,14 +156,8 @@ def main(args):
                 with torch.no_grad():
                     latents = vae.encode(
                         batch["anomal_image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
-                if args.use_noise_scheduler:
-                    noise, noisy_latents, timesteps = get_noise_noisy_latents_and_timesteps(args, noise_scheduler,
-                                                                                            latents)
-                else:
-                    noisy_latents = latents
-                    timesteps = 0
-                unet(noisy_latents, timesteps, encoder_hidden_states, trg_layer_list=args.trg_layer_list,
-                     noise_type=position_embedder)
+                with torch.set_grad_enabled(True):
+                    unet(latents, 0, encoder_hidden_states, trg_layer_list=args.trg_layer_list, noise_type=position_embedder)
                 query_dict, attn_dict = controller.query_dict, controller.step_store
                 controller.reset()
                 for trg_layer in args.trg_layer_list:
@@ -201,14 +175,9 @@ def main(args):
                 with torch.no_grad():
                     latents = vae.encode(
                         batch["bg_anomal_image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
-                if args.use_noise_scheduler:
-                    noise, noisy_latents, timesteps = get_noise_noisy_latents_and_timesteps(args, noise_scheduler,
-                                                                                            latents)
-                else:
-                    noisy_latents = latents
-                    timesteps = 0
-                unet(noisy_latents, timesteps, encoder_hidden_states, trg_layer_list=args.trg_layer_list,
-                     noise_type=position_embedder)
+                with torch.set_grad_enabled(True):
+                    unet(latents, 0, encoder_hidden_states, trg_layer_list=args.trg_layer_list,
+                         noise_type=position_embedder)
                 query_dict, attn_dict = controller.query_dict, controller.step_store
                 controller.reset()
                 for trg_layer in args.trg_layer_list:
