@@ -1,20 +1,19 @@
 import os
 import argparse, torch
-from model import LoRANetwork
+from model.lora import LoRANetwork,LoRAInfModule
 from attention_store import AttentionStore
 from utils.attention_control import add_attn_argument, passing_argument
-from model import unet_passing_argument
+from model.unet import unet_passing_argument
 from utils.attention_control import register_attention_control
 from accelerate import Accelerator
 from model.tokenizer import load_tokenizer
 from utils import prepare_dtype
 from utils.model_utils import get_input_ids
 from PIL import Image
-from model import LoRAInfModule
 from utils.image_utils import load_image, image2latent
 import numpy as np
-from model import load_target_model
-from model import PositionalEmbedding
+from model.diffusion_model import load_target_model
+from model.pe import PositionalEmbedding
 from safetensors.torch import load_file
 
 def main(args):
