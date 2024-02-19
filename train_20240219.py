@@ -116,13 +116,15 @@ def main(args):
 
             # --------------------------------------------------------------------------------------------------------- #
             # [1] normal sample
-            if args.do_object_detection :
+            if args.do_object_detection:
                 with torch.no_grad():
-                    latents = vae.encode(batch["image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
+                    latents = vae.encode(
+                        batch["image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
                 noise, noisy_latents, timesteps = get_noise_noisy_latents_and_timesteps(args, noise_scheduler, latents)
                 object_position = batch['object_mask'].squeeze().flatten()
                 with torch.set_grad_enabled(True):
-                    unet(noisy_latents, timesteps, encoder_hidden_states, trg_layer_list=args.trg_layer_list, noise_type=position_embedder)
+                    unet(noisy_latents, timesteps, encoder_hidden_states, trg_layer_list=args.trg_layer_list,
+                         noise_type=position_embedder)
                 query_dict, attn_dict = controller.query_dict, controller.step_store
                 controller.reset()
                 for trg_layer in args.trg_layer_list:
@@ -138,7 +140,8 @@ def main(args):
 
             if args.do_normal_sample:
                 with torch.no_grad():
-                    latents = vae.encode(batch["image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
+                    latents = vae.encode(
+                        batch["image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
                 noise, noisy_latents, timesteps = get_noise_noisy_latents_and_timesteps(args, noise_scheduler, latents)
                 with torch.set_grad_enabled(True):
                     unet(noisy_latents, timesteps, encoder_hidden_states, trg_layer_list=args.trg_layer_list,
@@ -158,11 +161,13 @@ def main(args):
                     normal_activator.collect_anomal_map_loss(attn_score, anomal_position_vector)
 
             # --------------------------------------------------------------------------------------------------------- #
-            if args.do_anomal_sample :
+            if args.do_anomal_sample:
                 with torch.no_grad():
-                    latents = vae.encode(batch["anomal_image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
+                    latents = vae.encode(
+                        batch["anomal_image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
                 noise, noisy_latents, timesteps = get_noise_noisy_latents_and_timesteps(args, noise_scheduler, latents)
-                unet(noisy_latents, timesteps, encoder_hidden_states, trg_layer_list=args.trg_layer_list, noise_type=position_embedder)
+                unet(noisy_latents, timesteps, encoder_hidden_states, trg_layer_list=args.trg_layer_list,
+                     noise_type=position_embedder)
                 query_dict, attn_dict = controller.query_dict, controller.step_store
                 controller.reset()
                 for trg_layer in args.trg_layer_list:
@@ -176,11 +181,13 @@ def main(args):
                     # [3]
                     normal_activator.collect_anomal_map_loss(attn_score, anomal_position_vector)
 
-            if args.do_background_masked_sample :
+            if args.do_background_masked_sample:
                 with torch.no_grad():
-                    latents = vae.encode(batch["bg_anomal_image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
+                    latents = vae.encode(
+                        batch["bg_anomal_image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
                 noise, noisy_latents, timesteps = get_noise_noisy_latents_and_timesteps(args, noise_scheduler, latents)
-                unet(noisy_latents, timesteps, encoder_hidden_states, trg_layer_list=args.trg_layer_list, noise_type=position_embedder)
+                unet(noisy_latents, timesteps, encoder_hidden_states, trg_layer_list=args.trg_layer_list,
+                     noise_type=position_embedder)
                 query_dict, attn_dict = controller.query_dict, controller.step_store
                 controller.reset()
                 for trg_layer in args.trg_layer_list:
@@ -236,20 +243,20 @@ def main(args):
                 with open(logging_file, 'a') as f:
                     f.write(logging_info + '\n')
                 progress_bar.set_postfix(**loss_dict)
-            normal_activator.reset()
             if global_step >= args.max_train_steps:
                 break
         # ----------------------------------------------------------------------------------------------------------- #
         # [6] epoch final
         accelerator.wait_for_everyone()
-        if is_main_process :
+        if is_main_process:
             ckpt_name = get_epoch_ckpt_name(args, "." + args.save_model_as, epoch + 1)
             save_model(args, ckpt_name, accelerator.unwrap_model(network), save_dtype)
             if position_embedder is not None:
                 position_embedder_base_save_dir = os.path.join(args.output_dir, 'position_embedder')
                 os.makedirs(position_embedder_base_save_dir, exist_ok=True)
-                pe_model_save(accelerator.unwrap_model(position_embedder), save_dtype,
-                           os.path.join(position_embedder_base_save_dir, f'position_embedder_{epoch + 1}.safetensors'))
+                p_save_dir = os.path.join(position_embedder_base_save_dir,
+                                          f'position_embedder_{epoch + 1}.safetensors')
+                pe_model_save(accelerator.unwrap_model(position_embedder), save_dtype, p_save_dir)
 
     accelerator.end_training()
 
