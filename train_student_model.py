@@ -187,11 +187,12 @@ def main(args):
             loss += normal_matching_query_loss.mean()
             loss_dict['normal matching query loss'] = normal_matching_query_loss.mean().item()
             # [5.2] backprop (2) attention loss
-            _, _, anormal_cls_loss, anormal_trigger_loss = normal_activator.generate_attention_loss()
-            attn_loss = args.anormal_weight * anormal_trigger_loss.mean()
-            if args.do_cls_train:
-                attn_loss += args.anormal_weight * anormal_cls_loss.mean()
-            loss += attn_loss
+            if args.do_attn_loss:
+                _, _, anormal_cls_loss, anormal_trigger_loss = normal_activator.generate_attention_loss()
+                attn_loss = args.anormal_weight * anormal_trigger_loss.mean()
+                if args.do_cls_train:
+                    attn_loss += args.anormal_weight * anormal_cls_loss.mean()
+                loss += attn_loss
             loss_dict['attn_loss'] = attn_loss.item()
             loss = loss.to(weight_dtype)
             current_loss = loss.detach().item()
