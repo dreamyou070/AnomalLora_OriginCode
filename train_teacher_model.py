@@ -44,30 +44,11 @@ def main(args):
 
     print(f'\n step 4. model ')
     weight_dtype, save_dtype = prepare_dtype(args)
-    T_text_encoder, T_vae, T_unet, T_network, T_position_embedder = call_model_package(args, weight_dtype, accelerator)
-    S_text_encoder, S_vae, S_unet, S_network, S_position_embedder = call_model_package(args, weight_dtype, accelerator)
+    text_encoder, vae, unet, network, position_embedder = call_model_package(args, weight_dtype, accelerator)
 
     print(f'\n step 5. optimizer')
-    except_names = ['to_k','to_v']
-
-    params = []
-    for unet_lora in S_network.unet_loras:
-        lora_name = unet_lora.lora_name
-        print(f' *** lora_name : {lora_name}')
-        params.extend(unet_lora.parameters())
-
-    """    
-    def enumerate_params(loras):
-        params = []
-        for lora in loras:
-            params.extend(lora.parameters())
-        return params
-    
-    
-    trainable_params = S_network.prepare_optimizer_params(args.text_encoder_lr, args.unet_lr, args.learning_rate)
-    trainable_params = [trainable_params[1]]
-
-    trainable_params.append({"params": S_position_embedder.parameters(), "lr": args.learning_rate})
+    trainable_params = network.prepare_optimizer_params(args.text_encoder_lr, args.unet_lr, args.learning_rate)
+    trainable_params.append({"params": position_embedder.parameters(), "lr": args.learning_rate})
     optimizer_name, optimizer_args, optimizer = get_optimizer(args, trainable_params)
 
     print(f'\n step 6. lr')
@@ -79,27 +60,26 @@ def main(args):
     normal_activator = NormalActivator(loss_focal, loss_l2, args.use_focal_loss)
 
     print(f'\n step 8. model to device')
-    S_unet, S_text_encoder, S_network, optimizer, train_dataloader, lr_scheduler, S_position_embedder = accelerator.prepare(
-        S_unet, S_text_encoder, S_network, optimizer, train_dataloader, lr_scheduler, S_position_embedder)
-    S_text_encoders = transform_models_if_DDP([S_text_encoder])
-    S_unet, S_network = transform_models_if_DDP([S_unet, S_network])
+    unet, text_encoder, network, optimizer, train_dataloader, lr_scheduler, position_embedder = accelerator.prepare(
+        unet, text_encoder, network, optimizer, train_dataloader, lr_scheduler, position_embedder)
+    text_encoders = transform_models_if_DDP([text_encoder])
+    unet, network = transform_models_if_DDP([unet, network])
     if args.gradient_checkpointing:
-        S_unet.train()
-        S_position_embedder.train()
-        for t_enc in S_text_encoders:
+        unet.train()
+        position_embedder.train()
+        for t_enc in text_encoders:
             t_enc.train()
             if args.train_text_encoder:
                 t_enc.text_model.embeddings.requires_grad_(True)
         if not args.train_text_encoder:  # train U-Net only
-            S_unet.parameters().__next__().requires_grad_(True)
+            unet.parameters().__next__().requires_grad_(True)
     else:
-        S_unet.eval()
-        for t_enc in S_text_encoders:
+        unet.eval()
+        for t_enc in text_encoders:
             t_enc.eval()
     del t_enc
-    S_network.prepare_grad_etc(S_text_encoder, S_unet)
-    S_vae.to(accelerator.device, dtype=weight_dtype)
-
+    network.prepare_grad_etc(text_encoder, unet)
+    vae.to(accelerator.device, dtype=weight_dtype)
 
     print(f'\n step 8. Training !')
     if args.max_train_epochs is not None:
@@ -116,11 +96,8 @@ def main(args):
     prepare_scheduler_for_custom_training(noise_scheduler, accelerator.device)
     loss_list = []
 
-    S_controller = AttentionStore()
-    register_attention_control(S_unet, S_controller)
-    T_controller = AttentionStore()
-    register_attention_control(T_unet, T_controller)
-    def T_vae, T_text_encoder
+    controller = AttentionStore()
+    register_attention_control(unet, controller)
 
     if is_main_process:
         logging_info = f"'step', 'normal dist mean', 'normal dist max'"
@@ -139,7 +116,7 @@ def main(args):
             loss_dict = {}
 
             with torch.set_grad_enabled(True):
-                encoder_hidden_states = S_text_encoder(batch["input_ids"].to(device))["last_hidden_state"]
+                encoder_hidden_states = text_encoder(batch["input_ids"].to(device))["last_hidden_state"]
 
             # --------------------------------------------------------------------------------------------------------- #
             # [1] normal sample
@@ -279,7 +256,6 @@ def main(args):
                 pe_model_save(accelerator.unwrap_model(position_embedder), save_dtype, p_save_dir)
 
     accelerator.end_training()
-    """
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
