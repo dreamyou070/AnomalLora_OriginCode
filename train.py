@@ -209,18 +209,15 @@ def main(args):
 
         for step, batch in enumerate(train_dataloader):
 
+            device = accelerator.device
+
             loss = torch.tensor(0.0, dtype=weight_dtype, device=accelerator.device)
             dist_loss, attn_loss, map_loss = 0.0, 0.0, 0.0
             normal_feat_list, anormal_feat_list = [], []
             value_dict, loss_dict = {}, {}
 
-            if args.do_down_dim_mahal_loss :
-                original_dim = 320
-                down_dim_idx = torch.tensor(sample(range(0, original_dim), args.down_dim))
-                down_dim_normal_feat_list, down_dim_anormal_feat_list = [], []
-
             with torch.set_grad_enabled(True):
-                encoder_hidden_states = text_encoder(batch["input_ids"].to(accelerator.device))["last_hidden_state"]
+                encoder_hidden_states = text_encoder(batch["input_ids"].to(device))["last_hidden_state"]
 
             # --------------------------------------------------------------------------------------------------------- #
             # [1] normal sample
@@ -229,20 +226,17 @@ def main(args):
             noise, noisy_latents, timesteps = get_noise_noisy_latents_and_timesteps(args, noise_scheduler, latents)
             unet(noisy_latents, timesteps, encoder_hidden_states, trg_layer_list=args.trg_layer_list,
                               noise_type=position_embedder)
-
-
-
             query_dict, attn_dict = controller.query_dict, controller.step_store
             controller.reset()
+
+            #anomal_position_vector =
+            #normal_position_vector =
             for trg_layer in args.trg_layer_list:
                 query = query_dict[trg_layer][0].squeeze(0)  # pix_num, dim
                 pix_num = query.shape[0]
                 for pix_idx in range(pix_num):
                     feat = query[pix_idx].squeeze(0)
                     normal_feat_list.append(feat.unsqueeze(0))
-                    if args.do_down_dim_mahal_loss :
-                        down_dim_feat = torch.index_select(feat, 0, down_dim_idx.to(feat.device))
-                        down_dim_normal_feat_list.append(down_dim_feat.unsqueeze(0))
                 # (2) attn loss
                 attn_score = attn_dict[trg_layer][0]  # head, pix_num, 2
                 cls_score, trigger_score = attn_score.chunk(2, dim=-1)
@@ -290,17 +284,10 @@ def main(args):
                 for pix_idx in range(query.shape[0]):
                     feat = query[pix_idx].squeeze(0)
                     anomal_flag = anomal_position[pix_idx].item()
-                    if args.do_down_dim_mahal_loss:
-                        down_dim_feat = torch.index_select(feat, 0, down_dim_idx.to(feat.device))
-                        down_dim_normal_feat_list.append(down_dim_feat.unsqueeze(0))
                     if anomal_flag != 0:
                         anormal_feat_list.append(feat.unsqueeze(0))
-                        if args.do_down_dim_mahal_loss:
-                            down_dim_anormal_feat_list.append(down_dim_feat.unsqueeze(0))
                     else:
                         normal_feat_list.append(feat.unsqueeze(0))
-                        if args.do_down_dim_mahal_loss:
-                            down_dim_normal_feat_list.append(down_dim_feat.unsqueeze(0))
                 # [2] attn score
                 attn_score = attn_dict[trg_layer][0]  # head, pix_num, 2
                 cls_score, trigger_score = attn_score.chunk(2, dim=-1)
@@ -350,17 +337,10 @@ def main(args):
                     for pix_idx in range(query.shape[0]):
                         feat = query[pix_idx].squeeze(0)
                         anomal_flag = anomal_position[pix_idx].item()
-                        if args.do_down_dim_mahal_loss :
-                            down_dim_feat = torch.index_select(feat, 0, down_dim_idx.to(feat.device))
-                            down_dim_normal_feat_list.append(down_dim_feat.unsqueeze(0))
                         if anomal_flag != 0 :
                             anormal_feat_list.append(feat.unsqueeze(0))
-                            if args.do_down_dim_mahal_loss :
-                                down_dim_anormal_feat_list.append(down_dim_feat.unsqueeze(0))
                         else :
                             normal_feat_list.append(feat.unsqueeze(0))
-                            if args.do_down_dim_mahal_loss :
-                                down_dim_normal_feat_list.append(down_dim_feat.unsqueeze(0))
                     # [2] attn score
                     attn_score = attn_dict[trg_layer][0]  # head, pix_num, 2
                     cls_score, trigger_score = attn_score.chunk(2, dim=-1)
@@ -393,22 +373,12 @@ def main(args):
                         focal_loss = loss_focal(focal_loss_in, focal_loss_trg.to(dtype=weight_dtype))
                         map_loss += focal_loss
 
-            # querry permute
-            queries = torch.cat(normal_feat_list, dim=0) #
-            p_shuffle = torch.randperm(queries.size(0))
-            shuffled_queries = queries[p_shuffle]
-            normal_query_loss = loss_l2(queries.float(), shuffled_queries.float()).to(weight_dtype).mean()
-
             # ----------------------------------------------------------------------------------------------------------
             # [5] backprop
 
             if args.do_dist_loss:
                 normal_dist_max, normal_dist_loss, mu, cov = gen_mahal_loss(args, anormal_feat_list, normal_feat_list, mu, cov)
                 dist_loss += normal_dist_loss.to(weight_dtype).requires_grad_()
-                if args.do_down_dim_mahal_loss:
-                    down_dim_normal_dist_max, down_dim_normal_dist_loss = gen_mahal_loss(args, down_dim_anormal_feat_list, down_dim_normal_feat_list)
-                    down_dim_normal_dist_loss = down_dim_normal_dist_loss.to(weight_dtype)
-                    dist_loss += down_dim_normal_dist_loss.requires_grad_()
                 loss += dist_loss.to(weight_dtype)
                 loss_dict['dist_loss'] = dist_loss.item()
 
@@ -442,10 +412,7 @@ def main(args):
                 progress_bar.update(1)
                 global_step += 1
             if is_main_process:
-                if args.do_down_dim_mahal_loss:
-                    logging_info = f'{global_step}, {normal_dist_max}, {down_dim_normal_dist_loss}'
-                else:
-                    logging_info = f'{global_step}, {normal_dist_max}'
+                logging_info = f'{global_step}, {normal_dist_max}'
                 with open(logging_file, 'a') as f:
                     f.write(logging_info + '\n')
                 progress_bar.set_postfix(**loss_dict)
