@@ -23,11 +23,6 @@ def make_perlin_noise(shape_row, shape_column):
 
 
 
-
-def add_attn_argument(parser: argparse.ArgumentParser) :
-    parser.add_argument("--down_dim", type=int, default=160)
-
-
 def window_partition(x, window_size):
     B, H, W, C = x.shape
     x = x.view(B, H // window_size, window_size, W // window_size, window_size, C)
@@ -42,13 +37,11 @@ def localize_hidden_states(hidden_states, window_size):
     return local_hidden_states
 
 def passing_argument(args):
-    global down_dim
     global do_local_self_attn
     global only_local_self_attn
     global fixed_window_size
     global argument
 
-    down_dim = args.down_dim
     argument = args
 
 
