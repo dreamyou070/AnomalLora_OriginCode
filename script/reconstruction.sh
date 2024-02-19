@@ -1,9 +1,9 @@
 # !/bin/bash
 
-port_number=51212
+port_number=53344
 obj_name='carrot'
 caption='carrot'
-folder_name="0_origin_code_test_20240219_small_data"
+folder_name="0_0_object_detector"
 bench_mark="MVTec3D-AD"
 position_embedding_layer="down_blocks_0_attentions_0_transformer_blocks_0_attn1"
 
