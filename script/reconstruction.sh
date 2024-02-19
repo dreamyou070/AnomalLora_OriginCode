@@ -1,9 +1,9 @@
 # !/bin/bash
 
-port_number=53344
+port_number=53311
 obj_name='carrot'
 caption='carrot'
-folder_name="3_1_training_data_do_background_masked_sample_attn_loss_map_loss_l2"
+folder_name="1_reference_check_attn_loss"
 bench_mark="MVTec3D-AD"
 position_embedding_layer="down_blocks_0_attentions_0_transformer_blocks_0_attn1"
 
