@@ -1,13 +1,13 @@
 # !/bin/bash
 
-port_number=50032
+port_number=50053
 
 obj_name='carrot'
 trigger_word='carrot'
 bench_mark='MVTec3D-AD'
-save_folder_name="1_3_background_masked_sample_attn_loss_dist_loss_map_loss_focal_only_zero_timestep_normalized_score"
+save_folder_name="1_5_anormal_sample_background_masked_sample_attn_loss_map_loss_only_zero_timestep"
 
-accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_5_config \
+accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_config \
  --main_process_port $port_number ../train_20240219.py \
  --log_with wandb \
  --output_dir "../../result/${bench_mark}/${obj_name}/${save_folder_name}" \
@@ -23,9 +23,7 @@ accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_5_config \
  --position_embedding_layer 'down_blocks_0_attentions_0_transformer_blocks_0_attn1' \
  --trg_layer_list "['up_blocks_3_attentions_2_transformer_blocks_0_attn2']" \
  --start_epoch 0 --max_train_epochs 30 \
+ --do_anomal_sample \
  --do_background_masked_sample \
  --do_attn_loss \
- --do_dist_loss \
- --do_map_loss \
- --use_focal_loss \
- --do_normalized_score
+ --do_map_loss
