@@ -4,7 +4,7 @@ from accelerate.utils import set_seed
 from diffusers import DDPMScheduler
 import torch
 import os
-from data.mvtec_sy import MVTecDRAEMTrainDataset
+from sub.mvtec_sy import MVTecDRAEMTrainDataset
 from attention_store import AttentionStore
 from model.diffusion_model import load_target_model, transform_models_if_DDP
 from model.lora import create_network
@@ -19,7 +19,7 @@ from utils.model_utils import prepare_scheduler_for_custom_training, get_noise_n
 from utils.utils_mahalanobis import gen_mahal_loss
 from utils.model_utils import pe_model_save
 from utils.utils_loss import FocalLoss
-from random import sample
+
 
 def gen_value_dict(value_dict,
                    normal_cls_loss, anormal_cls_loss,
@@ -224,19 +224,31 @@ def main(args):
             with torch.no_grad():
                 latents = vae.encode(batch["image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
             noise, noisy_latents, timesteps = get_noise_noisy_latents_and_timesteps(args, noise_scheduler, latents)
-            unet(noisy_latents, timesteps, encoder_hidden_states, trg_layer_list=args.trg_layer_list,
-                              noise_type=position_embedder)
+
+            network_kwrags = {}
+            network_kwrags['position_embedder'] = position_embedder
+            unet(noisy_latents, timesteps, encoder_hidden_states, trg_layer_list=args.trg_layer_list,**network_kwrags)
             query_dict, attn_dict = controller.query_dict, controller.step_store
             controller.reset()
 
-            #anomal_position_vector =
-            #normal_position_vector =
+
+
+
             for trg_layer in args.trg_layer_list:
+
+                # [1] dist
                 query = query_dict[trg_layer][0].squeeze(0)  # pix_num, dim
                 pix_num = query.shape[0]
+                anomal_position_vector = torch.zeros(pix_num, device=device)
+                normal_position_vector = 1 - anomal_position_vector
                 for pix_idx in range(pix_num):
                     feat = query[pix_idx].squeeze(0)
-                    normal_feat_list.append(feat.unsqueeze(0))
+                    anomal_flag = anomal_position_vector[pix_idx]
+                    if anomal_flag == 1:
+                        anormal_feat_list.append(feat.unsqueeze(0))
+                    else :
+                        normal_feat_list.append(feat.unsqueeze(0))
+
                 # (2) attn loss
                 attn_score = attn_dict[trg_layer][0]  # head, pix_num, 2
                 cls_score, trigger_score = attn_score.chunk(2, dim=-1)

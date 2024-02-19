@@ -65,8 +65,7 @@ anomal_p = 0.04
 
 class MVTecDRAEMTrainDataset(Dataset):
 
-    def __init__(self,
-                 root_dir,
+    def __init__(self, root_dir,
                  anomaly_source_path,
                  resize_shape=None,
                  tokenizer=None,
@@ -78,10 +77,22 @@ class MVTecDRAEMTrainDataset(Dataset):
                  perlin_max_scale : int = 8,
                  kernel_size : int = 5,
                  beta_scale_factor : float = 0.8,
-                 bgrm_test : bool = True):
+                 bgrm_test : bool = True,
+                 reference_check : bool = True,) :
 
         self.root_dir = root_dir
+        folders = os.listdir(root_dir)
+        image_paths = []
+        for folder in folders:
+            folder_path = os.path.join(root_dir, folder)
+            rgb_folder = os.path.join(folder_path, "rgb")
+            images = os.listdir(rgb_folder)
+            for image in images:
+                image_path = os.path.join(rgb_folder, image)
+                image_paths.append(image_path)
+
         self.resize_shape=resize_shape
+
         if anomaly_source_path is not None:
             self.anomaly_source_paths = []
             for ext in ["png", "jpg"]:
@@ -99,17 +110,16 @@ class MVTecDRAEMTrainDataset(Dataset):
                                iaa.Affine(rotate=(90, 90)),
                                iaa.Affine(rotate=(270, 270))]
         num_repeat = len(self.rot_augmenters)
-
-        image_paths = sorted(glob.glob(root_dir + "/*.png"))
         self.image_paths = [image_path for image_path in image_paths for i in range(num_repeat)]
+
         self.anomal_only_on_object = anomal_only_on_object
         self.anomal_training = anomal_training
         self.latent_res = latent_res
         self.perlin_max_scale = perlin_max_scale
         self.kernel_size = kernel_size
         self.beta_scale_factor = beta_scale_factor
-        self.down_sizer = transforms.Resize(size=(self.latent_res,self.latent_res), antialias=True)
         self.bgrm_test = bgrm_test
+        self.reference_check = reference_check
 
     def __len__(self):
         if len(self.anomaly_source_paths) > 0 :
@@ -123,12 +133,9 @@ class MVTecDRAEMTrainDataset(Dataset):
         np_img = np.array(((torch_img + 1) / 2) * 255).astype(np.uint8).transpose(1, 2, 0)
         pil = Image.fromarray(np_img)
     def get_img_name(self, img_path):
-        parent, name = os.path.split(img_path)
-        class_name = os.path.split(parent)[1]
-        class_name = os.path.split(class_name)[1]
-        name, ext = os.path.splitext(name)
-        final_name = f'{class_name}_{name}'
-        return final_name
+        rgb_folder, name = os.path.split(img_path)
+        class_folder, rgb = os.path.split(rgb_folder)[1]
+        return name, class_folder
 
     def get_object_mask_dir(self, img_path):
         parent, name = os.path.split(img_path)
@@ -242,7 +249,7 @@ class MVTecDRAEMTrainDataset(Dataset):
         img_path = self.image_paths[img_idx]
         img = self.load_image(img_path, self.resize_shape[0], self.resize_shape[1]) # np.array,
         img = aug(image=img)
-        final_name = self.get_img_name(img_path)
+        name, class_folder = self.get_img_name(img_path)
 
         # [2] background
         if self.bgrm_test :
@@ -252,56 +259,73 @@ class MVTecDRAEMTrainDataset(Dataset):
             parent, _ = os.path.split(parent)
             background_dir = os.path.join(parent, f"background/{name}")
 
-        # [3] object mask
-        object_mask_dir = self.get_object_mask_dir(img_path)
-        object_img = self.load_image(object_mask_dir, self.latent_res, self.latent_res, type='L')
-        object_img = aug(image=object_img)
-        object_mask_np = np.where((np.array(object_img, np.uint8) / 255) == 0, 0, 1)
-        object_mask = torch.tensor(object_mask_np) # shape = [64,64], 0 = background, 1 = object
 
-        # [4] augment image (pseudo anomal)
-        if len(self.anomaly_source_paths) > 0:
-            anomal_src_idx = idx % len(self.anomaly_source_paths)
-            anomal_src_path = self.anomaly_source_paths[anomal_src_idx]
-            anomal_name = self.get_img_name(anomal_src_path)
+        if self.reference_check :
+            gt_folder = os.path.join(class_folder, 'gt')
+            gt_path = os.path.join(gt_folder, name)
+            gt_img = self.load_image(gt_path, self.latent_res, self.latent_res, type='L')
+            gt_img = aug(image=gt_img)
+            gt_mask_np = np.where((np.array(gt_img, np.uint8) / 255) == 0, 0, 1)
+            gt_mask = torch.tensor(gt_mask_np)  # shape = [64,64], 0 = background, 1 = object
 
-            if self.anomal_only_on_object:
-                object_img_aug = aug(image=self.load_image(object_mask_dir, self.resize_shape[0], self.resize_shape[1], type='L') )
-                object_position = np.where((np.array(object_img_aug)) == 0, 0, 1)             # [512,512]
-                # [4.1] anomal img
-                anomaly_source_img = self.load_image(self.anomaly_source_paths[anomal_src_idx], self.resize_shape[0], self.resize_shape[1])
-                anomal_img, anomal_mask_torch = self.augment_image(img,
-                                                                   anomaly_source_img,
-                                                                   beta_scale_factor=self.beta_scale_factor,
-                                                                   object_position=object_position) # [512,512,3], [512,512]
-                if self.bgrm_test:
-                    background_img = (img * 0).astype(img.dtype)
-                else :
-                    background_img = self.load_image(background_dir, self.resize_shape[0], self.resize_shape[1],type='RGB')
-                back_anomal_img, back_anomal_mask_torch = self.gaussian_augment_image(img,
-                                                                                      aug(image=background_img),
-                                                                                      object_position = object_position)
+            object_mask = gt_mask
+            anomal_mask_torch = gt_mask.unsqueeze(0)
+            back_anomal_mask_torch = gt_mask.unsqueeze(0)
 
-            else :
-                anomaly_source_img = self.load_image(self.anomaly_source_paths[anomal_src_idx], self.resize_shape[0],
-                                                     self.resize_shape[1])
-                anomal_img, anomal_mask_torch = self.augment_image(img,
-                                                                   anomaly_source_img,
-                                                                   beta_scale_factor=self.beta_scale_factor,
-                                                                   object_position=None)
-                if self.bgrm_test:
-                    background_img = (img * 0).astype(img.dtype)
-                else:
-                    background_img = self.load_image(background_dir, self.resize_shape[0], self.resize_shape[1],
-                                                     type='RGB')
-                back_anomal_img, back_anomal_mask_torch = self.gaussian_augment_image(img,
-                                                                                      aug(image=background_img),
-                                                                                      object_position=None)
-        else :
             anomal_img = img
-            anomal_mask_torch = object_mask # [64,64]
             back_anomal_img = img
-            back_anomal_mask_torch = object_mask.unsqueeze(0) # [1, 64, 64]
+
+        else :
+            # [3] object mask
+            object_mask_dir = self.get_object_mask_dir(img_path)
+            object_img = self.load_image(object_mask_dir, self.latent_res, self.latent_res, type='L')
+            object_img = aug(image=object_img)
+            object_mask_np = np.where((np.array(object_img, np.uint8) / 255) == 0, 0, 1)
+            object_mask = torch.tensor(object_mask_np) # shape = [64,64], 0 = background, 1 = object
+
+            # [4] augment image (pseudo anomal)
+            if len(self.anomaly_source_paths) > 0:
+                anomal_src_idx = idx % len(self.anomaly_source_paths)
+                anomal_src_path = self.anomaly_source_paths[anomal_src_idx]
+                anomal_name = self.get_img_name(anomal_src_path)
+
+                if self.anomal_only_on_object:
+                    object_img_aug = aug(image=self.load_image(object_mask_dir, self.resize_shape[0], self.resize_shape[1], type='L') )
+                    object_position = np.where((np.array(object_img_aug)) == 0, 0, 1)             # [512,512]
+                    # [4.1] anomal img
+                    anomaly_source_img = self.load_image(self.anomaly_source_paths[anomal_src_idx], self.resize_shape[0], self.resize_shape[1])
+                    anomal_img, anomal_mask_torch = self.augment_image(img,
+                                                                       anomaly_source_img,
+                                                                       beta_scale_factor=self.beta_scale_factor,
+                                                                       object_position=object_position) # [512,512,3], [512,512]
+                    if self.bgrm_test:
+                        background_img = (img * 0).astype(img.dtype)
+                    else :
+                        background_img = self.load_image(background_dir, self.resize_shape[0], self.resize_shape[1],type='RGB')
+                    back_anomal_img, back_anomal_mask_torch = self.gaussian_augment_image(img,
+                                                                                          aug(image=background_img),
+                                                                                          object_position = object_position)
+
+                else :
+                    anomaly_source_img = self.load_image(self.anomaly_source_paths[anomal_src_idx], self.resize_shape[0],
+                                                         self.resize_shape[1])
+                    anomal_img, anomal_mask_torch = self.augment_image(img,
+                                                                       anomaly_source_img,
+                                                                       beta_scale_factor=self.beta_scale_factor,
+                                                                       object_position=None)
+                    if self.bgrm_test:
+                        background_img = (img * 0).astype(img.dtype)
+                    else:
+                        background_img = self.load_image(background_dir, self.resize_shape[0], self.resize_shape[1],
+                                                         type='RGB')
+                    back_anomal_img, back_anomal_mask_torch = self.gaussian_augment_image(img,
+                                                                                          aug(image=background_img),
+                                                                                          object_position=None)
+            else :
+                anomal_img = img
+                anomal_mask_torch = object_mask # [64,64]
+                back_anomal_img = img
+                back_anomal_mask_torch = object_mask.unsqueeze(0) # [1, 64, 64]
 
         input_ids, attention_mask = self.get_input_ids(self.caption) # input_ids = [77]
 
@@ -317,5 +341,5 @@ class MVTecDRAEMTrainDataset(Dataset):
                 'idx': idx,
                 'input_ids': input_ids.squeeze(0),
                 'caption': self.caption,
-                'image_name' : final_name,
+                'image_name' : name,
                 'anomal_name' : anomal_name,}

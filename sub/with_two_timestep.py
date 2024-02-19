@@ -3,7 +3,7 @@ from accelerate.utils import set_seed
 from diffusers import DDPMScheduler
 import torch
 import os
-from data.mvtec_sy import MVTecDRAEMTrainDataset
+from sub.mvtec_sy import MVTecDRAEMTrainDataset
 from model.diffusion_model import load_target_model, transform_models_if_DDP
 from model.tokenizer import load_tokenizer
 from utils import prepare_dtype

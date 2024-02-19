@@ -4,7 +4,7 @@ from model.diffusion_model import load_SD_model
 from model.tokenizer import load_tokenizer
 from model.lora import LoRANetwork
 from model.segmentation_model import SegmentationSubNetwork
-from data.mvtec_sy import MVTecDRAEMTrainDataset
+from sub.mvtec_sy import MVTecDRAEMTrainDataset
 from diffusers import DDPMScheduler
 from attention_store import AttentionStore
 from sub.attention_control import register_attention_control

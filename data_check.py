@@ -1,6 +1,6 @@
 import argparse
 import torch
-from data.mvtec_sy import MVTecDRAEMTrainDataset
+from sub.mvtec_sy import MVTecDRAEMTrainDataset
 from model.tokenizer import load_tokenizer
 import numpy as np
 import os
