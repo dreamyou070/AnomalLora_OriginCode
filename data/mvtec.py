@@ -265,7 +265,7 @@ class MVTecDRAEMTrainDataset(Dataset):
             gt_path = os.path.join(gt_folder, name)
             gt_img = self.load_image(gt_path, self.latent_res, self.latent_res, type='L')
             gt_img = aug(image=gt_img)
-            gt_mask_np = np.where((np.array(gt_img, np.uint8) / 255) == 0, 0, 1)
+            gt_mask_np = np.where((np.array(gt_img, np.uint8) / 255) < 0.6, 0, 1)
             gt_mask = torch.tensor(gt_mask_np)  # shape = [64,64], 0 = background, 1 = object
 
             object_mask = gt_mask
