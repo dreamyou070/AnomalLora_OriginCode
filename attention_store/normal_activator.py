@@ -128,12 +128,14 @@ class NormalActivator(nn.Module):
 
     def generate_attention_loss(self):
 
-        normal_cls_loss = torch.stack(self.attention_loss['normal_cls_loss'], dim=0).mean(dim=0)
-        normal_trigger_loss = torch.stack(self.attention_loss['normal_trigger_loss'], dim=0).mean(dim=0)
+        if len(self.attention_loss['normal_cls_loss']) != 0:
+            normal_cls_loss = torch.stack(self.attention_loss['normal_cls_loss'], dim=0).mean(dim=0)
+            normal_trigger_loss = torch.stack(self.attention_loss['normal_trigger_loss'], dim=0).mean(dim=0)
 
         if len(self.attention_loss['anormal_cls_loss']) != 0:
             anormal_cls_loss = torch.stack(self.attention_loss['anormal_cls_loss'], dim=0).mean(dim=0)
             anormal_trigger_loss = torch.stack(self.attention_loss['anormal_trigger_loss'], dim=0).mean(dim=0)
+
         else :
             anormal_cls_loss = normal_cls_loss * 0
             anormal_trigger_loss = normal_trigger_loss * 0
