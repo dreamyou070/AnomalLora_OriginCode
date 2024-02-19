@@ -12,6 +12,7 @@ accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_5_config \
  --output_dir "../../result/${bench_mark}/${obj_name}/test" \
  --pretrained_model_name_or_path ../../../pretrained_stable_diffusion/stable-diffusion-v1-5/v1-5-pruned.safetensors \
  --data_path "../../../MyData/anomaly_detection/${bench_mark}" --beta_scale_factor 0.8 \
+ --bgrm_test \
  --anomal_source_path "../../../MyData/anomal_source" \
  --anomal_only_on_object \
  --trigger_word "${trigger_word}" \
