@@ -10,7 +10,7 @@ bench_mark='MVTec3D-AD'
 save_folder_name="1_4_background_masked_sample_attn_loss_dist_loss_map_loss_only_zero_timestep"
 
 
-accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_5_config \
+accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_config \
  --main_process_port $port_number ../train_20240219.py \
  --log_with wandb \
  --output_dir "../../result/${bench_mark}/${obj_name}/${save_folder_name}" \
