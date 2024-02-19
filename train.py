@@ -210,7 +210,7 @@ def main(args):
         for step, batch in enumerate(train_dataloader):
 
             loss = torch.tensor(0.0, dtype=weight_dtype, device=accelerator.device)
-            task_loss, dist_loss, attn_loss, map_loss = 0.0, 0.0, 0.0, 0.0
+            dist_loss, attn_loss, map_loss = 0.0, 0.0, 0.0
             normal_feat_list, anormal_feat_list = [], []
             value_dict, loss_dict = {}, {}
 
@@ -227,12 +227,8 @@ def main(args):
             with torch.no_grad():
                 latents = vae.encode(batch["image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
             noise, noisy_latents, timesteps = get_noise_noisy_latents_and_timesteps(args, noise_scheduler, latents)
-            noise_pred = unet(noisy_latents, timesteps, encoder_hidden_states, trg_layer_list=args.trg_layer_list,
-                              noise_type=position_embedder).sample
-            target = noise
-            loss = torch.nn.functional.mse_loss(noise_pred.float(), target.float(), reduction="none")
-            loss = loss.mean([1, 2, 3])
-            task_loss += loss.mean()  * args.task_loss_weight
+            unet(noisy_latents, timesteps, encoder_hidden_states, trg_layer_list=args.trg_layer_list,
+                              noise_type=position_embedder)
 
 
 
@@ -286,10 +282,6 @@ def main(args):
 
             anomal_map = batch["anomaly_mask"].squeeze().flatten().squeeze()  # [64*64]
             trg_map = (1-anomal_map.view(1, 1, args.latent_res, args.latent_res))
-            loss = torch.nn.functional.mse_loss((noise_pred * trg_map).float(),
-                                                (target*trg_map).float(), reduction="none")
-            loss = loss.mean([1, 2, 3])
-            task_loss += loss.mean() * args.task_loss_weight
             query_dict, attn_dict = controller.query_dict, controller.step_store
             controller.reset()
             for trg_layer in args.trg_layer_list:
@@ -409,9 +401,6 @@ def main(args):
 
             # ----------------------------------------------------------------------------------------------------------
             # [5] backprop
-            if args.do_task_loss:
-                loss += task_loss.to(weight_dtype)
-                loss_dict['task_loss'] = task_loss.item()
 
             if args.do_dist_loss:
                 normal_dist_max, normal_dist_loss, mu, cov = gen_mahal_loss(args, anormal_feat_list, normal_feat_list, mu, cov)
@@ -608,7 +597,6 @@ if __name__ == "__main__":
                         help="generate sample images every N epochs (overwrites n_steps)", )
     parser.add_argument("--adv_focal_loss", action='store_true')
     parser.add_argument("--previous_mahal", action='store_true')
-    parser.add_argument("--do_task_loss", action='store_true')
     args = parser.parse_args()
     unet_passing_argument(args)
     passing_argument(args)
