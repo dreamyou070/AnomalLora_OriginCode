@@ -227,7 +227,8 @@ def main(args):
 
             network_kwrags = {}
             network_kwrags['position_embedder'] = position_embedder
-            unet(noisy_latents, timesteps, encoder_hidden_states, trg_layer_list=args.trg_layer_list,**network_kwrags)
+            unet(noisy_latents, timesteps, encoder_hidden_states, trg_layer_list=args.trg_layer_list,
+                 noise_type = position_embedder)
             query_dict, attn_dict = controller.query_dict, controller.step_store
             controller.reset()
 
