@@ -146,7 +146,6 @@ def main(args):
                 S_controller.reset()
                 T_controller.reset()
                 for trg_layer in args.trg_layer_list:
-                    # [1] dist
                     S_query = S_query_dict[trg_layer][0].squeeze(0)  # pix_num, dim
                     T_query = T_query_dict[trg_layer][0].squeeze(0)  # pix_num, dim
                     anomal_position_vector = 1 - object_position
@@ -160,7 +159,6 @@ def main(args):
                 S_unet(noisy_latents, timesteps, encoder_hidden_states, trg_layer_list=args.trg_layer_list, noise_type=S_position_embedder)
                 S_query_dict, S_attn_dict = S_controller.query_dict, S_controller.step_store
                 S_controller.reset()
-                T_controller.reset()
                 for trg_layer in args.trg_layer_list:
                     anomal_position_vector = batch["anomal_mask"].squeeze().flatten()
                     S_attn_score = S_attn_dict[trg_layer][0]  # head, pix_num, 2
@@ -173,7 +171,6 @@ def main(args):
                 S_unet(noisy_latents, timesteps, encoder_hidden_states, trg_layer_list=args.trg_layer_list, noise_type=S_position_embedder)
                 S_query_dict, S_attn_dict = S_controller.query_dict, S_controller.step_store
                 S_controller.reset()
-                T_controller.reset()
                 for trg_layer in args.trg_layer_list:
                     anomal_position_vector = batch["bg_anomal_mask"].squeeze().flatten()
                     S_attn_score = S_attn_dict[trg_layer][0]  # head, pix_num, 2
@@ -185,17 +182,14 @@ def main(args):
             normal_activator.normal_matching_query_loss = []
             loss += normal_matching_query_loss.mean()
             loss_dict['normal matching query loss'] = normal_matching_query_loss.mean().item()
-
-
+            # [5.2] backprop (2) attention loss
             _, _, anormal_cls_loss, anormal_trigger_loss = normal_activator.generate_attention_loss()
             attn_loss = args.anormal_weight * anormal_trigger_loss.mean()
             if args.do_cls_train:
                 attn_loss += args.anormal_weight * anormal_cls_loss.mean()
             loss += attn_loss
             loss_dict['attn_loss'] = attn_loss.item()
-
             loss = loss.to(weight_dtype)
-
             current_loss = loss.detach().item()
             if epoch == args.start_epoch:
                 loss_list.append(current_loss)
@@ -216,7 +210,6 @@ def main(args):
                 progress_bar.set_postfix(**loss_dict)
             if global_step >= args.max_train_steps:
                 break
-        # ----------------------------------------------------------------------------------------------------------- #
         # [6] epoch final
         accelerator.wait_for_everyone()
         if is_main_process :
@@ -341,8 +334,6 @@ if __name__ == "__main__":
     parser.add_argument("--adv_focal_loss", action='store_true')
     parser.add_argument("--do_normal_sample", action='store_true')
     parser.add_argument("--do_object_detection", action='store_true')
-
-
     args = parser.parse_args()
     unet_passing_argument(args)
     passing_argument(args)
