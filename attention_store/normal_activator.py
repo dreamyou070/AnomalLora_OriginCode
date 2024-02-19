@@ -1,9 +1,15 @@
 import torch
 import torch.nn as nn
+
+def passing_normalize_argument(args) :
+    global argument
+    argument = args
 class NormalActivator(nn.Module):
 
     def __init__(self, loss_focal, loss_l2, use_focal_loss):
         super(NormalActivator, self).__init__()
+
+        self.do_normalized_scroe = argument.do_normalized_scroe
 
         # [1]
         self.anomal_feat_list = []
@@ -41,9 +47,19 @@ class NormalActivator(nn.Module):
     def collect_attention_scores(self, attn_score, anomal_position_vector,
                                  do_normal_activating = True):
 
+        def normalize_score(score):
+            score = torch.softmax(score, dim=-1)
+            max_value = (torch.max(score, dim=-1)[0]).unsqueeze(-1)
+            normalized_trigger_map = score / max_value
+            return score
+
         # [1] preprocessing
         cls_score, trigger_score = attn_score.chunk(2, dim=-1)
         cls_score, trigger_score = cls_score.squeeze(), trigger_score.squeeze()      # head, pix_num
+
+        if self.do_normalized_scroe :
+            cls_score, trigger_score = normalize_score(cls_score), normalize_score(trigger_score)
+
         cls_score, trigger_score = cls_score.mean(dim=0), trigger_score.mean(dim=0)  # pix_num
         total_score = torch.ones_like(cls_score)
 
@@ -52,6 +68,7 @@ class NormalActivator(nn.Module):
         normal_trigger_score = trigger_score * (1 - anomal_position_vector)
         anomal_cls_score = cls_score * anomal_position_vector
         anomal_trigger_score = trigger_score * anomal_position_vector
+
 
         # [3]
         normal_cls_score = normal_cls_score / total_score
@@ -93,10 +110,12 @@ class NormalActivator(nn.Module):
 
         else:
             cls_score, trigger_score = attn_score.chunk(2, dim=-1)
-            cls_score, trigger_score = cls_score.squeeze(), trigger_score.squeeze()  # head, pix_num
+            cls_score, trigger_score = cls_score.squeeze(), trigger_score.squeeze()      # head, pix_num
             cls_score, trigger_score = cls_score.mean(dim=0), trigger_score.mean(dim=0)  # pix_num
             trg_trigger_score = 1 - anomal_position_vector
             map_loss = self.loss_l2(trigger_score.float(), trg_trigger_score.float())
+
+
         self.anomal_map_loss.append(map_loss)
 
     def generate_mahalanobis_distance_loss(self):
