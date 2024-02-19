@@ -59,33 +59,34 @@ def main(args):
         lora_name, ext = os.path.splitext(model)
         lora_epoch = int(lora_name.split('-')[-1])
 
+        # [1] position embedding layer
         parent = os.path.split(args.network_folder)[0]
         pe_base_dir = os.path.join(parent, f'position_embedder')
-
         pretrained_pe_dir = os.path.join(pe_base_dir, f'position_embedder_{lora_epoch}.safetensors')
         position_embedder_state_dict = load_file(pretrained_pe_dir)
         position_embedder.load_state_dict(position_embedder_state_dict)
         position_embedder.to(accelerator.device, dtype=weight_dtype)
 
-        # [1] recon base folder
-        parent, _ = os.path.split(args.network_folder)
-        recon_base_folder = os.path.join(parent, 'reconstruction')
-        os.makedirs(recon_base_folder, exist_ok=True)
-
-        lora_base_folder = os.path.join(recon_base_folder, f'lora_epoch_{lora_epoch}')
-        os.makedirs(lora_base_folder, exist_ok=True)
+        # [2] recon base folder
         anomal_detecting_state_dict = load_file(network_model_dir)
         for k in anomal_detecting_state_dict.keys():
             raw_state_dict[k] = anomal_detecting_state_dict[k]
         network.load_state_dict(raw_state_dict)
         network.to(accelerator.device, dtype=weight_dtype)
+
+        # [3] folder
+        parent, _ = os.path.split(args.network_folder)
+        recon_base_folder = os.path.join(parent, 'reconstruction')
+        os.makedirs(recon_base_folder, exist_ok=True)
+        lora_base_folder = os.path.join(recon_base_folder, f'lora_epoch_{lora_epoch}')
+        os.makedirs(lora_base_folder, exist_ok=True)
+
+        # [4] collector
         controller = AttentionStore()
         register_attention_control(unet, controller)
-
         for thred in args.threds :
             thred_folder = os.path.join(lora_base_folder, f'thred_{thred}')
             os.makedirs(thred_folder, exist_ok=True)
-
             check_base_folder = os.path.join(thred_folder, f'my_check')
             os.makedirs(check_base_folder, exist_ok=True)
             answer_base_folder = os.path.join(thred_folder, f'scoring/{args.obj_name}/test')
@@ -93,9 +94,7 @@ def main(args):
 
             test_img_folder = args.data_path
             anomal_folders = os.listdir(test_img_folder)
-
             for anomal_folder in anomal_folders:
-
                 answer_anomal_folder = os.path.join(answer_base_folder, anomal_folder)
                 os.makedirs(answer_anomal_folder, exist_ok=True)
                 save_base_folder = os.path.join(check_base_folder, anomal_folder)
@@ -120,8 +119,6 @@ def main(args):
                             img = load_image(rgb_img_dir, 512, 512)
                             vae_latent = image2latent(img, vae, weight_dtype)
                             input_ids, attention_mask = get_input_ids(tokenizer, args.prompt)
-
-
                             encoder_hidden_states = text_encoder(input_ids.to(text_encoder.device))["last_hidden_state"]
                             unet(vae_latent, 0, encoder_hidden_states,
                                  trg_layer_list=args.trg_layer_list, noise_type=position_embedder)
@@ -150,8 +147,6 @@ def main(args):
 
                             gt_img_save_dir = os.path.join(save_base_folder, f'{name}_gt.png')
                             Image.open(gt_img_dir).resize((org_h, org_w)).save(gt_img_save_dir)
-
-
 
         for k in raw_state_dict_orig.keys():
             raw_state_dict[k] = raw_state_dict_orig[k]

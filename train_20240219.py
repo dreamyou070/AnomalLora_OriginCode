@@ -155,13 +155,33 @@ def main(args):
 
             # --------------------------------------------------------------------------------------------------------- #
             # [1] normal sample
+            if args.do_object_detection :
+                with torch.no_grad():
+                    latents = vae.encode(batch["image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
+                noise, noisy_latents, timesteps = get_noise_noisy_latents_and_timesteps(args, noise_scheduler, latents)
+                object_position = batch['object_mask'].squeeze().flatten()
+                with torch.set_grad_enabled(True):
+                    unet(noisy_latents, timesteps, encoder_hidden_states, trg_layer_list=args.trg_layer_list, noise_type=position_embedder)
+                query_dict, attn_dict = controller.query_dict, controller.step_store
+                controller.reset()
+                for trg_layer in args.trg_layer_list:
+                    # [1] dist
+                    query = query_dict[trg_layer][0].squeeze(0)  # pix_num, dim
+                    anomal_position_vector = 1 - object_position
+                    normal_activator.collect_queries(query, anomal_position_vector)
+                    # (2) attn loss
+                    attn_score = attn_dict[trg_layer][0]  # head, pix_num, 2
+                    normal_activator.collect_attention_scores(attn_score, anomal_position_vector)
+                    # [3]
+                    normal_activator.collect_anomal_map_loss(attn_score, anomal_position_vector)
+
             if args.do_normal_sample:
                 with torch.no_grad():
                     latents = vae.encode(batch["image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
                 noise, noisy_latents, timesteps = get_noise_noisy_latents_and_timesteps(args, noise_scheduler, latents)
-                network_kwrags = {}
-                network_kwrags['position_embedder'] = position_embedder
-                unet(noisy_latents, timesteps, encoder_hidden_states, trg_layer_list=args.trg_layer_list, noise_type=position_embedder)
+                with torch.set_grad_enabled(True):
+                    unet(noisy_latents, timesteps, encoder_hidden_states, trg_layer_list=args.trg_layer_list,
+                         noise_type=position_embedder)
                 query_dict, attn_dict = controller.query_dict, controller.step_store
                 controller.reset()
                 for trg_layer in args.trg_layer_list:
@@ -382,6 +402,7 @@ if __name__ == "__main__":
     parser.add_argument("--use_focal_loss", action='store_true')
     parser.add_argument("--adv_focal_loss", action='store_true')
     parser.add_argument("--do_normal_sample", action='store_true')
+    parser.add_argument("--do_object_detection", action='store_true')
 
 
     args = parser.parse_args()

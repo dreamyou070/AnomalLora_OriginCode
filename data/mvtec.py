@@ -140,7 +140,7 @@ class MVTecDRAEMTrainDataset(Dataset):
     def get_object_mask_dir(self, img_path):
         parent, name = os.path.split(img_path)
         parent, _ = os.path.split(parent)
-        object_mask_dir = os.path.join(parent, f"back_rm_object_mask/{name}")
+        object_mask_dir = os.path.join(parent, f"object_mask/{name}")
         return object_mask_dir
 
     def randAugmenter(self, idx):
@@ -265,11 +265,11 @@ class MVTecDRAEMTrainDataset(Dataset):
             gt_path = os.path.join(gt_folder, name)
             gt_img = self.load_image(gt_path, self.latent_res, self.latent_res, type='L')
             gt_img = aug(image=gt_img)
-            gt_mask_np = np.where((np.array(gt_img, np.uint8) / 255) < 0.6, 0, 1)
+            gt_mask_np = np.where((np.array(gt_img, np.uint8) / 255) < 0.6, 0, 1) # anomal one, normal zero
             gt_mask = torch.tensor(gt_mask_np)  # shape = [64,64], 0 = background, 1 = object
 
-            object_mask = gt_mask
-            anomal_mask_torch = gt_mask.unsqueeze(0)
+            object_mask = gt_mask # anormal one
+            anomal_mask_torch = gt_mask.unsqueeze(0) # anomal one
             back_anomal_mask_torch = gt_mask.unsqueeze(0)
 
             anomal_img = img
@@ -280,23 +280,19 @@ class MVTecDRAEMTrainDataset(Dataset):
             object_mask_dir = self.get_object_mask_dir(img_path)
             object_img = self.load_image(object_mask_dir, self.latent_res, self.latent_res, type='L')
             object_img = aug(image=object_img)
-            object_mask_np = np.where((np.array(object_img, np.uint8) / 255) == 0, 0, 1)
+            object_mask_np = np.where((np.array(object_img, np.uint8) / 255) == 0, 0, 1) # object = 1
             object_mask = torch.tensor(object_mask_np) # shape = [64,64], 0 = background, 1 = object
 
             # [4] augment image (pseudo anomal)
             if len(self.anomaly_source_paths) > 0:
                 anomal_src_idx = idx % len(self.anomaly_source_paths)
-                anomal_src_path = self.anomaly_source_paths[anomal_src_idx]
-                anomal_name = self.get_img_name(anomal_src_path)
 
                 if self.anomal_only_on_object:
                     object_img_aug = aug(image=self.load_image(object_mask_dir, self.resize_shape[0], self.resize_shape[1], type='L') )
                     object_position = np.where((np.array(object_img_aug)) == 0, 0, 1)             # [512,512]
                     # [4.1] anomal img
                     anomaly_source_img = self.load_image(self.anomaly_source_paths[anomal_src_idx], self.resize_shape[0], self.resize_shape[1])
-                    anomal_img, anomal_mask_torch = self.augment_image(img,
-                                                                       anomaly_source_img,
-                                                                       beta_scale_factor=self.beta_scale_factor,
+                    anomal_img, anomal_mask_torch = self.augment_image(img,anomaly_source_img, beta_scale_factor=self.beta_scale_factor,
                                                                        object_position=object_position) # [512,512,3], [512,512]
                     if self.bgrm_test:
                         background_img = (img * 0).astype(img.dtype)
@@ -309,17 +305,13 @@ class MVTecDRAEMTrainDataset(Dataset):
                 else :
                     anomaly_source_img = self.load_image(self.anomaly_source_paths[anomal_src_idx], self.resize_shape[0],
                                                          self.resize_shape[1])
-                    anomal_img, anomal_mask_torch = self.augment_image(img,
-                                                                       anomaly_source_img,
-                                                                       beta_scale_factor=self.beta_scale_factor,
-                                                                       object_position=None)
+                    anomal_img, anomal_mask_torch = self.augment_image(img, anomaly_source_img,
+                                                                       beta_scale_factor=self.beta_scale_factor, object_position=None)
                     if self.bgrm_test:
                         background_img = (img * 0).astype(img.dtype)
                     else:
-                        background_img = self.load_image(background_dir, self.resize_shape[0], self.resize_shape[1],
-                                                         type='RGB')
-                    back_anomal_img, back_anomal_mask_torch = self.gaussian_augment_image(img,
-                                                                                          aug(image=background_img),
+                        background_img = self.load_image(background_dir, self.resize_shape[0], self.resize_shape[1],type='RGB')
+                    back_anomal_img, back_anomal_mask_torch = self.gaussian_augment_image(img, aug(image=background_img),
                                                                                           object_position=None)
             else :
                 anomal_img = img
@@ -331,13 +323,10 @@ class MVTecDRAEMTrainDataset(Dataset):
 
         return {'image': self.transform(img),               # original image
                 "object_mask": object_mask.unsqueeze(0),    # [1, 64, 64]
-
                 'anomal_image': self.transform(anomal_img),
-                "anomal_mask": anomal_mask_torch,   # [1, 64, 64] ################################
-
+                "anomal_mask": anomal_mask_torch,
                 'bg_anomal_image': self.transform(back_anomal_img),          # masked image
                 'bg_anomal_mask': back_anomal_mask_torch,
-
                 'idx': idx,
                 'input_ids': input_ids.squeeze(0),
                 'caption': self.caption,

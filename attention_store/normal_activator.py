@@ -39,10 +39,8 @@ class NormalActivator(nn.Module):
 
         # [1] preprocessing
         cls_score, trigger_score = attn_score.chunk(2, dim=-1)
-        cls_score, trigger_score = cls_score.squeeze(), trigger_score.squeeze()  # head, pix_num
+        cls_score, trigger_score = cls_score.squeeze(), trigger_score.squeeze()      # head, pix_num
         cls_score, trigger_score = cls_score.mean(dim=0), trigger_score.mean(dim=0)  # pix_num
-        self.trigger_score.append(trigger_score)
-        self.cls_score.append(cls_score)
         total_score = torch.ones_like(cls_score)
 
         # [2]
@@ -58,10 +56,10 @@ class NormalActivator(nn.Module):
         anomal_trigger_score = anomal_trigger_score / total_score
 
         # [4]
-        normal_cls_loss = (normal_cls_score) ** 2
-        normal_trigger_loss = (1 - normal_trigger_score) ** 2
-        anomal_cls_loss = (1 - anomal_cls_score) ** 2
-        anomal_trigger_loss = (anomal_trigger_score) ** 2
+        normal_cls_loss = normal_cls_score ** 2
+        normal_trigger_loss = (1 - normal_trigger_score ** 2 )  #normal cls score 이랑 같은 상황
+        anomal_cls_loss = (1 - anomal_cls_score ** 2)
+        anomal_trigger_loss = anomal_trigger_score ** 2
 
         # [5]
         self.attention_loss['normal_cls_loss'].append(normal_cls_loss.mean())
@@ -74,16 +72,10 @@ class NormalActivator(nn.Module):
     def collect_anomal_map_loss(self, attn_score, anomal_position_vector):
 
         if self.use_focal_loss:
-            if len(self.trigger_score) > 0:
-                trigger_score = self.trigger_score[0]
-                cls_score = self.cls_score[0]
-                self.trigger_score = []
-                self.cls_score = []
-            else:
-                cls_score, trigger_score = attn_score.chunk(2, dim=-1)
-                cls_score, trigger_score = cls_score.squeeze(), trigger_score.squeeze()  # head, pix_num
-                cls_score, trigger_score = cls_score.mean(dim=0), trigger_score.mean(dim=0)  # pix_num
 
+            cls_score, trigger_score = attn_score.chunk(2, dim=-1)
+            cls_score, trigger_score = cls_score.squeeze(), trigger_score.squeeze()  # head, pix_num
+            cls_score, trigger_score = cls_score.mean(dim=0), trigger_score.mean(dim=0)  # pix_num
             res = int(attn_score.shape[0] ** 0.5)
             focal_loss_in = torch.cat([cls_score.view(res, res).unsqueeze(0).unsqueeze(0),
                                        trigger_score.view(res, res).unsqueeze(0).unsqueeze(0)], 1)
@@ -94,15 +86,9 @@ class NormalActivator(nn.Module):
                                        focal_loss_trg.to(dtype=trigger_score.dtype))
 
         else:
-
-            if len(self.trigger_score) > 0:
-                trigger_score = self.trigger_score[0]
-                self.trigger_score = []
-                self.cls_score = []
-            else:
-                cls_score, trigger_score = attn_score.chunk(2, dim=-1)
-                cls_score, trigger_score = cls_score.squeeze(), trigger_score.squeeze()  # head, pix_num
-                cls_score, trigger_score = cls_score.mean(dim=0), trigger_score.mean(dim=0)  # pix_num
+            cls_score, trigger_score = attn_score.chunk(2, dim=-1)
+            cls_score, trigger_score = cls_score.squeeze(), trigger_score.squeeze()  # head, pix_num
+            cls_score, trigger_score = cls_score.mean(dim=0), trigger_score.mean(dim=0)  # pix_num
             trg_trigger_score = 1 - anomal_position_vector
             map_loss = self.loss_l2(trigger_score.float(), trg_trigger_score.float())
         self.anomal_map_loss.append(map_loss)
