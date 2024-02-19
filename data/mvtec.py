@@ -80,6 +80,8 @@ class MVTecDRAEMTrainDataset(Dataset):
                  bgrm_test : bool = True,
                  reference_check : bool = True,) :
 
+        self.bgrm_test = bgrm_test
+        
         self.root_dir = root_dir
         folders = os.listdir(root_dir)
         image_paths = []
@@ -121,7 +123,7 @@ class MVTecDRAEMTrainDataset(Dataset):
         self.perlin_max_scale = perlin_max_scale
         self.kernel_size = kernel_size
         self.beta_scale_factor = beta_scale_factor
-        self.bgrm_test = bgrm_test
+
         self.reference_check = reference_check
 
     def __len__(self):
