@@ -118,7 +118,7 @@ class NormalActivator(nn.Module):
         normal_dist_max = torch.tensor(normal_mahalanobis_dists).max()
         normal_dist_mean = torch.tensor(normal_mahalanobis_dists).mean()
 
-        if len(self.anormal_feat_list) > 0 :
+        if len(self.anomal_feat_list) > 0 :
             anormal_feats = torch.cat(self.anomal_feat_list, dim=0)
             anormal_mahalanobis_dists = [mahal(feat, mu, cov) for feat in anormal_feats]
             anormal_dist_mean = torch.tensor(anormal_mahalanobis_dists).mean()
