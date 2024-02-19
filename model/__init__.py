@@ -2,6 +2,9 @@ from model.lora import create_network
 from model.pe import PositionalEmbedding
 from model.diffusion_model import load_target_model
 import os
+from safetensors.torch import load_file
+
+
 def call_model_package(args, weight_dtype, accelerator):
 
     # [1] diffusion
@@ -35,7 +38,8 @@ def call_model_package(args, weight_dtype, accelerator):
         lora_epoch = int(lora_name.split("-")[-1])
         pe_name = f"position_embedder_{lora_epoch}.safetensors"
         position_embedder_path = os.path.join(base_folder, f"{position_embedder}/{pe_name}")
-        position_embedder.load_state_dict(position_embedder_path) #, map_location="cpu")
+        position_embedder_state_dict = load_file(position_embedder_path)
+        position_embedder.load_state_dict(position_embedder_state_dict)
     position_embedder.to(weight_dtype)
     return text_encoder, vae, unet, network, position_embedder
 
