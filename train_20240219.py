@@ -259,18 +259,15 @@ def main(args):
         # ----------------------------------------------------------------------------------------------------------- #
         # [6] epoch final
         accelerator.wait_for_everyone()
-        if args.save_every_n_epochs is not None:
-            saving = (epoch + 1) % args.save_every_n_epochs == 0 and (
-                    epoch + 1) < args.start_epoch + args.max_train_epochs
-            if is_main_process and saving:
-                ckpt_name = get_epoch_ckpt_name(args, "." + args.save_model_as, epoch + 1)
-                save_model(args, ckpt_name, accelerator.unwrap_model(network), save_dtype)
-                if position_embedder is not None:
-                    position_embedder_base_save_dir = os.path.join(args.output_dir, 'position_embedder')
-                    os.makedirs(position_embedder_base_save_dir, exist_ok=True)
-                    p_save_dir = os.path.join(position_embedder_base_save_dir,
-                                              f'position_embedder_{epoch + 1}.safetensors')
-                    pe_model_save(accelerator.unwrap_model(position_embedder), save_dtype, p_save_dir)
+        if is_main_process :
+            ckpt_name = get_epoch_ckpt_name(args, "." + args.save_model_as, epoch + 1)
+            save_model(args, ckpt_name, accelerator.unwrap_model(network), save_dtype)
+            if position_embedder is not None:
+                position_embedder_base_save_dir = os.path.join(args.output_dir, 'position_embedder')
+                os.makedirs(position_embedder_base_save_dir, exist_ok=True)
+                p_save_dir = os.path.join(position_embedder_base_save_dir,
+                                          f'position_embedder_{epoch + 1}.safetensors')
+                pe_model_save(accelerator.unwrap_model(position_embedder), save_dtype, p_save_dir)
 
     accelerator.end_training()
 
