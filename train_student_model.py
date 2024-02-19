@@ -48,26 +48,15 @@ def main(args):
     S_text_encoder, S_vae, S_unet, S_network, S_position_embedder = call_model_package(args, weight_dtype, accelerator)
 
     print(f'\n step 5. optimizer')
-    except_names = ['to_k','to_v']
-
+    except_names = ['lora_unet_up_blocks_3_attentions_2_transformer_blocks_0_attn2_to_k',
+                    'lora_unet_up_blocks_3_attentions_2_transformer_blocks_0_attn2_to_v']
     params = []
     for unet_lora in S_network.unet_loras:
         lora_name = unet_lora.lora_name
-        print(f' *** lora_name : {lora_name}')
-        params.extend(unet_lora.parameters())
-
-    """    
-    def enumerate_params(loras):
-        params = []
-        for lora in loras:
-            params.extend(lora.parameters())
-        return params
-    
-    
-    trainable_params = S_network.prepare_optimizer_params(args.text_encoder_lr, args.unet_lr, args.learning_rate)
-    trainable_params = [trainable_params[1]]
-
-    trainable_params.append({"params": S_position_embedder.parameters(), "lr": args.learning_rate})
+        if lora_name not in except_names:
+            params.extend(unet_lora.parameters())
+    trainable_params = [{"params": params, "lr": args.unet_lr},
+                        {"params": S_position_embedder.parameters(), "lr": args.learning_rate}]
     optimizer_name, optimizer_args, optimizer = get_optimizer(args, trainable_params)
 
     print(f'\n step 6. lr')
@@ -99,7 +88,8 @@ def main(args):
     del t_enc
     S_network.prepare_grad_etc(S_text_encoder, S_unet)
     S_vae.to(accelerator.device, dtype=weight_dtype)
-
+    T_unet.to(accelerator.device, dtype=weight_dtype)
+    del T_vae, T_text_encoder
 
     print(f'\n step 8. Training !')
     if args.max_train_epochs is not None:
@@ -120,7 +110,6 @@ def main(args):
     register_attention_control(S_unet, S_controller)
     T_controller = AttentionStore()
     register_attention_control(T_unet, T_controller)
-    def T_vae, T_text_encoder
 
     if is_main_process:
         logging_info = f"'step', 'normal dist mean', 'normal dist max'"
@@ -145,13 +134,13 @@ def main(args):
             # [1] normal sample
             if args.do_object_detection :
                 with torch.no_grad():
-                    latents = vae.encode(batch["image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
+                    latents = S_vae.encode(batch["image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
                 noise, noisy_latents, timesteps = get_noise_noisy_latents_and_timesteps(args, noise_scheduler, latents)
                 object_position = batch['object_mask'].squeeze().flatten()
                 with torch.set_grad_enabled(True):
-                    unet(noisy_latents, timesteps, encoder_hidden_states, trg_layer_list=args.trg_layer_list, noise_type=position_embedder)
-                query_dict, attn_dict = controller.query_dict, controller.step_store
-                controller.reset()
+                    S_unet(noisy_latents, timesteps, encoder_hidden_states, trg_layer_list=args.trg_layer_list, noise_type=S_position_embedder)
+                query_dict, attn_dict = S_controller.query_dict, S_controller.step_store
+                S_controller.reset()
                 for trg_layer in args.trg_layer_list:
                     # [1] dist
                     query = query_dict[trg_layer][0].squeeze(0)  # pix_num, dim
@@ -165,13 +154,13 @@ def main(args):
 
             if args.do_normal_sample:
                 with torch.no_grad():
-                    latents = vae.encode(batch["image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
+                    latents = S_vae.encode(batch["image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
                 noise, noisy_latents, timesteps = get_noise_noisy_latents_and_timesteps(args, noise_scheduler, latents)
                 with torch.set_grad_enabled(True):
-                    unet(noisy_latents, timesteps, encoder_hidden_states, trg_layer_list=args.trg_layer_list,
-                         noise_type=position_embedder)
-                query_dict, attn_dict = controller.query_dict, controller.step_store
-                controller.reset()
+                    S_unet(noisy_latents, timesteps, encoder_hidden_states, trg_layer_list=args.trg_layer_list,
+                         noise_type=S_position_embedder)
+                query_dict, attn_dict = S_controller.query_dict, S_controller.step_store
+                S_controller.reset()
                 for trg_layer in args.trg_layer_list:
                     # [1] dist
                     query = query_dict[trg_layer][0].squeeze(0)  # pix_num, dim
@@ -187,11 +176,11 @@ def main(args):
             # --------------------------------------------------------------------------------------------------------- #
             if args.do_anomal_sample :
                 with torch.no_grad():
-                    latents = vae.encode(batch["anomal_image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
+                    latents = S_vae.encode(batch["anomal_image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
                 noise, noisy_latents, timesteps = get_noise_noisy_latents_and_timesteps(args, noise_scheduler, latents)
-                unet(noisy_latents, timesteps, encoder_hidden_states, trg_layer_list=args.trg_layer_list, noise_type=position_embedder)
-                query_dict, attn_dict = controller.query_dict, controller.step_store
-                controller.reset()
+                S_unet(noisy_latents, timesteps, encoder_hidden_states, trg_layer_list=args.trg_layer_list, noise_type=S_position_embedder)
+                query_dict, attn_dict = S_controller.query_dict, S_controller.step_store
+                S_controller.reset()
                 for trg_layer in args.trg_layer_list:
                     # [1] dist
                     query = query_dict[trg_layer][0].squeeze(0)  # pix_num, dim
@@ -205,11 +194,11 @@ def main(args):
 
             if args.do_background_masked_sample :
                 with torch.no_grad():
-                    latents = vae.encode(batch["bg_anomal_image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
+                    latents = S_vae.encode(batch["bg_anomal_image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
                 noise, noisy_latents, timesteps = get_noise_noisy_latents_and_timesteps(args, noise_scheduler, latents)
-                unet(noisy_latents, timesteps, encoder_hidden_states, trg_layer_list=args.trg_layer_list, noise_type=position_embedder)
-                query_dict, attn_dict = controller.query_dict, controller.step_store
-                controller.reset()
+                S_unet(noisy_latents, timesteps, encoder_hidden_states, trg_layer_list=args.trg_layer_list, noise_type=S_position_embedder)
+                query_dict, attn_dict = S_controller.query_dict, S_controller.step_store
+                S_controller.reset()
                 for trg_layer in args.trg_layer_list:
                     # [1] dist
                     query = query_dict[trg_layer][0].squeeze(0)  # pix_num, dim
@@ -270,16 +259,14 @@ def main(args):
         accelerator.wait_for_everyone()
         if is_main_process :
             ckpt_name = get_epoch_ckpt_name(args, "." + args.save_model_as, epoch + 1)
-            save_model(args, ckpt_name, accelerator.unwrap_model(network), save_dtype)
-            if position_embedder is not None:
+            save_model(args, ckpt_name, accelerator.unwrap_model(S_network), save_dtype)
+            if S_position_embedder is not None:
                 position_embedder_base_save_dir = os.path.join(args.output_dir, 'position_embedder')
                 os.makedirs(position_embedder_base_save_dir, exist_ok=True)
                 p_save_dir = os.path.join(position_embedder_base_save_dir,
                                           f'position_embedder_{epoch + 1}.safetensors')
-                pe_model_save(accelerator.unwrap_model(position_embedder), save_dtype, p_save_dir)
-
+                pe_model_save(accelerator.unwrap_model(S_position_embedder), save_dtype, p_save_dir)
     accelerator.end_training()
-    """
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
