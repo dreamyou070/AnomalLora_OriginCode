@@ -81,7 +81,7 @@ class MVTecDRAEMTrainDataset(Dataset):
                  reference_check : bool = True,) :
 
         self.bgrm_test = bgrm_test
-        
+
         self.root_dir = root_dir
         folders = os.listdir(root_dir)
         image_paths = []
