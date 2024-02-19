@@ -76,7 +76,7 @@ def main(args):
     print(f'\n step 7. loss function')
     loss_focal = FocalLoss()
     loss_l2 = torch.nn.modules.loss.MSELoss(reduction='none')
-    normal_activator = NormalActivator(loss_focal, loss_l2)
+    normal_activator = NormalActivator(loss_focal, loss_l2, args.use_focal_loss)
 
     print(f'\n step 8. weight dtype and network to accelerate preparing')
     if args.full_fp16:
@@ -358,7 +358,6 @@ if __name__ == "__main__":
     parser.add_argument('--learning_rate', type=float, default=1e-5)
     parser.add_argument('--train_unet', action='store_true')
     parser.add_argument('--train_text_encoder', action='store_true')
-    parser.add_argument("--use_focal_loss", action='store_true')
     # step 8. training
     parser.add_argument("--output_name", type=str, default=None, help="base name of trained model file ")
     parser.add_argument("--save_model_as", type=str, default="safetensors",

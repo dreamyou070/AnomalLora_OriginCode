@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 class NormalActivator(nn.Module):
 
-    def __init__(self, loss_focal, loss_l2):
+    def __init__(self, loss_focal, loss_l2, use_focal_loss):
         super(NormalActivator, self).__init__()
 
         # [1]
@@ -22,6 +22,7 @@ class NormalActivator(nn.Module):
         self.loss_focal = loss_focal
         self.loss_l2 = loss_l2
         self.anomal_map_loss = []
+        self.use_focal_loss = use_focal_loss
 
     def collect_queries(self, origin_query, anomal_position_vector):
 
