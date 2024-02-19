@@ -2,12 +2,12 @@
 #--do_anomal_sample \
 #--do_background_masked_sample \
 
-port_number=50061
+port_number=50062
 
 obj_name='carrot'
 trigger_word='carrot'
 bench_mark='MVTec3D-AD'
-save_folder_name="1_6_anormal_sample_background_masked_sample_attn_loss_dist_loss_map_loss_focal_only_zero_timestep"
+save_folder_name="1_6_anormal_sample_background_masked_sample_attn_loss_dist_loss_map_loss_focal_only_zero_timestep_normalized_score"
 
 
 accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_5_config \
@@ -31,4 +31,5 @@ accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_5_config \
  --do_attn_loss \
  --do_dist_loss \
  --do_map_loss \
- --use_focal_loss
+ --use_focal_loss \
+ --do_normalized_score

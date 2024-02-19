@@ -349,7 +349,7 @@ if __name__ == "__main__":
     parser.add_argument("--do_map_loss", action='store_true')
     parser.add_argument("--use_focal_loss", action='store_true')
     parser.add_argument("--use_noise_scheduler", action='store_true')
-    parser.add_argument("--do_normalized_scroe", action='store_true')
+    parser.add_argument("--do_normalized_score", action='store_true')
 
     # [3]
     args = parser.parse_args()
