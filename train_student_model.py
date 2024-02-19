@@ -158,7 +158,8 @@ def main(args):
                 with torch.no_grad():
                     latents = S_vae.encode(batch["anomal_image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
                 noise, noisy_latents, timesteps = get_noise_noisy_latents_and_timesteps(args, noise_scheduler, latents)
-                S_unet(noisy_latents, timesteps, encoder_hidden_states, trg_layer_list=args.trg_layer_list, noise_type=S_position_embedder)
+                with torch.set_grad_enabled(True):
+                    S_unet(noisy_latents, timesteps, encoder_hidden_states, trg_layer_list=args.trg_layer_list, noise_type=S_position_embedder)
                 S_query_dict, S_attn_dict = S_controller.query_dict, S_controller.step_store
                 S_controller.reset()
                 for trg_layer in args.trg_layer_list:
@@ -170,7 +171,8 @@ def main(args):
                 with torch.no_grad():
                     latents = S_vae.encode(batch["bg_anomal_image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
                 noise, noisy_latents, timesteps = get_noise_noisy_latents_and_timesteps(args, noise_scheduler, latents)
-                S_unet(noisy_latents, timesteps, encoder_hidden_states, trg_layer_list=args.trg_layer_list, noise_type=S_position_embedder)
+                with torch.set_grad_enabled(True):
+                    S_unet(noisy_latents, timesteps, encoder_hidden_states, trg_layer_list=args.trg_layer_list, noise_type=S_position_embedder)
                 S_query_dict, S_attn_dict = S_controller.query_dict, S_controller.step_store
                 S_controller.reset()
                 for trg_layer in args.trg_layer_list:
@@ -210,6 +212,9 @@ def main(args):
                 global_step += 1
             if is_main_process:
                 progress_bar.set_postfix(**loss_dict)
+            normal_activator.reset()
+            S_controller.reset()
+            T_controller.reset()
             if global_step >= args.max_train_steps:
                 break
         # [6] epoch final
