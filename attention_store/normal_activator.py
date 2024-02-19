@@ -67,7 +67,6 @@ class NormalActivator(nn.Module):
         self.attention_loss['normal_cls_loss'].append(normal_cls_loss.mean())
         self.attention_loss['normal_trigger_loss'].append(normal_trigger_loss.mean())
         anomal_pixel_num = anomal_position_vector.sum()
-        print(f'anomal_pixel_num: {anomal_pixel_num}')
         if anomal_pixel_num > 0:
             self.attention_loss['anormal_cls_loss'].append(anomal_cls_loss.mean())
             self.attention_loss['anormal_trigger_loss'].append(anomal_trigger_loss.mean())
