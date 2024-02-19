@@ -3,7 +3,7 @@
 port_number=53344
 obj_name='carrot'
 caption='carrot'
-folder_name="0_0_object_detector"
+folder_name="3_1_training_data_do_background_masked_sample_attn_loss_map_loss_l2"
 bench_mark="MVTec3D-AD"
 position_embedding_layer="down_blocks_0_attentions_0_transformer_blocks_0_attn1"
 

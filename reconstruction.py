@@ -74,6 +74,13 @@ def main(args):
 
         lora_base_folder = os.path.join(recon_base_folder, f'lora_epoch_{lora_epoch}')
         os.makedirs(lora_base_folder, exist_ok=True)
+        anomal_detecting_state_dict = load_file(network_model_dir)
+        for k in anomal_detecting_state_dict.keys():
+            raw_state_dict[k] = anomal_detecting_state_dict[k]
+        network.load_state_dict(raw_state_dict)
+        network.to(accelerator.device, dtype=weight_dtype)
+        controller = AttentionStore()
+        register_attention_control(unet, controller)
 
         for thred in args.threds :
             thred_folder = os.path.join(lora_base_folder, f'thred_{thred}')
@@ -84,7 +91,6 @@ def main(args):
             answer_base_folder = os.path.join(thred_folder, f'scoring/{args.obj_name}/test')
             os.makedirs(answer_base_folder, exist_ok=True)
 
-            anomal_detecting_state_dict = load_file(network_model_dir)
             test_img_folder = args.data_path
             anomal_folders = os.listdir(test_img_folder)
 
@@ -114,12 +120,8 @@ def main(args):
                             img = load_image(rgb_img_dir, 512, 512)
                             vae_latent = image2latent(img, vae, weight_dtype)
                             input_ids, attention_mask = get_input_ids(tokenizer, args.prompt)
-                            controller = AttentionStore()
-                            register_attention_control(unet, controller)
-                            for k in anomal_detecting_state_dict.keys():
-                                raw_state_dict[k] = anomal_detecting_state_dict[k]
-                            network.load_state_dict(raw_state_dict)
-                            network.to(accelerator.device, dtype=weight_dtype)
+
+
                             encoder_hidden_states = text_encoder(input_ids.to(text_encoder.device))["last_hidden_state"]
                             unet(vae_latent, 0, encoder_hidden_states,
                                  trg_layer_list=args.trg_layer_list, noise_type=position_embedder)
@@ -148,9 +150,12 @@ def main(args):
 
                             gt_img_save_dir = os.path.join(save_base_folder, f'{name}_gt.png')
                             Image.open(gt_img_dir).resize((org_h, org_w)).save(gt_img_save_dir)
-                            for k in raw_state_dict_orig.keys():
-                                raw_state_dict[k] = raw_state_dict_orig[k]
-                            network.load_state_dict(raw_state_dict)
+
+
+
+        for k in raw_state_dict_orig.keys():
+            raw_state_dict[k] = raw_state_dict_orig[k]
+        network.load_state_dict(raw_state_dict)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Anomal Lora')
