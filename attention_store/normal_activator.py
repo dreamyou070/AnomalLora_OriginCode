@@ -88,7 +88,7 @@ class NormalActivator(nn.Module):
             trigger_score_map = trigger_score.view(res, res).unsqueeze(0).unsqueeze(0)
             focal_loss_in = torch.cat([cls_score_map, trigger_score_map], 1)
             focal_loss_trg = anomal_position_vector.view(res, res).unsqueeze(0).unsqueeze(0)
-            map_loss = self.loss_focal(focal_loss_in, focal_loss_trg.to(dtype=weight_dtype))
+            map_loss = self.loss_focal(focal_loss_in, focal_loss_trg.to(dtype=trigger_score_map.dtype))
 
         else:
 
