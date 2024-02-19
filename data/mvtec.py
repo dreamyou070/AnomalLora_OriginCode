@@ -134,7 +134,7 @@ class MVTecDRAEMTrainDataset(Dataset):
         pil = Image.fromarray(np_img)
     def get_img_name(self, img_path):
         rgb_folder, name = os.path.split(img_path)
-        class_folder, rgb = os.path.split(rgb_folder)[1]
+        class_folder, rgb = os.path.split(rgb_folder)
         return name, class_folder
 
     def get_object_mask_dir(self, img_path):
