@@ -89,6 +89,7 @@ def main(args):
     S_network.prepare_grad_etc(S_text_encoder, S_unet)
     S_vae.to(accelerator.device, dtype=weight_dtype)
     T_unet.to(accelerator.device, dtype=weight_dtype)
+    T_network.to(accelerator.device, dtype=weight_dtype)
     del T_vae, T_text_encoder
 
     print(f'\n step 8. Training !')
