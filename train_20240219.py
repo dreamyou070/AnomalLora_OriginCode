@@ -186,10 +186,11 @@ def main(args):
                 for trg_layer in args.trg_layer_list:
                     # [1] dist
                     query = query_dict[trg_layer][0].squeeze(0)  # pix_num, dim
-                    anomal_position_vector = batch["anomal_mask"].squeeze().flatten().squeeze()  # [64*64]
+                    anomal_position_vector = batch["anomal_mask"].squeeze().flatten()
                     normal_activator.collect_queries(query, anomal_position_vector)
                     # (2) attn loss
                     attn_score = attn_dict[trg_layer][0]  # head, pix_num, 2
+                    print(f'anomal sample, anomal pixel num = {anomal_position_vector.sum()}')
                     normal_activator.collect_attention_scores(attn_score, anomal_position_vector)
                     # [3]
                     normal_activator.collect_anomal_map_loss(attn_score, anomal_position_vector)
@@ -204,10 +205,11 @@ def main(args):
                 for trg_layer in args.trg_layer_list:
                     # [1] dist
                     query = query_dict[trg_layer][0].squeeze(0)  # pix_num, dim
-                    anomal_position_vector = batch["bg_anomal_mask"].squeeze().flatten().squeeze()  # [64*64]
+                    anomal_position_vector = batch["bg_anomal_mask"].squeeze().flatten()
                     normal_activator.collect_queries(query, anomal_position_vector)
                     # (2) attn loss
                     attn_score = attn_dict[trg_layer][0]  # head, pix_num, 2
+                    print(f'anomal sample, anomal pixel num = {anomal_position_vector.sum()}')
                     normal_activator.collect_attention_scores(attn_score, anomal_position_vector)
                     # [3]
                     normal_activator.collect_anomal_map_loss(attn_score, anomal_position_vector)
