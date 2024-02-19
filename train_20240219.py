@@ -307,6 +307,7 @@ if __name__ == "__main__":
     parser.add_argument("--position_embedding_layer", type=str)
     parser.add_argument("--d_dim", default=320, type=int)
     parser.add_argument("--beta_scale_factor", type=float, default=0.8)
+    parser.add_argument("--bgrm_test", action='store_true')
     # step 4. model
     parser.add_argument('--pretrained_model_name_or_path', type=str, default='facebook/diffusion-dalle')
     parser.add_argument("--clip_skip", type=int, default=None,
