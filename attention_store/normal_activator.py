@@ -24,6 +24,9 @@ class NormalActivator(nn.Module):
         self.anomal_map_loss = []
         self.use_focal_loss = use_focal_loss
 
+        # [4]
+        self.normal_matching_query_loss = []
+
     def collect_queries(self, origin_query, anomal_position_vector):
 
         pix_num = origin_query.shape[0]
@@ -35,7 +38,8 @@ class NormalActivator(nn.Module):
             else:
                 self.normal_feat_list.append(feat.unsqueeze(0))
 
-    def collect_attention_scores(self, attn_score, anomal_position_vector):
+    def collect_attention_scores(self, attn_score, anomal_position_vector,
+                                 do_normal_activating = True):
 
         # [1] preprocessing
         cls_score, trigger_score = attn_score.chunk(2, dim=-1)
@@ -62,8 +66,10 @@ class NormalActivator(nn.Module):
         anomal_trigger_loss = anomal_trigger_score ** 2
 
         # [5]
-        self.attention_loss['normal_cls_loss'].append(normal_cls_loss.mean())
-        self.attention_loss['normal_trigger_loss'].append(normal_trigger_loss.mean())
+        if do_normal_activating:
+            self.attention_loss['normal_cls_loss'].append(normal_cls_loss.mean())
+            self.attention_loss['normal_trigger_loss'].append(normal_trigger_loss.mean())
+
         anomal_pixel_num = anomal_position_vector.sum()
         if anomal_pixel_num > 0:
             self.attention_loss['anormal_cls_loss'].append(anomal_cls_loss.mean())
@@ -140,3 +146,20 @@ class NormalActivator(nn.Module):
         map_loss = map_loss.mean()
         self.anomal_map_loss = []
         return map_loss
+
+    def matching_TS_query(self, T_query, S_query, anomal_position_vector):
+        pix_num, dim = T_query.shape
+        anomal_position_matrix = anomal_position_vector.unsqueeze(-1).repeat(1, dim)
+        T_query = T_query * (1 - anomal_position_matrix)
+        S_query = S_query * (1 - anomal_position_matrix)
+        matching_query_loss = self.loss_l2(T_query.float(), S_query.float())
+        self.normal_matching_query_loss.append(matching_query_loss)
+
+
+    def reset(self) -> None:
+        self.normal_feat_list = []
+        self.anomal_feat_list = []
+        self.attention_loss = {'normal_cls_loss': [], 'normal_trigger_loss': [],
+                               'anormal_cls_loss': [], 'anormal_trigger_loss': []}
+        self.anomal_map_loss = []
+        self.normal_matching_query_loss = []
