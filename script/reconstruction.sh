@@ -1,9 +1,9 @@
 # !/bin/bash
 
-port_number=53120
+port_number=53131
 obj_name='carrot'
 caption='carrot'
-folder_name="1_2_anomal_sample_attn_loss_dist_loss_map_loss_only_zero_timestep"
+folder_name="1_3_background_masked_sample_attn_loss_dist_loss_map_loss_focal_only_zero_timestep"
 bench_mark="MVTec3D-AD"
 position_embedding_layer="down_blocks_0_attentions_0_transformer_blocks_0_attn1"
 
