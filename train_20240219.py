@@ -190,6 +190,7 @@ def main(args):
                     normal_activator.collect_queries(query, anomal_position_vector)
                     # (2) attn loss
                     attn_score = attn_dict[trg_layer][0]  # head, pix_num, 2
+                    print(f'anomal sample, anomal pixel num = {anomal_position_vector.sum()}')
                     normal_activator.collect_attention_scores(attn_score, anomal_position_vector)
                     # [3]
                     normal_activator.collect_anomal_map_loss(attn_score, anomal_position_vector)
@@ -208,6 +209,7 @@ def main(args):
                     normal_activator.collect_queries(query, anomal_position_vector)
                     # (2) attn loss
                     attn_score = attn_dict[trg_layer][0]  # head, pix_num, 2
+                    print(f'background_masked_sample sample, anomal pixel num = {anomal_position_vector.sum()}')
                     normal_activator.collect_attention_scores(attn_score, anomal_position_vector)
                     # [3]
                     normal_activator.collect_anomal_map_loss(attn_score, anomal_position_vector)
