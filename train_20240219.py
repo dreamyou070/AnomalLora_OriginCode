@@ -100,6 +100,7 @@ def main(args):
         with open(logging_file, 'a') as f:
             f.write(logging_info + '\n')
 
+
     for epoch in range(args.start_epoch, args.max_train_epochs):
         epoch_loss_total = 0
         accelerator.print(f"\nepoch {epoch + 1}/{args.start_epoch + args.max_train_epochs}")
@@ -120,7 +121,11 @@ def main(args):
                 with torch.no_grad():
                     latents = vae.encode(
                         batch["image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
-                noise, noisy_latents, timesteps = get_noise_noisy_latents_and_timesteps(args, noise_scheduler, latents)
+                if args.use_noise_scheduler:
+                    noise, noisy_latents, timesteps = get_noise_noisy_latents_and_timesteps(args, noise_scheduler, latents)
+                else :
+                    noisy_latents = latents
+                    timesteps = 0
                 object_position = batch['object_mask'].squeeze().flatten()
                 with torch.set_grad_enabled(True):
                     unet(noisy_latents, timesteps, encoder_hidden_states, trg_layer_list=args.trg_layer_list,
@@ -142,7 +147,13 @@ def main(args):
                 with torch.no_grad():
                     latents = vae.encode(
                         batch["image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
-                noise, noisy_latents, timesteps = get_noise_noisy_latents_and_timesteps(args, noise_scheduler, latents)
+                if args.use_noise_scheduler:
+                    noise, noisy_latents, timesteps = get_noise_noisy_latents_and_timesteps(args, noise_scheduler,
+                                                                                            latents)
+                else:
+                    noisy_latents = latents
+                    timesteps = 0
+
                 with torch.set_grad_enabled(True):
                     unet(noisy_latents, timesteps, encoder_hidden_states, trg_layer_list=args.trg_layer_list,
                          noise_type=position_embedder)
@@ -165,7 +176,12 @@ def main(args):
                 with torch.no_grad():
                     latents = vae.encode(
                         batch["anomal_image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
-                noise, noisy_latents, timesteps = get_noise_noisy_latents_and_timesteps(args, noise_scheduler, latents)
+                if args.use_noise_scheduler:
+                    noise, noisy_latents, timesteps = get_noise_noisy_latents_and_timesteps(args, noise_scheduler,
+                                                                                            latents)
+                else:
+                    noisy_latents = latents
+                    timesteps = 0
                 unet(noisy_latents, timesteps, encoder_hidden_states, trg_layer_list=args.trg_layer_list,
                      noise_type=position_embedder)
                 query_dict, attn_dict = controller.query_dict, controller.step_store
@@ -185,7 +201,12 @@ def main(args):
                 with torch.no_grad():
                     latents = vae.encode(
                         batch["bg_anomal_image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
-                noise, noisy_latents, timesteps = get_noise_noisy_latents_and_timesteps(args, noise_scheduler, latents)
+                if args.use_noise_scheduler:
+                    noise, noisy_latents, timesteps = get_noise_noisy_latents_and_timesteps(args, noise_scheduler,
+                                                                                            latents)
+                else:
+                    noisy_latents = latents
+                    timesteps = 0
                 unet(noisy_latents, timesteps, encoder_hidden_states, trg_layer_list=args.trg_layer_list,
                      noise_type=position_embedder)
                 query_dict, attn_dict = controller.query_dict, controller.step_store
@@ -358,6 +379,7 @@ if __name__ == "__main__":
     parser.add_argument("--trg_layer_list", type=arg_as_list, default=[])
     parser.add_argument("--do_map_loss", action='store_true')
     parser.add_argument("--use_focal_loss", action='store_true')
+    parser.add_argument("--use_noise_scheduler", action='store_true')
     # [3]
     args = parser.parse_args()
     unet_passing_argument(args)

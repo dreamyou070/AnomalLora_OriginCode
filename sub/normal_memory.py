@@ -47,8 +47,6 @@ def main(args):
 
         with torch.no_grad():
             latents = T_vae.encode(batch["image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
-            """
-            noise, noisy_latents, timesteps = get_noise_noisy_latents_and_timesteps(args, noise_scheduler, latents)
             object_position = batch['object_mask'].squeeze().flatten()
             with torch.set_grad_enabled(True):
                 unet(noisy_latents, timesteps, encoder_hidden_states, trg_layer_list=args.trg_layer_list,
