@@ -1,6 +1,7 @@
 from model.lora import create_network
 from model.pe import PositionalEmbedding
 from model.diffusion_model import load_target_model
+import os
 def call_model_package(args, weight_dtype, accelerator):
 
     # [1] diffusion
@@ -27,7 +28,14 @@ def call_model_package(args, weight_dtype, accelerator):
 
     # [3] PE
     position_embedder = PositionalEmbedding(max_len=args.latent_res * args.latent_res, d_model=args.d_dim)
+    if args.network_weights is not None:
+        models_folder,  lora_file = os.path.split(args.network_weights)
+        base_folder = os.path.split(models_folder)[0]
+        lora_name, _ = os.path.splitext(lora_file)
+        lora_epoch = int(lora_name.split("-")[-1])
+        pe_name = f"position_embedder_{lora_epoch}.safetensors"
+        position_embedder_path = os.path.join(base_folder, f"{position_embedder}/{pe_name}")
+        position_embedder.load_weights(position_embedder_path)
     position_embedder.to(weight_dtype)
-
     return text_encoder, vae, unet, network, position_embedder
 
