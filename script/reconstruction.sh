@@ -3,7 +3,7 @@
 port_number=53311
 obj_name='carrot'
 caption='carrot'
-folder_name="0_do_object_detection_different_code"
+folder_name="0_student_model"
 bench_mark="MVTec3D-AD"
 position_embedding_layer="down_blocks_0_attentions_0_transformer_blocks_0_attn1"
 
