@@ -2,7 +2,7 @@ import os
 import argparse, torch
 from model.lora import LoRANetwork,LoRAInfModule
 from attention_store import AttentionStore
-from utils.attention_control import add_attn_argument, passing_argument
+from utils.attention_control import passing_argument
 from model.unet import unet_passing_argument
 from utils.attention_control import register_attention_control
 from accelerate import Accelerator
@@ -190,7 +190,6 @@ if __name__ == '__main__':
     parser.add_argument("--thred", default=0.5, type=float)
     parser.add_argument("--image_classification_layer", type=str)
     parser.add_argument("--use_focal_loss", action='store_true')
-    add_attn_argument(parser)
     args = parser.parse_args()
     passing_argument(args)
     unet_passing_argument(args)
