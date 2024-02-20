@@ -15,6 +15,7 @@ import numpy as np
 from model.diffusion_model import load_target_model
 from model.pe import PositionalEmbedding
 from safetensors.torch import load_file
+from attention_store.normal_activator import NormalActivator
 
 def main(args):
 
