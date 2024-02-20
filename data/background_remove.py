@@ -26,6 +26,7 @@ def main(args):
 
             train_rgb_dir = os.path.join(train_good_dir, 'rgb')
             origin_folder = os.path.join(train_good_dir, 'rgb_origin')
+            os.makedirs(origin_folder, exist_ok=True)
 
             images = os.listdir(train_rgb_dir)
             for image in images:
