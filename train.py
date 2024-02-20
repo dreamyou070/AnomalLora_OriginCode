@@ -144,7 +144,7 @@ def main(args):
                     query = query_dict[trg_layer][0].squeeze(0)  # pix_num, dim
                     pix_num = query.shape[0]
                     anomal_position_vector = torch.zeros(pix_num, device=device)
-                    normal_activator.collect_queries(query, anomal_position_vector)
+                    normal_activator.collect_queries(query, anomal_position_vector, do_collect_normal = True)
                     # (2) attn loss
                     attn_score = attn_dict[trg_layer][0]  # head, pix_num, 2
                     normal_activator.collect_attention_scores(attn_score, anomal_position_vector)
@@ -164,7 +164,10 @@ def main(args):
                     # [1] dist
                     query = query_dict[trg_layer][0].squeeze(0)  # pix_num, dim
                     anomal_position_vector = batch["anomal_mask"].squeeze().flatten()
-                    normal_activator.collect_queries(query, anomal_position_vector)
+                    if args.do_normal_sample:
+                        normal_activator.collect_queries(query, anomal_position_vector, do_collect_normal=False)
+                    else:
+                        normal_activator.collect_queries(query, anomal_position_vector)
                     # (2) attn loss
                     attn_score = attn_dict[trg_layer][0]  # head, pix_num, 2
                     normal_activator.collect_attention_scores(attn_score, anomal_position_vector)
@@ -184,7 +187,10 @@ def main(args):
                     # [1] dist
                     query = query_dict[trg_layer][0].squeeze(0)  # pix_num, dim
                     anomal_position_vector = batch["bg_anomal_mask"].squeeze().flatten()
-                    normal_activator.collect_queries(query, anomal_position_vector)
+                    if args.do_normal_sample:
+                        normal_activator.collect_queries(query, anomal_position_vector,do_collect_normal = False)
+                    else:
+                        normal_activator.collect_queries(query, anomal_position_vector)
                     # (2) attn loss
                     attn_score = attn_dict[trg_layer][0]  # head, pix_num, 2
                     normal_activator.collect_attention_scores(attn_score, anomal_position_vector)

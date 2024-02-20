@@ -5,10 +5,10 @@ port_number=50322
 obj_name='carrot'
 trigger_word='carrot'
 bench_mark='MVTec3D-AD'
-save_folder_name="do_normal_sample_do_anomal_sample_dist_loss_score_map_loss"
+save_folder_name="do_normal_sample_do_anomal_sample_dist_loss_map_loss"
 
-accelerate launch --config_file ../../../gpu_config/gpu_0_1_config \
- --main_process_port $port_number ../train_20240219.py \
+accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_config \
+ --main_process_port $port_number ../train.py \
  --log_with wandb \
  --output_dir "../../result/${bench_mark}/${obj_name}/${save_folder_name}" \
  --pretrained_model_name_or_path ../../../pretrained_stable_diffusion/stable-diffusion-v1-5/v1-5-pruned.safetensors \

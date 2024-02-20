@@ -33,7 +33,7 @@ class NormalActivator(nn.Module):
         # [4]
         self.normal_matching_query_loss = []
 
-    def collect_queries(self, origin_query, anomal_position_vector):
+    def collect_queries(self, origin_query, anomal_position_vector, do_collect_normal = True):
 
         pix_num = origin_query.shape[0]
         for pix_idx in range(pix_num):
@@ -42,7 +42,8 @@ class NormalActivator(nn.Module):
             if anomal_flag == 1:
                 self.anomal_feat_list.append(feat.unsqueeze(0))
             else:
-                self.normal_feat_list.append(feat.unsqueeze(0))
+                if do_collect_normal:
+                    self.normal_feat_list.append(feat.unsqueeze(0))
 
     def collect_attention_scores(self, attn_score, anomal_position_vector,
                                  do_normal_activating = True):
@@ -142,7 +143,6 @@ class NormalActivator(nn.Module):
             normal_dist_loss = normal_dist_max.requires_grad_()
         self.normal_feat_list = []
         self.anomal_feat_list = []
-
         return normal_dist_loss, normal_dist_mean, normal_dist_max
 
     def generate_attention_loss(self):
