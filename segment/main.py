@@ -30,6 +30,7 @@ def main(args):
             train_rgb_dir = os.path.join(train_good_dir, 'rgb')
             train_object_mask_dir = os.path.join(train_good_dir, 'object_mask_test')
             os.makedirs(train_object_mask_dir, exist_ok=True)
+            print(f'train_object_mask_dir: {train_object_mask_dir}')
 
             images = os.listdir(train_rgb_dir)
             for image in images:
