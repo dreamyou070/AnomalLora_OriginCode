@@ -1,7 +1,7 @@
 #! /bin/bash
 
 class_name="carrot"
-second_folder_name="up_2_not_anomal_hole_act_deact_do_down_dim_mahal_loss"
+second_folder_name="1_2_anomal_sample_attn_loss_dist_loss_map_loss_only_zero_timestep"
 
 
 python ../evaluation/get_all_metrics.py \
