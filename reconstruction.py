@@ -138,9 +138,11 @@ def main(args):
                                     query = b_query_dict[trg_layer][0].squeeze(0)
                                     key = b_key_dict[trg_layer][0].squeeze(0)
                                     normal_activator.collect_qk_features(query, key)
-                                normal_activator.generate_conjugated_attention(anomal_position_vector=None,
+                                attn_score = normal_activator.generate_conjugated_attention(anomal_position_vector=None,
                                                                                do_normal_activating=False)
+                                normal_activator.collect_attention_scores(attn_score, None)
                                 normal_map = normal_activator.normal_map
+                                print(f'normal_map : {normal_map}')
                             # --------------------------------------------------------------------------------------- #
                             normal_map = torch.where(normal_map > thred, 1, normal_map).squeeze()
                             anomaly_map = 1 - normal_map
