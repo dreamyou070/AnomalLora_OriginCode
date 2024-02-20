@@ -179,7 +179,7 @@ class NormalActivator(nn.Module):
         matching_query_loss = self.loss_l2(T_query.float(), S_query.float())
         self.normal_matching_query_loss.append(matching_query_loss)
 
-    def collect_qk_features(self, query, key, anomal_position_vector, do_collect_normal = True) :
+    def collect_qk_features(self, query, key) :
 
         head_num, pix_num, dim = query.shape
         res = int(pix_num ** 0.5)
@@ -187,16 +187,17 @@ class NormalActivator(nn.Module):
         resized_query_map = nn.functional.interpolate(query_map, size=(64, 64), mode='bilinear')
         resized_query = resized_query_map.permute(0, 2, 3, 1).contiguous().view(head_num, -1, dim)  # head, 64*64, dim
 
-        self.collect_queries(resized_query.mean(dim=0),
-                             anomal_position_vector,
-                             do_collect_normal = do_collect_normal)
         self.resized_queries.append(resized_query)
         self.keys.append(key)
 
     def generate_conjugated_attention(self,
-                                      anomal_position_vector, do_normal_activating):
+                                      anomal_position_vector,
+                                      do_normal_activating = True):
 
-        concat_query = torch.cat(self.resized_queries, dim=2)  # 8, 4096, 960
+        concat_query = torch.cat(self.resized_queries, dim=2)  # 8, 4096, 960 ***
+        self.collect_queries(concat_query.mean(dim=0),         # 4096, 960
+                             anomal_position_vector, do_collect_normal=do_normal_activating)
+
         concat_key = torch.cat(self.keys, dim=2)  # 8, 77, 960
         attn_score = torch.bmm(concat_query, concat_key.permute(0, 2, 1))  # 8, 4096, 77
         attention_probs = attn_score.softmax(dim=-1)
