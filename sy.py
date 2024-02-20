@@ -1,5 +1,5 @@
 import torch
 
-org = torch.randn(8,64*64,7)
-trg = org[:,:,:2]
-print(trg.shape)
+resized_queries = [torch.randn(4096,320), torch.randn(4096,320)]
+
+print(f'c_query.shape : {c_query.shape}')
