@@ -1,6 +1,6 @@
 #! /bin/bash
 
-class_name="bagel"
+class_name="cookie"
 bench_mark="MVTec3D-AD"
 dataset_dir="../../../MyData/anomaly_detection/${bench_mark}"
 sub_folder="sub_3_background_masked_sample_anomal_sample"
