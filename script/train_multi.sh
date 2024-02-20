@@ -1,14 +1,14 @@
 # !/bin/bash
 
-port_number=50001
+port_number=50005
 
-obj_name='bagel'
-trigger_word='bagel'
+obj_name='dowel'
+trigger_word='dowel'
 bench_mark='MVTec3D-AD'
 save_folder_name="sub_3_background_masked_sample_anomal_sample_multi_code"
 folder="attn_loss_normalized_score_map_loss"
 
-accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_config \
+accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_5_config \
  --main_process_port $port_number ../train_multi.py \
  --log_with wandb \
  --output_dir "../../result/${bench_mark}/${obj_name}/${sub_folder}/${folder_name}" \
