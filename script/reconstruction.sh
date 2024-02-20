@@ -1,10 +1,10 @@
 # !/bin/bash
 
-port_number=50003
-obj_name='cookie'
-caption='cookie'
+port_number=51111
+obj_name='bagel'
+caption='bagel'
 sub_folder="sub_3_background_masked_sample_anomal_sample"
-folder_name="attn_loss_normalized_score_map_loss_train_code_without_normalized"
+folder_name="attn_loss_normalized_score_map_loss_multi_code"
 bench_mark="MVTec3D-AD"
 position_embedding_layer="down_blocks_0_attentions_0_transformer_blocks_0_attn1"
 
