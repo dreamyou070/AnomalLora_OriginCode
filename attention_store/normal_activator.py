@@ -40,8 +40,7 @@ class NormalActivator(nn.Module):
 
         pix_num = origin_query.shape[0]
         for pix_idx in range(pix_num):
-            feat = origin_query[pix_idx].squeeze(0)
-            print(f'in collect query function, feat : {feat.shape}')
+            feat = origin_query[pix_idx].squeeze(0) # always same dim
             anomal_flag = anomal_position_vector[pix_idx]
             if anomal_flag == 1:
                 self.anomal_feat_list.append(feat.unsqueeze(0))
@@ -132,6 +131,10 @@ class NormalActivator(nn.Module):
             delta = u - v
             m = torch.dot(delta, torch.matmul(cov, delta))
             return torch.sqrt(m)
+
+        print('fin generate mahalanobis distance loss function' )
+        for f in self.normal_feat_list:
+            print(f'feat : {f.shape}}')
 
         normal_feats = torch.cat(self.normal_feat_list, dim=0)
         mu = torch.mean(normal_feats, dim=0)
