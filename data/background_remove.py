@@ -39,7 +39,6 @@ def main(args):
                 # [1] save original image
                 origin_img_dir = os.path.join(origin_folder, image)
                 pil_img.save(origin_img_dir)
-
                 # [2] remove background
                 sub_dir = os.path.join(sub_folder, image)
                 remove_background(img_dir, sub_dir)
