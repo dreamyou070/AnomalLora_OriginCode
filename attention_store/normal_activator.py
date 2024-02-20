@@ -137,7 +137,6 @@ class NormalActivator(nn.Module):
             return torch.sqrt(m)
 
         normal_feats = torch.cat(self.normal_feat_list, dim=0)
-        print(f'[1] dist loss, normal_feats shape : {normal_feats.shape}')
         mu = torch.mean(normal_feats, dim=0)
         cov = torch.cov(normal_feats.transpose(0, 1))
         normal_mahalanobis_dists = [mahal(feat, mu, cov) for feat in normal_feats]
@@ -163,14 +162,12 @@ class NormalActivator(nn.Module):
         normal_cls_loss = 0.0
         normal_trigger_loss = 0.0
         if len(self.attention_loss['normal_cls_loss']) != 0:
-            print(f'len of normal_cls_loss (2 because anomal and back sample) : {len(self.attention_loss["normal_cls_loss"])}')
             normal_cls_loss = torch.stack(self.attention_loss['normal_cls_loss'], dim=0).mean(dim=0)
             normal_trigger_loss = torch.stack(self.attention_loss['normal_trigger_loss'], dim=0).mean(dim=0)
 
         anormal_cls_loss = 0.0
         anormal_trigger_loss = 0.0
         if len(self.attention_loss['anormal_cls_loss']) != 0:
-            print(f'len of anormal_cls_loss (2 because anomal and back sample) : {len(self.attention_loss["anormal_cls_loss"])}')
             anormal_cls_loss = torch.stack(self.attention_loss['anormal_cls_loss'], dim=0).mean(dim=0)
             anormal_trigger_loss = torch.stack(self.attention_loss['anormal_trigger_loss'], dim=0).mean(dim=0)
 
