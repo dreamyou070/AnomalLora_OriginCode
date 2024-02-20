@@ -1,14 +1,14 @@
 # !/bin/bash
 
-port_number=50313
+port_number=50001
 
-obj_name='carrot'
-trigger_word='carrot'
+obj_name='bagel'
+trigger_word='bagel'
 bench_mark='MVTec3D-AD'
 save_folder_name="sub_3_background_masked_sample_anomal_sample"
 folder="attn_loss_normalized_score_map_loss"
 
-accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_5_config \
+accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_config \
  --main_process_port $port_number ../train.py \
  --log_with wandb \
  --output_dir "../../result/${bench_mark}/${obj_name}/${save_folder_name}/${folder}" \
