@@ -1,13 +1,13 @@
 # !/bin/bash
 
-port_number=50323
+port_number=50322
 
 obj_name='carrot'
 trigger_word='carrot'
 bench_mark='MVTec3D-AD'
-save_folder_name="do_normal_sample_do_anomal_sample_dist_loss_attn_loss_normalized_score"
+save_folder_name="do_normal_sample_do_anomal_sample_dist_loss_score_map_loss"
 
-accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_config \
+accelerate launch --config_file ../../../gpu_config/gpu_0_1_config \
  --main_process_port $port_number ../train_20240219.py \
  --log_with wandb \
  --output_dir "../../result/${bench_mark}/${obj_name}/${save_folder_name}" \
@@ -25,4 +25,4 @@ accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_config \
  --start_epoch 0 --max_train_epochs 30 \
  --do_normal_sample --do_anomal_sample \
  --do_dist_loss \
- --do_attn_loss --do_normalized_score
+ --do_map_loss
