@@ -174,7 +174,7 @@ def main(args):
                     # [3]
                     normal_activator.collect_anomal_map_loss(attn_score, anomal_position_vector)
 
-            if args.do_background_masked_sample:
+            if args.do_background_masked_sample :
                 with torch.no_grad():
                     latents = vae.encode(
                         batch["bg_anomal_image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor

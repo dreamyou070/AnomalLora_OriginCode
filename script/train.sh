@@ -5,12 +5,13 @@ port_number=50313
 obj_name='carrot'
 trigger_word='carrot'
 bench_mark='MVTec3D-AD'
-save_folder_name="dist_loss_attn_loss_normalized_score"
+save_folder_name="sub_3_background_masked_sample_anomal_sample"
+folder="attn_loss_normalized_score_map_loss"
 
 accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_5_config \
  --main_process_port $port_number ../train.py \
  --log_with wandb \
- --output_dir "../../result/${bench_mark}/${obj_name}/${save_folder_name}" \
+ --output_dir "../../result/${bench_mark}/${obj_name}/${save_folder_name}/${folder}" \
  --pretrained_model_name_or_path ../../../pretrained_stable_diffusion/stable-diffusion-v1-5/v1-5-pruned.safetensors \
  --data_path "../../../MyData/anomaly_detection/${bench_mark}" --beta_scale_factor 0.8 \
  --bgrm_test \
@@ -23,6 +24,6 @@ accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_5_config \
  --position_embedding_layer 'down_blocks_0_attentions_0_transformer_blocks_0_attn1' \
  --trg_layer_list "['up_blocks_3_attentions_2_transformer_blocks_0_attn2']" \
  --start_epoch 0 --max_train_epochs 30 \
- --do_anomal_sample \
- --do_dist_loss \
- --do_attn_loss --do_normalized_score
+ --do_anomal_sample --do_background_masked_sample \
+ --do_attn_loss --do_normalized_score \
+ --map_loss
