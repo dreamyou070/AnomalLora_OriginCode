@@ -27,6 +27,8 @@ def main(args):
             train_rgb_dir = os.path.join(train_good_dir, 'rgb')
             origin_folder = os.path.join(train_good_dir, 'rgb_origin')
             os.makedirs(origin_folder, exist_ok=True)
+            sub_folder = os.path.join(train_good_dir, 'rgb_remove_background')
+            os.makedirs(sub_folder, exist_ok=True)
 
             images = os.listdir(train_rgb_dir)
             for image in images:
@@ -39,8 +41,9 @@ def main(args):
                 pil_img.save(origin_img_dir)
 
                 # [2] remove background
-                remove_background(img_dir, img_dir)
-                background_removed_img = Image.open(img_dir).convert("RGB")
+                sub_dir = os.path.join(sub_folder, image)
+                remove_background(img_dir, sub_dir)
+                background_removed_img = Image.open(sub_dir).convert("RGB")
                 background_removed_img.save(img_dir)
                 
 
