@@ -54,8 +54,9 @@ class NormalActivator(nn.Module):
         def normalize_score(score):
             score = torch.softmax(score, dim=-1)
             """ Code Wrong !! """
-            #max_value = (torch.max(score, dim=-1)[0]).unsqueeze(-1)
-            #normalized_trigger_map = score / max_value
+            max_value = (torch.max(score, dim=-1)[0]).unsqueeze(-1)
+            normalized_trigger_map = score / max_value
+            score = normalized_trigger_map
             return score
 
         # [1] preprocessing
