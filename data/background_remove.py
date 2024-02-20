@@ -1,19 +1,52 @@
 from PIL import Image
 from rembg import remove
 import numpy as np
+import os
+import argparse
 
-input_path = '003.png'
-output_path = 'output.png'
+def remove_background(input_path, output_path):
+    with open(input_path, 'rb') as i:
+        with open(output_path, 'wb') as o:
+            input = i.read()
+            output = remove(input)
+            o.write(output)
 
-with open(input_path, 'rb') as i:
-    with open(output_path, 'wb') as o:
-        input = i.read()
-        output = remove(input)
-        o.write(output)
 
-output_pil = Image.open(output_path)
-output_np = np.array(output_pil)
-alpha_channel = output_np[:, :, 3]
-alpha_channel = np.where(alpha_channel == 0, 0,1)
-mask = Image.fromarray(alpha_channel * 255)
-mask.show()
+def main(args):
+
+    print(f'step 2. prepare images')
+    base_folder = args.base_folder
+    cats = os.listdir(base_folder)
+
+    for cat in cats:
+        if cat == args.trg_cat:
+
+            cat_dir = os.path.join(base_folder, f'{cat}')
+            train_good_dir = os.path.join(cat_dir, 'train/good')
+
+            train_rgb_dir = os.path.join(train_good_dir, 'rgb')
+            origin_folder = os.path.join(train_good_dir, 'rgb_origin')
+
+            images = os.listdir(train_rgb_dir)
+            for image in images:
+
+                img_dir = os.path.join(train_rgb_dir, image)
+                pil_img = Image.open(img_dir)
+
+                # [1] save original image
+                origin_img_dir = os.path.join(origin_folder, image)
+                pil_img.save(origin_img_dir)
+
+                # [2] remove background
+                remove_background(img_dir, img_dir)
+                background_removed_img = Image.open(img_dir).convert("RGB")
+                background_removed_img.save(img_dir)
+                
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--base_folder', type=str,
+                        default=r'/home/dreamyou070/MyData/anomaly_detection/MVTec3D-AD')
+    parser.add_argument('--trg_cat', type=str, default='dowel')
+    args = parser.parse_args()
+    main(args)
