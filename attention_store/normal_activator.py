@@ -179,9 +179,19 @@ class NormalActivator(nn.Module):
 
 
     def reset(self) -> None:
-        self.normal_feat_list = []
+
+        # [1]
         self.anomal_feat_list = []
+        self.normal_feat_list = []
+
+        # [2]
         self.attention_loss = {'normal_cls_loss': [], 'normal_trigger_loss': [],
                                'anormal_cls_loss': [], 'anormal_trigger_loss': []}
+        self.trigger_score = []
+        self.cls_score = []
+
+        # [3]
         self.anomal_map_loss = []
+
+        # [4]
         self.normal_matching_query_loss = []

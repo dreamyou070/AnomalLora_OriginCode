@@ -245,6 +245,8 @@ def main(args):
                 with open(logging_file, 'a') as f:
                     f.write(logging_info + '\n')
                 progress_bar.set_postfix(**loss_dict)
+            normal_activator.reset()
+            controller.reset()
             if global_step >= args.max_train_steps:
                 break
         # ----------------------------------------------------------------------------------------------------------- #
