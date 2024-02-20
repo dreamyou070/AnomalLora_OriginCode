@@ -120,11 +120,16 @@ def main(args):
                 b_query_dict, b_key_dict = controller.batchshaped_query_dict, controller.batchshaped_key_dict
                 controller.reset()
                 for trg_layer in args.trg_layer_list:
+                    print(f'try layer : {trg_layer}')
                     query = b_query_dict[trg_layer][0].squeeze(0) # head, pix_num, dim
                     key = b_key_dict[trg_layer][0].squeeze(0)
+                    print(f'batch shaped query : {query.shape}, key : {key.shape}')
                     normal_activator.collect_qk_features(query, key)
+                # [1] generate attention map
                 attn_score = normal_activator.generate_conjugated_attention(anomal_position_vector=anomal_position_vector,
                                                                             do_normal_activating=True)
+
+                # [2] map loss
                 normal_activator.collect_anomal_map_loss(attn_score, # 8, 4096, 2
                                                          anomal_position_vector)
             # --------------------------------------------------------------------------------------------------------- #
