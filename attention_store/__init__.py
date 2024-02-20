@@ -44,12 +44,9 @@ class AttentionStore :
     def save_batshaped_qk(self, query, key, layer_name):
         if layer_name not in self.batchshaped_query_dict.keys():
             self.batchshaped_query_dict[layer_name] = []
-            self.batchshaped_query_dict[layer_name].append(query)
             self.batchshaped_key_dict[layer_name] = []
-            self.batchshaped_key_dict[layer_name].append(key)
-        else:
-            self.batchshaped_query_dict[layer_name].append(query)
-            self.batchshaped_key_dict[layer_name].append(key)
+        self.batchshaped_query_dict[layer_name].append(query)
+        self.batchshaped_key_dict[layer_name].append(key)
 
 
     def store_classifocation_map(self, map, layer_name):
