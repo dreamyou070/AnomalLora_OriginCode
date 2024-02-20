@@ -37,17 +37,15 @@ class NormalActivator(nn.Module):
 
     def collect_queries(self, origin_query, anomal_position_vector, do_collect_normal = True):
 
-        if anomal_position_vector is None:
-
-            pix_num = origin_query.shape[0]
-            for pix_idx in range(pix_num):
-                feat = origin_query[pix_idx].squeeze(0)
-                anomal_flag = anomal_position_vector[pix_idx]
-                if anomal_flag == 1:
-                    self.anomal_feat_list.append(feat.unsqueeze(0))
-                else:
-                    if do_collect_normal:
-                        self.normal_feat_list.append(feat.unsqueeze(0))
+        pix_num = origin_query.shape[0]
+        for pix_idx in range(pix_num):
+            feat = origin_query[pix_idx].squeeze(0)
+            anomal_flag = anomal_position_vector[pix_idx]
+            if anomal_flag == 1:
+                self.anomal_feat_list.append(feat.unsqueeze(0))
+            else:
+                if do_collect_normal:
+                    self.normal_feat_list.append(feat.unsqueeze(0))
 
 
     def collect_attention_scores(self, attn_score, anomal_position_vector,
@@ -201,9 +199,10 @@ class NormalActivator(nn.Module):
                                       do_normal_activating = True):
 
         concat_query = torch.cat(self.resized_queries, dim=2)  # 8, 4096, 960 ***
-        self.collect_queries(concat_query.mean(dim=0),         # 4096, 960
-                             anomal_position_vector,
-                             do_collect_normal=do_normal_activating)
+        if anomal_position_vector is not None:
+            self.collect_queries(concat_query.mean(dim=0),         # 4096, 960
+                                 anomal_position_vector,
+                                 do_collect_normal=do_normal_activating)
 
         concat_key = torch.cat(self.keys, dim=2)  # 8, 77, 960
         attn_score = torch.bmm(concat_query, concat_key.permute(0, 2, 1))  # 8, 4096, 77
@@ -212,8 +211,8 @@ class NormalActivator(nn.Module):
         self.resized_queries = []
         self.keys = []
         self.collect_attention_scores(attn_score,
-                                      anomal_position_vector,
-                                      do_normal_activating = do_normal_activating)
+                                          anomal_position_vector,
+                                          do_normal_activating = do_normal_activating)
         return attn_score
 
 
