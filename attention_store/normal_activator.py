@@ -38,10 +38,6 @@ class NormalActivator(nn.Module):
 
     def collect_queries(self, origin_query, anomal_position_vector, do_collect_normal = True):
 
-        if type(origin_query) == list:
-            origin_query = torch.cat(origin_query, dim=2).squeeze()
-            self.queries = []
-
         pix_num = origin_query.shape[0]
         for pix_idx in range(pix_num):
             feat = origin_query[pix_idx].squeeze(0)
@@ -191,6 +187,7 @@ class NormalActivator(nn.Module):
         query_map = query.view(head_num, res, res, dim).permute(0, 3, 1, 2).contiguous()
         resized_query_map = nn.functional.interpolate(query_map, size=(64, 64), mode='bilinear')
         resized_query = resized_query_map.permute(0, 2, 3, 1).contiguous().view(head_num, -1, dim)  # 1, 64*64, dim
+        print(f'resized_query.shape (1, 64*64, dim) : {resized_query.shape}')
         self.resized_queries.append(resized_query) # len = 3
 
     def resize_attn_scores(self, attn_score) :
@@ -204,7 +201,7 @@ class NormalActivator(nn.Module):
 
 
     def generate_conjugated(self,):
-        concat_query = torch.cat(self.resized_queries, dim=2)     # 1, 4096, 1960 ***
+        concat_query = torch.cat(self.resized_queries, dim=2).squeeze()     # 4096, 1960 ***
         return concat_query
 
     def generate_conjugated_attn_score(self,):
