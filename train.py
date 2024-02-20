@@ -124,11 +124,9 @@ def main(args):
                     # [1] dist
                     query = query_dict[trg_layer][0].squeeze(0)  # pix_num, dim
                     anomal_position_vector = 1 - object_position
-                    normal_activator.collect_queries(query, anomal_position_vector)
-                    # (2) attn loss
                     attn_score = attn_dict[trg_layer][0]  # head, pix_num, 2
+                    normal_activator.collect_queries(query, anomal_position_vector)
                     normal_activator.collect_attention_scores(attn_score, anomal_position_vector)
-                    # [3]
                     normal_activator.collect_anomal_map_loss(attn_score, anomal_position_vector)
 
             if args.do_normal_sample:

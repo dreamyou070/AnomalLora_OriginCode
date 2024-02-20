@@ -33,9 +33,14 @@ class NormalActivator(nn.Module):
         # [4]
         self.normal_matching_query_loss = []
         self.resized_queries = []
+        self.queries = []
         self.keys = []
 
     def collect_queries(self, origin_query, anomal_position_vector, do_collect_normal = True):
+
+        if type(origin_query) == list:
+            origin_query = torch.cat(origin_query, dim=2).squeeze()
+            self.queries = []
 
         pix_num = origin_query.shape[0]
         for pix_idx in range(pix_num):
@@ -47,9 +52,7 @@ class NormalActivator(nn.Module):
                 if do_collect_normal:
                     self.normal_feat_list.append(feat.unsqueeze(0))
 
-
-    def collect_attention_scores(self, attn_score, anomal_position_vector,
-                                 do_normal_activating = True):
+    def collect_attention_scores(self, attn_score, anomal_position_vector,do_normal_activating = True):
 
         def normalize_score(score):
             score = torch.softmax(score, dim=-1)
@@ -175,33 +178,38 @@ class NormalActivator(nn.Module):
         self.attention_loss = {'normal_cls_loss': [], 'normal_trigger_loss': [],
                                'anormal_cls_loss': [], 'anormal_trigger_loss': []}
         return normal_cls_loss, normal_trigger_loss, anormal_cls_loss, anormal_trigger_loss
+
     def generate_anomal_map_loss(self):
         map_loss = torch.stack(self.anomal_map_loss, dim=0)
         map_loss = map_loss.mean()
         self.anomal_map_loss = []
         return map_loss
 
-    def matching_TS_query(self, T_query, S_query, anomal_position_vector):
-        pix_num, dim = T_query.shape
-        anomal_position_matrix = anomal_position_vector.unsqueeze(-1).repeat(1, dim)
-        T_query = T_query * (1 - anomal_position_matrix)
-        S_query = S_query * (1 - anomal_position_matrix)
-        matching_query_loss = self.loss_l2(T_query.float(), S_query.float())
-        self.normal_matching_query_loss.append(matching_query_loss)
-
     def collect_qk_features(self, query, key) :
+
+        def reshape_batch_dim_to_heads(tensor, head_size=8):
+            batch_size, seq_len, dim = tensor.shape
+            head_size = self.heads
+            tensor = tensor.reshape(batch_size // head_size, head_size, seq_len, dim)
+
+            b_size, pix_num, dim = resized_query.shape
+            resized_query.reshape(b_size // head_size, head_size, pix_num, dim)
+            return tensor.permute(0, 2, 1, 3).reshape(b_size // head_size, pix_num, dim * head_size)
+
+            tensor = tensor.permute(0, 2, 1, 3).reshape(batch_size // head_size, seq_len, dim * head_size)
+            return tensor
 
         head_num, pix_num, dim = query.shape
         res = int(pix_num ** 0.5)
         query_map = query.view(head_num, res, res, dim).permute(0, 3, 1, 2).contiguous()
         resized_query_map = nn.functional.interpolate(query_map, size=(64, 64), mode='bilinear')
         resized_query = resized_query_map.permute(0, 2, 3, 1).contiguous().view(head_num, -1, dim)  # head, 64*64, dim
+        query = reshape_batch_dim_to_heads(query) # 1, 4096, 960
         self.resized_queries.append(resized_query) # len = 3
         self.keys.append(key)
+        self.queries.append(query)
 
-    def generate_conjugated_attention(self,
-                                      anomal_position_vector,
-                                      do_normal_activating = True):
+    def generate_conjugated_attention(self,):
 
         concat_query = torch.cat(self.resized_queries, dim=2)     # 8, 4096, 960 ***
         concat_key = torch.cat(self.keys, dim=2)  # 8, 77, 960
@@ -210,13 +218,9 @@ class NormalActivator(nn.Module):
                                          concat_query, concat_key.transpose(-1, -2), beta=0)
         attention_probs = attention_scores.softmax(dim=-1).to(concat_query.dtype)
         attn_score = attention_probs[:, :, :2]  # 8, 4096, 2
-
         self.resized_queries = []
         self.keys = []
-        self.collect_attention_scores(attn_score,
-                                      anomal_position_vector,
-                                      do_normal_activating = do_normal_activating)
-        return attn_score, concat_query, concat_key
+        return attn_score
 
 
     def reset(self) -> None:
@@ -237,4 +241,5 @@ class NormalActivator(nn.Module):
         # [4]
         self.normal_matching_query_loss = []
         self.resized_queries = []
+        self.queries = []
         self.keys = []
