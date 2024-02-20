@@ -14,7 +14,6 @@ def main(args):
     path_to_checkpoint= r'/home/dreamyou070/pretrained_stable_diffusion/sam_vit_h_4b8939.pth'
     sam = sam_model_registry[model_type](checkpoint=path_to_checkpoint)
     predictor = SamPredictor(sam)
-    mask_generator = SamAutomaticMaskGenerator(sam)
 
 
     print(f'step 2. prepare images')
@@ -31,18 +30,17 @@ def main(args):
             train_object_mask_dir = os.path.join(train_good_dir, 'object_mask_test')
             os.makedirs(train_object_mask_dir, exist_ok=True)
 
-            train_object_mask_dir_1 = os.path.join(train_object_mask_dir, 'predict_1')
-            os.makedirs(train_object_mask_dir_1, exist_ok=True)
-            train_object_mask_dir_2 = os.path.join(train_object_mask_dir, 'predict_2')
-            os.makedirs(train_object_mask_dir_2, exist_ok=True)
-            train_object_mask_dir_3 = os.path.join(train_object_mask_dir, 'predict_3')
-            os.makedirs(train_object_mask_dir_3, exist_ok=True)
-
+            dir1 = os.path.join(train_object_mask_dir, 'mask_1')
+            dir2 = os.path.join(train_object_mask_dir, 'mask_2')
+            dir3 = os.path.join(train_object_mask_dir, 'mask_3')
+            os.makedirs(dir1, exist_ok=True)
+            os.makedirs(dir2, exist_ok=True)
+            os.makedirs(dir3, exist_ok=True)
 
 
             images = os.listdir(train_rgb_dir)
             for image in images:
-                save_dir = os.path.join(train_object_mask_dir, image)
+
                 img_dir = os.path.join(train_rgb_dir, image)
                 pil_img = Image.open(img_dir)
                 org_h, org_w = pil_img.size
@@ -54,33 +52,18 @@ def main(args):
 
                 # [2]
                 h, w, c = np_img.shape
-                input_box = np.array([int(h/10), int(9*h/10),
-                                      int(w/10), int(9*w/10)])
-
-                # [3]
-                input_point = np.array([[0,0]])
-                # [3]
-                input_label = np.array([0])
-
-                # point_labels (np.ndarray or None): A length N array of labels for the
-                #             point prompts. 1 indicates a foreground point and 0 indicates a
-                #             background point.
-                masks, _, _ = predictor.predict(
-                    point_coords=input_point,
-                    point_labels=input_label,
-                    box=input_box,
-                    multimask_output=True,)
-                for i, mask in enumerate(masks):
-                    if i == 0:
-                        save_dir = os.path.join(train_object_mask_dir_1, image)
-                    elif i == 1:
-                        save_dir = os.path.join(train_object_mask_dir_2, image)
-                    elif i == 2:
-                        save_dir = os.path.join(train_object_mask_dir_3, image)
+                input_point = np.array([[0, 0],
+                                        [int(h/2),int(w/2)]])
+                input_label = np.array([1,1]) # 1 indicates a foreground point
+                masks, scores, logits = predictor.predict(point_coords=input_point,
+                                                          point_labels=input_label,
+                                                          multimask_output=True, )
+                for i, (mask, score) in enumerate(zip(masks, scores)):
                     np_mask = (mask * 1)
                     np_mask = np.where(np_mask == 1, 0, 1) * 255
                     sam_result_pil = Image.fromarray(np_mask.astype(np.uint8))
                     sam_result_pil = sam_result_pil.resize((org_h, org_w))
+                    save_dir = os.path.join(train_object_mask_dir, f'mask_{i+1}/{image}')
                     sam_result_pil.save(save_dir)
 
 if __name__ == "__main__":
