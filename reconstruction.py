@@ -53,6 +53,8 @@ def main(args):
     raw_state_dict = network.state_dict()
     raw_state_dict_orig = raw_state_dict.copy()
 
+    normal_activator = NormalActivator(None, None, args.use_focal_loss)
+
     for model in models:
 
         network_model_dir = os.path.join(args.network_folder, model)
@@ -122,32 +124,35 @@ def main(args):
                             encoder_hidden_states = text_encoder(input_ids.to(text_encoder.device))["last_hidden_state"]
                             unet(vae_latent, 0, encoder_hidden_states,
                                  trg_layer_list=args.trg_layer_list, noise_type=position_embedder)
-                            attn_dict = controller.step_store
+                            query_dict, attn_dict = controller.query_dict, controller.step_store
+                            b_query_dict, b_key_dict = controller.batchshaped_query_dict, controller.batchshaped_key_dict
+                            if args.single_layer :
+                                for trg_layer in args.trg_layer_list:
+                                    attn_score = attn_dict[trg_layer][0]  # head, pix_num, 2
+                                    normal_activator.collect_attention_scores(attn_score, None)
+                                    normal_map = normal_activator.normal_map
+                            else :
+                                for trg_layer in args.trg_layer_list:
+                                    query = b_query_dict[trg_layer][0].squeeze(0)
+                                    key = b_key_dict[trg_layer][0].squeeze(0)
+                                    normal_activator.collect_qk_features(query, key)
+                                normal_activator.generate_conjugated_attention(anomal_position_vector=None,
+                                                                               do_normal_activating=False)
+                                normal_map = normal_activator.normal_map
+                            # --------------------------------------------------------------------------------------- #
+                            normal_map = torch.where(normal_map > thred, 1, normal_map).squeeze()
+                            anomaly_map = 1 - normal_map
+                            normal_map = normal_map.cpu().detach().numpy() * 255
+                            anomal_map = anomaly_map.cpu().detach().numpy() * 255
+                            normal_pil = Image.fromarray(normal_map.astype(np.uint8)).resize((org_h, org_w))
+                            normal_pil.save(os.path.join(save_base_folder, f'{name}_n_score.png'))
+                            anomal_pil = Image.fromarray(anomal_map.astype(np.uint8)).resize((org_h, org_w))
+                            anomal_pil.save(os.path.join(save_base_folder, f'{name}_anomaly_score.png'))
+                            anomal_pil.save(os.path.join(answer_anomal_folder, f'{name}.tiff'))
+                            # --------------------------------------------------------------------------------------- #
+                            Image.open(gt_img_dir).resize((org_h, org_w)).save(os.path.join(save_base_folder, f'{name}_gt.png'))
                             controller.reset()
-                            for layer_name in args.trg_layer_list:
-                                attn_map = attn_dict[layer_name][0]
-                                cls_map = attn_map[:, :, 0].squeeze().mean(dim=0) # [res*res]
-                                trigger_map = attn_map[:, :, 1].squeeze().mean(dim=0)
-                                pix_num = trigger_map.shape[0]
-                                res = int(pix_num ** 0.5)
-
-                                cls_map = cls_map.unsqueeze(0).view(res, res)
-                                cls_map_pil = Image.fromarray((255*cls_map).cpu().detach().numpy().astype(np.uint8)).resize((org_h, org_w))
-                                cls_map_pil.save(os.path.join(save_base_folder, f'{name}_cls_map_{layer_name}.png'))
-
-                                normal_map = torch.where(trigger_map > thred, 1, trigger_map).squeeze()
-                                normal_map = normal_map.unsqueeze(0).view(res, res)
-                                normal_map_pil = Image.fromarray(normal_map.cpu().detach().numpy().astype(np.uint8) * 255).resize((org_h, org_w))
-                                normal_map_pil.save(os.path.join(save_base_folder, f'{name}_normal_score_map_{layer_name}.png'))
-
-                                anomal_np = ((1 - normal_map) * 255).cpu().detach().numpy().astype(np.uint8)
-                                anomaly_map_pil = Image.fromarray(anomal_np).resize((org_h, org_w))
-                                anomaly_map_pil.save(os.path.join(save_base_folder, f'{name}_anomaly_score_map_{layer_name}.png'))
-                                anomaly_map_pil.save(os.path.join(answer_anomal_folder, f'{name}.tiff'))
-
-                            gt_img_save_dir = os.path.join(save_base_folder, f'{name}_gt.png')
-                            Image.open(gt_img_dir).resize((org_h, org_w)).save(gt_img_save_dir)
-
+                            normal_activator.reset()
         for k in raw_state_dict_orig.keys():
             raw_state_dict[k] = raw_state_dict_orig[k]
         network.load_state_dict(raw_state_dict)
@@ -173,7 +178,7 @@ if __name__ == '__main__':
     parser.add_argument("--prompt", type=str, default="bagel", )
     parser.add_argument("--guidance_scale", type=float, default=8.5)
     parser.add_argument("--latent_res", type=int, default=64)
-    parser.add_argument("--truncating", action='store_true')
+    parser.add_argument("--single_layer", action='store_true')
     # step 8. test
     import ast
     def arg_as_list(arg):
