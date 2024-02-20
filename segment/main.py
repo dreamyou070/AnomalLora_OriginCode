@@ -52,23 +52,26 @@ def main(args):
                 # [1] setting the image
                 predictor.set_image(np_img)
 
+                # [2]
                 h, w, c = np_img.shape
-                for h_index in range(h):
-                    for w_index in range(w):
-                        value = np_img[h_index, w_index, :].sum()
-                        if value > 100:
-                            break
+                input_box = np.array([int(h/10), int(9*h/10),
+                                      int(w/10), int(9*w/10)])
 
-                input_point = np.array([[h_index, w_index]])
+                # [3]
+                input_point = np.array([[int(h/2),int(w/2)]])
+
+                # [3]
+                input_label = np.array([0])
+
                 # point_labels (np.ndarray or None): A length N array of labels for the
                 #             point prompts. 1 indicates a foreground point and 0 indicates a
                 #             background point.
-                input_label = np.array([1])
-
-                masks, scores, logits = predictor.predict(point_coords=input_point,
-                                                          point_labels=input_label,
-                                                          multimask_output=True)
-                for i, (mask, score) in enumerate(zip(masks, scores)):
+                masks, _, _ = predictor.predict(
+                    point_coords=input_point,
+                    point_labels=input_label,
+                    box=input_box,
+                    multimask_output=True,)
+                for i, mask in enumerate(masks):
                     if i == 0:
                         save_dir = os.path.join(train_object_mask_dir_1, image)
                     elif i == 1:
