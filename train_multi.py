@@ -143,8 +143,8 @@ def main(args):
                 controller.reset()
                 for trg_layer in args.trg_layer_list:
                     print(f'try layer : {trg_layer}')
-                    print(f'batch shaped query : {query.shape}, key : {key.shape}')
                     query = b_query_dict[trg_layer][0].squeeze(0)
+                    print(f'batch shaped query : {query.shape}, key : {key.shape}')
                     key = b_key_dict[trg_layer][0].squeeze(0)
                     normal_activator.collect_qk_features(query, key)
                 if args.do_normal_sample:
