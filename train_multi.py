@@ -116,16 +116,12 @@ def main(args):
                 query_dict, attn_dict = controller.query_dict, controller.step_store
                 controller.reset()
                 for trg_layer in args.trg_layer_list:
-                    query = query_dict[trg_layer][0].squeeze(0)  # pix_num, dim
-                    normal_activator.resize_query_features(query)
-                    attn_score = attn_dict[trg_layer][0]  # head, pix_num, 2
-                    normal_activator.resize_attn_scores(attn_score)
+                    normal_activator.resize_query_features(query_dict[trg_layer][0].squeeze(0))
+                    normal_activator.resize_attn_scores(attn_dict[trg_layer][0])
                 c_query = normal_activator.generate_conjugated()
                 normal_activator.collect_queries(c_query, anomal_position_vector, do_collect_normal = True)
-                # [2]
                 c_attn_score = normal_activator.generate_conjugated_attn_score()
                 normal_activator.collect_attention_scores(c_attn_score, anomal_position_vector)
-                # [3]
                 normal_activator.collect_anomal_map_loss(c_attn_score, anomal_position_vector)
             # --------------------------------------------------------------------------------------------------------- #
             if args.do_anomal_sample:
@@ -164,9 +160,11 @@ def main(args):
                     attn_score = attn_dict[trg_layer][0]  # head, pix_num, 2
                     normal_activator.resize_attn_scores(attn_score)
                 c_query = normal_activator.generate_conjugated()
-                normal_activator.collect_queries(c_query, anomal_position_vector)
+                normal_activator.collect_queries(c_query, anomal_position_vector, do_collect_normal=True)
+                # [2]
                 c_attn_score = normal_activator.generate_conjugated_attn_score()
                 normal_activator.collect_attention_scores(c_attn_score, anomal_position_vector)
+                # [3]
                 normal_activator.collect_anomal_map_loss(c_attn_score, anomal_position_vector)
             # ----------------------------------------------------------------------------------------------------------
             # [5] backprop

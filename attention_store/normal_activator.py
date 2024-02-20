@@ -191,7 +191,6 @@ class NormalActivator(nn.Module):
         query_map = query.view(head_num, res, res, dim).permute(0, 3, 1, 2).contiguous()
         resized_query_map = nn.functional.interpolate(query_map, size=(64, 64), mode='bilinear')
         resized_query = resized_query_map.permute(0, 2, 3, 1).contiguous().view(head_num, -1, dim).squeeze()
-        print(f'resized_query.shape (64*64, dim) : {resized_query.shape}')
         self.resized_queries.append(resized_query) # len = 3
 
     def resize_attn_scores(self, attn_score) :
@@ -205,10 +204,12 @@ class NormalActivator(nn.Module):
 
     def generate_conjugated(self,):
         concat_query = torch.cat(self.resized_queries, dim=-1).squeeze()     # 4096, 1960 ***
+        self.resized_queries = []
         return concat_query
 
     def generate_conjugated_attn_score(self,):
         concat_attn_score = torch.cat(self.resized_attn_scores, dim=2)     # 8, 4096, sen_len ***
+        self.resized_attn_scores = []
         return concat_attn_score[:,:,:2]
 
 
