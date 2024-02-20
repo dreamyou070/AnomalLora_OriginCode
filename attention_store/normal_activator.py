@@ -184,14 +184,10 @@ class NormalActivator(nn.Module):
 
     def collect_qk_features(self, query, key) :
 
-        def reshape_batch_dim_to_heads(tensor, head_size=8):
+        def reshape_batch_dim_to_heads(tensor):
             batch_size, seq_len, dim = tensor.shape
+            head_size = 8
             tensor = tensor.reshape(batch_size // head_size, head_size, seq_len, dim)
-
-            b_size, pix_num, dim = resized_query.shape
-            resized_query.reshape(b_size // head_size, head_size, pix_num, dim)
-            return tensor.permute(0, 2, 1, 3).reshape(b_size // head_size, pix_num, dim * head_size)
-
             tensor = tensor.permute(0, 2, 1, 3).reshape(batch_size // head_size, seq_len, dim * head_size)
             return tensor
 
