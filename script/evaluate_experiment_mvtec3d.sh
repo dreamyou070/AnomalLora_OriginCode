@@ -3,13 +3,14 @@
 class_name="carrot"
 bench_mark="MVTec3D-AD"
 dataset_dir="../../../MyData/anomaly_detection/${bench_mark}"
-sub_folder="1_5_anormal_sample_background_masked_sample_attn_loss_map_loss_only_zero_timestep"
+sub_folder="sub_3_background_masked_sample_anomal_sample"
+folder="attn_loss_map_loss"
 
 output_dir="metrics"
 
 
 python ../evaluation/evaluation_code_MVTec3D-AD/evaluate_experiment.py \
-     --base_dir "../../result/${bench_mark}/${class_name}/${sub_folder}/reconstruction" \
+     --base_dir "../../result/${bench_mark}/${class_name}/${sub_folder}/${folder}/reconstruction" \
      --dataset_base_dir "${dataset_dir}" \
      --anomaly_maps_dir "${base_dir}" \
      --output_dir "${output_dir}" \
