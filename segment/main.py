@@ -59,7 +59,6 @@ def main(args):
 
                 # [3]
                 input_point = np.array([[int(h/2),int(w/2)]])
-
                 # [3]
                 input_label = np.array([0])
 
