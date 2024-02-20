@@ -17,6 +17,7 @@ from model.pe import PositionalEmbedding
 from safetensors.torch import load_file
 from attention_store.normal_activator import NormalActivator
 from attention_store.normal_activator import passing_normalize_argument
+
 def main(args):
 
     print(f'\n step 1. accelerator')
@@ -170,7 +171,6 @@ if __name__ == '__main__':
     # step 4. dataset and dataloader
     parser.add_argument("--mixed_precision", type=str, default="no", choices=["no", "fp16", "bf16"], )
     parser.add_argument("--save_precision", type=str, default=None, choices=[None, "float", "fp16", "bf16"], )
-    parser.add_argument("--gradient_accumulation_steps", type=int, default=1, )
     parser.add_argument('--data_path', type=str,
                         default=r'../../../MyData/anomaly_detection/MVTec3D-AD')
     parser.add_argument('--obj_name', type=str, default='bagel')
@@ -194,7 +194,6 @@ if __name__ == '__main__':
     parser.add_argument("--do_normalized_score", action='store_true')
     parser.add_argument("--d_dim", default=320, type=int)
     parser.add_argument("--thred", default=0.5, type=float)
-    parser.add_argument("--image_classification_layer", type=str)
     parser.add_argument("--use_focal_loss", action='store_true')
     args = parser.parse_args()
     passing_argument(args)
