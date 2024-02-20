@@ -125,7 +125,8 @@ def main(args):
                     normal_activator.collect_qk_features(query, key, anomal_position_vector, do_collect_normal=True)
                 attn_score = normal_activator.generate_conjugated_attention(anomal_position_vector=anomal_position_vector,
                                                                             do_normal_activating=True)
-                normal_activator.collect_anomal_map_loss(attn_score, anomal_position_vector)
+                normal_activator.collect_anomal_map_loss(attn_score, # 8, 4096, 2
+                                                         anomal_position_vector)
             # --------------------------------------------------------------------------------------------------------- #
             if args.do_anomal_sample:
                 with torch.no_grad():

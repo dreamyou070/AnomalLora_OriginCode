@@ -57,7 +57,7 @@ class NormalActivator(nn.Module):
             return score
 
         # [1] preprocessing
-        cls_score, trigger_score = attn_score.chunk(2, dim=-1)
+        cls_score, trigger_score = attn_score.chunk(2, dim=-1)                       # 8, 4096,
         cls_score, trigger_score = cls_score.squeeze(), trigger_score.squeeze()      # head, pix_num
 
         if self.do_normalized_score :
@@ -199,9 +199,10 @@ class NormalActivator(nn.Module):
         concat_query = torch.cat(self.resized_queries, dim=2)  # 8, 4096, 960
         concat_key = torch.cat(self.keys, dim=2)  # 8, 77, 960
         attn_score = torch.bmm(concat_query, concat_key.permute(0, 2, 1))  # 8, 4096, 77
+        attention_probs = attn_score.softmax(dim=-1)
+        attn_score = attention_probs[:, :, :2] # 8, 4096, 2
         self.resized_queries = []
         self.keys = []
-
         self.collect_attention_scores(attn_score,
                                       anomal_position_vector,
                                       do_normal_activating = do_normal_activating)
