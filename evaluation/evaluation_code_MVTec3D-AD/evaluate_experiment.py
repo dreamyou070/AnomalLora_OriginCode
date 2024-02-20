@@ -40,7 +40,7 @@ def parse_user_arguments():
                                 images of the MVTec 3D-AD dataset.""")
 
     parser.add_argument('--output_dir',
-                        help="""Path to the directory to store evaluation
+                        heflp="""Path to the directory to store evaluation
                                 results. If no output directory is specified,
                                 the results are not written to drive.""")
 
