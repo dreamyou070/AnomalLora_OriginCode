@@ -2,8 +2,8 @@
 
 bench_mark="MVTec3D-AD"
 class_name="carrot"
-second_folder_name="sub_4_anomal_sample"
-folder="dist_loss_attn_loss_map_loss"
+second_folder_name="sub_5_normal_sample_anomal_sample"
+folder="attn_loss_normalized_score_map_loss"
 
 
 
