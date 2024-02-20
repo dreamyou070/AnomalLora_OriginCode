@@ -3,7 +3,7 @@
 port_number=53101
 obj_name='carrot'
 caption='carrot'
-sub_folder="sub_6_normal_sample_anormal_sample_background_masked_sample"
+sub_folder="sub_5_normal_sample_anomal_sample"
 folder_name="attn_loss_normalized_score_map_loss"
 bench_mark="MVTec3D-AD"
 position_embedding_layer="down_blocks_0_attentions_0_transformer_blocks_0_attn1"
