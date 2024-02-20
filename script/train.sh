@@ -26,4 +26,4 @@ accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_5_config \
  --start_epoch 0 --max_train_epochs 30 \
  --do_anomal_sample --do_background_masked_sample \
  --do_attn_loss --do_normalized_score \
- --map_loss
+ --do_map_loss
