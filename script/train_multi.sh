@@ -1,9 +1,9 @@
 # !/bin/bash
 
-port_number=50005
+port_number=50004
 
-obj_name='dowel'
-trigger_word='dowel'
+obj_name='cookie'
+trigger_word='cookie'
 bench_mark='MVTec3D-AD'
 save_folder_name="sub_3_background_masked_sample_anomal_sample_multi_code"
 folder="attn_loss_normalized_score_map_loss"
