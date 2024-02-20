@@ -8,4 +8,4 @@ bench_mark="MVTec3D-AD"
 python ../evaluation/get_all_metrics.py \
   --class_name ${class_name} \
   --second_folder_name ${second_folder_name} \
-  --base_save_dir f"../../result/${bench_mark}/${class_name}/${second_folder_name}"
+  --base_save_dir "../../result/${bench_mark}/${class_name}/${second_folder_name}"
