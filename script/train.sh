@@ -5,7 +5,7 @@ pretrained_model_name_or_path="../../../pretrained_stable_diffusion/stable-diffu
 obj_name='cookie'
 trigger_word='cookie'
 bench_mark='MVTec3D-AD'
-sub_folder="sub_3_background_masked_sample_anomal_sampl"
+sub_folder="sub_3_background_masked_sample_anomal_sample"
 folder_name="attn_loss_normalized_score_map_loss_train_code"
 output_dir="../../result/${bench_mark}/${obj_name}/${sub_folder}/${folder_name}"
 
