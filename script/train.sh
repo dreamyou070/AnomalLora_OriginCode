@@ -6,7 +6,7 @@ obj_name='cookie'
 trigger_word='cookie'
 bench_mark='MVTec3D-AD'
 sub_folder="sub_3_background_masked_sample_anomal_sample"
-folder_name="attn_loss_normalized_score_map_loss_train_code"
+folder_name="attn_loss_normalized_score_map_loss_train_code_without_normalized"
 output_dir="../../result/${bench_mark}/${obj_name}/${sub_folder}/${folder_name}"
 
 
@@ -25,5 +25,5 @@ accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_5_config \
  --trg_layer_list "['up_blocks_3_attentions_2_transformer_blocks_0_attn2',]" \
  --start_epoch 0 --max_train_epochs 30 \
  --do_anomal_sample --do_background_masked_sample \
- --do_attn_loss --do_normalized_score \
+ --do_attn_loss \
  --do_map_loss
