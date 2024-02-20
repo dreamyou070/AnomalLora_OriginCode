@@ -134,7 +134,7 @@ class NormalActivator(nn.Module):
 
         print('fin generate mahalanobis distance loss function' )
         for f in self.normal_feat_list:
-            print(f'feat : {f.shape}}')
+            print(f'feat : {f.shape}')
 
         normal_feats = torch.cat(self.normal_feat_list, dim=0)
         mu = torch.mean(normal_feats, dim=0)
