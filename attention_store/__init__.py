@@ -21,7 +21,9 @@ class AttentionStore :
         self.normal_score_list = []
         self.map_dict = {}
         self.query_dict_sub = {}
-        self.classification_map_dict = {}
+        self.batchshaped_query_dict = {}
+        self.batchshaped_key_dict = {}
+
     def get_empty_store(self):
         return {}
 
@@ -39,12 +41,16 @@ class AttentionStore :
         else:
             self.map_dict[layer_name].append(map)
 
-    def save_key(self, key, layer_name):
-        if layer_name not in self.key_dict.keys():
-            self.key_dict[layer_name] = []
-            self.key_dict[layer_name].append(key)
+    def save_batshaped_qk(self, query, key, layer_name):
+        if layer_name not in self.batchshaped_query_dict.keys():
+            self.batchshaped_query_dict[layer_name] = []
+            self.batchshaped_query_dict[layer_name].append(query)
+            self.batchshaped_key_dict[layer_name] = []
+            self.batchshaped_key_dict[layer_name].append(key)
         else:
-            self.key_dict[layer_name].append(key)
+            self.batchshaped_query_dict[layer_name].append(query)
+            self.batchshaped_key_dict[layer_name].append(key)
+
 
     def store_classifocation_map(self, map, layer_name):
         if layer_name not in self.classification_map_dict.keys():
@@ -125,4 +131,5 @@ class AttentionStore :
         self.normal_score_list = []
         self.map_dict = {}
         self.query_dict_sub = {}
-        self.classification_map_dict = {}
+        self.batchshaped_query_dict = {}
+        self.batchshaped_key_dict = {}

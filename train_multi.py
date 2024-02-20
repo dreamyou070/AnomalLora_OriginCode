@@ -1,12 +1,11 @@
 import argparse, math, random, json
 from tqdm import tqdm
 from accelerate.utils import set_seed
-from diffusers import DDPMScheduler
 import torch
 import os
 from attention_store import AttentionStore
 from attention_store.normal_activator import NormalActivator
-from model.diffusion_model import load_target_model, transform_models_if_DDP
+from model.diffusion_model import transform_models_if_DDP
 from model.unet import unet_passing_argument
 from utils import get_epoch_ckpt_name, save_model, prepare_dtype, arg_as_list
 from utils.attention_control import passing_argument, register_attention_control
@@ -17,6 +16,7 @@ from utils.model_utils import pe_model_save
 from utils.utils_loss import FocalLoss
 from data.prepare_dataset import call_dataset
 from model import call_model_package
+
 
 def main(args):
 
@@ -44,19 +44,12 @@ def main(args):
 
     print(f'\n step 4. model ')
     weight_dtype, save_dtype = prepare_dtype(args)
-    T_text_encoder, T_vae, T_unet, T_network, T_position_embedder = call_model_package(args, weight_dtype, accelerator)
-    S_text_encoder, S_vae, S_unet, S_network, S_position_embedder = call_model_package(args, weight_dtype, accelerator)
+    text_encoder, vae, unet, network, position_embedder = call_model_package(args, weight_dtype, accelerator)
 
     print(f'\n step 5. optimizer')
-    except_names = ['lora_unet_up_blocks_3_attentions_2_transformer_blocks_0_attn2_to_k',
-                    'lora_unet_up_blocks_3_attentions_2_transformer_blocks_0_attn2_to_v']
-    params = []
-    for unet_lora in S_network.unet_loras:
-        lora_name = unet_lora.lora_name
-        if lora_name not in except_names:
-            params.extend(unet_lora.parameters())
-    trainable_params = [{"params": params, "lr": args.unet_lr},
-                        {"params": S_position_embedder.parameters(), "lr": args.learning_rate}]
+    args.max_train_steps = len(train_dataloader) * args.max_train_epochs
+    trainable_params = network.prepare_optimizer_params(args.text_encoder_lr, args.unet_lr, args.learning_rate)
+    trainable_params.append({"params": position_embedder.parameters(), "lr": args.learning_rate})
     optimizer_name, optimizer_args, optimizer = get_optimizer(args, trainable_params)
 
     print(f'\n step 6. lr')
@@ -68,55 +61,39 @@ def main(args):
     normal_activator = NormalActivator(loss_focal, loss_l2, args.use_focal_loss)
 
     print(f'\n step 8. model to device')
-    S_unet, S_text_encoder, S_network, optimizer, train_dataloader, lr_scheduler, S_position_embedder = accelerator.prepare(
-        S_unet, S_text_encoder, S_network, optimizer, train_dataloader, lr_scheduler, S_position_embedder)
-    S_text_encoders = transform_models_if_DDP([S_text_encoder])
-    S_unet, S_network = transform_models_if_DDP([S_unet, S_network])
+    unet, text_encoder, network, optimizer, train_dataloader, lr_scheduler, position_embedder = accelerator.prepare(
+        unet, text_encoder, network, optimizer, train_dataloader, lr_scheduler, position_embedder)
+    text_encoders = transform_models_if_DDP([text_encoder])
+    unet, network = transform_models_if_DDP([unet, network])
     if args.gradient_checkpointing:
-        S_unet.train()
-        S_position_embedder.train()
-        for t_enc in S_text_encoders:
+        unet.train()
+        position_embedder.train()
+        for t_enc in text_encoders:
             t_enc.train()
             if args.train_text_encoder:
                 t_enc.text_model.embeddings.requires_grad_(True)
         if not args.train_text_encoder:  # train U-Net only
-            S_unet.parameters().__next__().requires_grad_(True)
+            unet.parameters().__next__().requires_grad_(True)
     else:
-        S_unet.eval()
-        for t_enc in S_text_encoders:
+        unet.eval()
+        for t_enc in text_encoders:
             t_enc.eval()
     del t_enc
-    S_network.prepare_grad_etc(S_text_encoder, S_unet)
-    S_vae.to(accelerator.device, dtype=weight_dtype)
-    T_unet.to(accelerator.device, dtype=weight_dtype)
-    T_network.to(accelerator.device, dtype=weight_dtype)
-    T_position_embedder.to(accelerator.device, dtype=weight_dtype)
-    del T_vae, T_text_encoder
+    network.prepare_grad_etc(text_encoder, unet)
+    vae.to(accelerator.device, dtype=weight_dtype)
 
-    print(f'\n step 8. Training !')
-    if args.max_train_epochs is not None:
-        args.max_train_steps = args.max_train_epochs * math.ceil(
-            len(train_dataloader) / accelerator.num_processes / args.gradient_accumulation_steps)
-        accelerator.print(f"override steps. steps for {args.max_train_epochs} epochs / {args.max_train_steps}")
-    max_train_steps = len(train_dataloader) * args.max_train_epochs
-    progress_bar = tqdm(range(max_train_steps),
-                        smoothing=0,
+    print(f'\n step 9. Training !')
+    progress_bar = tqdm(range(args.max_train_steps), smoothing=0,
                         disable=not accelerator.is_local_main_process, desc="steps")
     global_step = 0
-    noise_scheduler = DDPMScheduler(beta_start=0.00085, beta_end=0.012, beta_schedule="scaled_linear",
-                                    num_train_timesteps=1000, clip_sample=False)
-    prepare_scheduler_for_custom_training(noise_scheduler, accelerator.device)
     loss_list = []
-
-    S_controller = AttentionStore()
-    register_attention_control(S_unet, S_controller)
-    T_controller = AttentionStore()
-    register_attention_control(T_unet, T_controller)
-
+    controller = AttentionStore()
+    register_attention_control(unet, controller)
     if is_main_process:
         logging_info = f"'step', 'normal dist mean', 'normal dist max'"
         with open(logging_file, 'a') as f:
             f.write(logging_info + '\n')
+
 
     for epoch in range(args.start_epoch, args.max_train_epochs):
         epoch_loss_total = 0
@@ -125,75 +102,109 @@ def main(args):
         for step, batch in enumerate(train_dataloader):
 
             device = accelerator.device
-
             loss = torch.tensor(0.0, dtype=weight_dtype, device=accelerator.device)
             loss_dict = {}
-
             with torch.set_grad_enabled(True):
-                encoder_hidden_states = S_text_encoder(batch["input_ids"].to(device))["last_hidden_state"]
+                encoder_hidden_states = text_encoder(batch["input_ids"].to(device))["last_hidden_state"]
 
             # --------------------------------------------------------------------------------------------------------- #
             # [1] normal sample
             if args.do_normal_sample:
                 with torch.no_grad():
-                    latents = S_vae.encode(batch["image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
-                noise, noisy_latents, timesteps = get_noise_noisy_latents_and_timesteps(args, noise_scheduler, latents)
+                    latents = vae.encode(
+                        batch["image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
                 object_position = batch['object_mask'].squeeze().flatten()
+                anomal_position_vector = torch.zeros_like(object_position)
                 with torch.set_grad_enabled(True):
-                    S_unet(noisy_latents, timesteps, encoder_hidden_states, trg_layer_list=args.trg_layer_list, noise_type=S_position_embedder)
-                with torch.no_grad():
-                    T_unet(latents, timesteps, encoder_hidden_states, trg_layer_list=args.trg_layer_list, noise_type=T_position_embedder)
-                S_query_dict, S_attn_dict = S_controller.query_dict, S_controller.step_store
-                T_query_dict, T_attn_dict = T_controller.query_dict, T_controller.step_store
-                S_controller.reset()
-                T_controller.reset()
+                    unet(latents, 0, encoder_hidden_states, trg_layer_list=args.trg_layer_list, noise_type=position_embedder)
+                b_query_dict, b_key_dict = controller.batchshaped_query_dict, controller.batchshaped_key_dict
+                controller.reset()
                 for trg_layer in args.trg_layer_list:
-                    S_query = S_query_dict[trg_layer][0].squeeze(0)  # pix_num, dim
-                    T_query = T_query_dict[trg_layer][0].squeeze(0)  # pix_num, dim
-                    anomal_position_vector = 1 - object_position
-                    normal_activator.matching_TS_query(T_query, S_query, anomal_position_vector)
+                    query = b_query_dict[trg_layer][0].squeeze(0) # head, pix_num, dim
+                    key = b_key_dict[trg_layer][0].squeeze(0)
+                    normal_activator.collect_qk_features(query, key, anomal_position_vector, do_collect_normal=True)
+                attn_score = normal_activator.generate_conjugated_attention(anomal_position_vector=anomal_position_vector,
+                                                                            do_normal_activating=True)
+                normal_activator.collect_anomal_map_loss(attn_score, anomal_position_vector)
+            # --------------------------------------------------------------------------------------------------------- #
+            if args.do_anomal_sample:
+                with torch.no_grad():
+                    latents = vae.encode(
+                        batch["anomal_image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
+                anomal_position_vector = batch["anomal_mask"].squeeze().flatten()
+                with torch.set_grad_enabled(True):
+                    unet(latents, 0, encoder_hidden_states, trg_layer_list=args.trg_layer_list, noise_type=position_embedder)
+                b_query_dict, b_key_dict = controller.batchshaped_query_dict, controller.batchshaped_key_dict
+                controller.reset()
+                for trg_layer in args.trg_layer_list:
+                    query = b_query_dict[trg_layer][0].squeeze(0)
+                    key = b_key_dict[trg_layer][0].squeeze(0)
+                    if args.do_normal_sample:
+                        normal_activator.collect_qk_features(query, key, anomal_position_vector, do_collect_anomal=False)
+                    else:
+                        normal_activator.collect_qk_features(query, key, anomal_position_vector, do_collect_normal=True)
+                if args.do_normal_sample:
+                    attn_score = normal_activator.generate_conjugated_attention(anomal_position_vector=anomal_position_vector,
+                                                                                do_normal_activating=False)
+                else:
+                    attn_score = normal_activator.generate_conjugated_attention(anomal_position_vector=anomal_position_vector,
+                                                                                do_normal_activating=True)
+                normal_activator.collect_anomal_map_loss(attn_score, anomal_position_vector)
 
             # --------------------------------------------------------------------------------------------------------- #
-            if args.do_anomal_sample :
+            if args.do_background_masked_sample:
                 with torch.no_grad():
-                    latents = S_vae.encode(batch["anomal_image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
-                noise, noisy_latents, timesteps = get_noise_noisy_latents_and_timesteps(args, noise_scheduler, latents)
+                    latents = vae.encode(
+                        batch["bg_anomal_image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
+                anomal_position_vector = batch["bg_anomal_mask"].squeeze().flatten()
                 with torch.set_grad_enabled(True):
-                    S_unet(noisy_latents, timesteps, encoder_hidden_states, trg_layer_list=args.trg_layer_list, noise_type=S_position_embedder)
-                S_query_dict, S_attn_dict = S_controller.query_dict, S_controller.step_store
-                S_controller.reset()
+                    unet(latents, 0, encoder_hidden_states, trg_layer_list=args.trg_layer_list,
+                         noise_type=position_embedder)
+                b_query_dict, b_key_dict = controller.batchshaped_query_dict, controller.batchshaped_key_dict
+                controller.reset()
                 for trg_layer in args.trg_layer_list:
-                    anomal_position_vector = batch["anomal_mask"].squeeze().flatten()
-                    S_attn_score = S_attn_dict[trg_layer][0]  # head, pix_num, 2
-                    normal_activator.collect_attention_scores(S_attn_score, anomal_position_vector, do_normal_activating = False)
+                    query = b_query_dict[trg_layer][0].squeeze(0)
+                    key = b_key_dict[trg_layer][0].squeeze(0)
+                    if args.do_normal_sample:
+                        normal_activator.collect_qk_features(query, key, anomal_position_vector,
+                                                             do_collect_anomal=False)
+                    else:
+                        normal_activator.collect_qk_features(query, key, anomal_position_vector, do_collect_normal=True)
+                if args.do_normal_sample:
+                    attn_score = normal_activator.generate_conjugated_attention(anomal_position_vector=anomal_position_vector,
+                                                                                do_normal_activating=False)
+                else:
+                    attn_score = normal_activator.generate_conjugated_attention(anomal_position_vector=anomal_position_vector,
+                                                                                do_normal_activating=True)
+                normal_activator.collect_anomal_map_loss(attn_score, anomal_position_vector)
 
-            if args.do_background_masked_sample :
-                with torch.no_grad():
-                    latents = S_vae.encode(batch["bg_anomal_image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
-                noise, noisy_latents, timesteps = get_noise_noisy_latents_and_timesteps(args, noise_scheduler, latents)
-                with torch.set_grad_enabled(True):
-                    S_unet(noisy_latents, timesteps, encoder_hidden_states, trg_layer_list=args.trg_layer_list, noise_type=S_position_embedder)
-                S_query_dict, S_attn_dict = S_controller.query_dict, S_controller.step_store
-                S_controller.reset()
-                for trg_layer in args.trg_layer_list:
-                    anomal_position_vector = batch["bg_anomal_mask"].squeeze().flatten()
-                    S_attn_score = S_attn_dict[trg_layer][0]  # head, pix_num, 2
-                    normal_activator.collect_attention_scores(S_attn_score, anomal_position_vector, do_normal_activating = False)
 
             # ----------------------------------------------------------------------------------------------------------
-            # [5] backprop (1) matching loss
-            normal_matching_query_loss = normal_activator.normal_matching_query_loss[0]
-            normal_activator.normal_matching_query_loss = []
-            loss += normal_matching_query_loss.mean()
-            loss_dict['normal matching query loss'] = normal_matching_query_loss.mean().item()
-            # [5.2] backprop (2) attention loss
+            # [5] backprop (1) distance loss
+            dist_loss, normal_dist_mean, normal_dist_max = normal_activator.generate_mahalanobis_distance_loss()
+            if args.do_dist_loss:
+                loss += dist_loss
+                loss_dict['dist_loss'] = dist_loss.item()
+            # [5] backprop (2) attn loss
             if args.do_attn_loss:
-                _, _, anormal_cls_loss, anormal_trigger_loss = normal_activator.generate_attention_loss()
-                attn_loss = args.anormal_weight * anormal_trigger_loss.mean()
+                normal_cls_loss, normal_trigger_loss, anormal_cls_loss, anormal_trigger_loss = normal_activator.generate_attention_loss()
+                if type(anormal_cls_loss) == float :
+                    attn_loss = args.normal_weight * normal_trigger_loss.mean()
+                else:
+                    attn_loss = args.normal_weight * normal_cls_loss.mean() + args.anormal_weight * anormal_cls_loss.mean()
                 if args.do_cls_train:
-                    attn_loss += args.anormal_weight * anormal_cls_loss.mean()
+                    if type(anormal_trigger_loss) == float:
+                        attn_loss = args.normal_weight * normal_cls_loss.mean()
+                    else:
+                        attn_loss += args.normal_weight * normal_cls_loss.mean() + args.anormal_weight * anormal_cls_loss.mean()
                 loss += attn_loss
                 loss_dict['attn_loss'] = attn_loss.item()
+            # [5] backprop (3) map loss
+            if args.do_map_loss:
+                map_loss = normal_activator.generate_anomal_map_loss()
+                loss += map_loss
+                loss_dict['map_loss'] = map_loss.item()
+
             loss = loss.to(weight_dtype)
             current_loss = loss.detach().item()
             if epoch == args.start_epoch:
@@ -212,34 +223,36 @@ def main(args):
                 progress_bar.update(1)
                 global_step += 1
             if is_main_process:
+                logging_info = f'{global_step}, {normal_dist_mean}, {normal_dist_max}'
+                with open(logging_file, 'a') as f:
+                    f.write(logging_info + '\n')
                 progress_bar.set_postfix(**loss_dict)
             normal_activator.reset()
-            S_controller.reset()
-            T_controller.reset()
+            controller.reset()
             if global_step >= args.max_train_steps:
                 break
+        # ----------------------------------------------------------------------------------------------------------- #
         # [6] epoch final
         accelerator.wait_for_everyone()
-        if is_main_process :
+        if is_main_process:
             ckpt_name = get_epoch_ckpt_name(args, "." + args.save_model_as, epoch + 1)
-            save_model(args, ckpt_name, accelerator.unwrap_model(S_network), save_dtype)
-            if S_position_embedder is not None:
+            save_model(args, ckpt_name, accelerator.unwrap_model(network), save_dtype)
+            if position_embedder is not None:
                 position_embedder_base_save_dir = os.path.join(args.output_dir, 'position_embedder')
                 os.makedirs(position_embedder_base_save_dir, exist_ok=True)
                 p_save_dir = os.path.join(position_embedder_base_save_dir,
                                           f'position_embedder_{epoch + 1}.safetensors')
-                pe_model_save(accelerator.unwrap_model(S_position_embedder), save_dtype, p_save_dir)
+                pe_model_save(accelerator.unwrap_model(position_embedder), save_dtype, p_save_dir)
+
     accelerator.end_training()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-
     # step 1. setting
     parser.add_argument('--seed', type=int, default=42)
     parser.add_argument('--output_dir', type=str, default='output')
     # step 2. dataset
     parser.add_argument('--data_path', type=str, default=r'../../../MyData/anomaly_detection/MVTec3D-AD')
-    parser.add_argument('--use_sharpen_aug', action='store_true')
     parser.add_argument('--obj_name', type=str, default='bottle')
     parser.add_argument("--anomal_source_path", type=str)
     parser.add_argument('--batch_size', type=int, default=1)
@@ -249,22 +262,20 @@ if __name__ == "__main__":
     parser.add_argument("--anomal_only_on_object", action='store_true')
     parser.add_argument("--reference_check", action='store_true')
     parser.add_argument("--latent_res", type=int, default=64)
+    parser.add_argument("--use_small_anomal", action='store_true')
+    parser.add_argument("--beta_scale_factor", type=float, default=0.8)
+    parser.add_argument("--bgrm_test", action='store_true')
     # step 3. preparing accelerator
     parser.add_argument("--mixed_precision", type=str, default="no", choices=["no", "fp16", "bf16"], )
     parser.add_argument("--save_precision", type=str, default=None, choices=[None, "float", "fp16", "bf16"], )
     parser.add_argument("--gradient_accumulation_steps", type=int, default=1, )
     parser.add_argument("--log_with", type=str, default=None, choices=["tensorboard", "wandb", "all"], )
     parser.add_argument("--log_prefix", type=str, default=None)
-    parser.add_argument("--full_fp16", action="store_true", help="fp16 training including gradients")
-    parser.add_argument("--full_bf16", action="store_true", help="bf16 training including gradients")
     parser.add_argument("--lowram", action="store_true", )
     parser.add_argument("--no_half_vae", action="store_true",
                         help="do not use fp16/bf16 VAE in mixed precision (use float VAE) / mixed precision", )
-    parser.add_argument("--use_small_anomal", action='store_true')
     parser.add_argument("--position_embedding_layer", type=str)
     parser.add_argument("--d_dim", default=320, type=int)
-    parser.add_argument("--beta_scale_factor", type=float, default=0.8)
-    parser.add_argument("--bgrm_test", action='store_true')
     # step 4. model
     parser.add_argument('--pretrained_model_name_or_path', type=str, default='facebook/diffusion-dalle')
     parser.add_argument("--clip_skip", type=int, default=None,
@@ -275,25 +286,15 @@ if __name__ == "__main__":
     parser.add_argument("--network_weights", type=str, default=None, help="pretrained weights for network")
     parser.add_argument("--network_dim", type=int, default=64, help="network dimensions (depends on each network) ")
     parser.add_argument("--network_alpha", type=float, default=4, help="alpha for LoRA weight scaling, default 1 ", )
-    parser.add_argument("--network_dropout", type=float, default=None,
-                        help="Drops neurons out of training every step", )
-    parser.add_argument("--network_args", type=str, default=None, nargs="*",
-                        help="additional argmuments for network (key=value)")
-    parser.add_argument("--dim_from_weights", action="store_true",
-                        help="automatically determine dim (rank) from network_weights / dim ", )
-    parser.add_argument("--scale_weight_norms", type=float, default=None,
-                        help="Scale the weight of each key pair to help prevent overtraing via exploding gradients. ", )
-    parser.add_argument("--base_weights", type=str, default=None, nargs="*",
-                        help="network weights to merge into the model before training", )
-    parser.add_argument("--base_weights_multiplier", type=float, default=None, nargs="*",
-                        help="multiplier for network weights to merge into the model before training ", )
+    parser.add_argument("--network_dropout", type=float, default=None,)
+    parser.add_argument("--network_args", type=str, default=None, nargs="*",)
+    parser.add_argument("--dim_from_weights", action="store_true",)
     # step 5. optimizer
     parser.add_argument("--optimizer_type", type=str, default="AdamW",
-                        help="AdamW , AdamW8bit, PagedAdamW8bit, PagedAdamW32bit, Lion8bit, PagedLion8bit, Lion, SGDNesterov, "
-                             "SGDNesterov8bit, DAdaptation(DAdaptAdamPreprint), DAdaptAdaGrad, DAdaptAdam, DAdaptAdan, DAdaptAdanIP, "
-                             "DAdaptLion, DAdaptSGD, AdaFactor", )
-    parser.add_argument("--use_8bit_adam", action="store_true",
-                        help="use 8bit AdamW optimizer(requires bitsandbytes)", )
+            help="AdamW , AdamW8bit, PagedAdamW8bit, PagedAdamW32bit, Lion8bit, PagedLion8bit, Lion, SGDNesterov,"
+            "SGDNesterov8bit, DAdaptation(DAdaptAdamPreprint), DAdaptAdaGrad, DAdaptAdam, DAdaptAdan, DAdaptAdanIP,"
+             "DAdaptLion, DAdaptSGD, AdaFactor", )
+    parser.add_argument("--use_8bit_adam", action="store_true", help="use 8bit AdamW optimizer(requires bitsandbytes)",)
     parser.add_argument("--use_lion_optimizer", action="store_true",
                         help="use Lion optimizer (requires lion-pytorch)", )
     parser.add_argument("--max_grad_norm", default=1.0, type=float, help="Max gradient norm, 0 for no clipping")
@@ -316,33 +317,34 @@ if __name__ == "__main__":
     parser.add_argument('--train_unet', action='store_true')
     parser.add_argument('--train_text_encoder', action='store_true')
     # step 8. training
-    parser.add_argument("--output_name", type=str, default=None, help="base name of trained model file ")
     parser.add_argument("--save_model_as", type=str, default="safetensors",
               choices=[None, "ckpt", "pt", "safetensors"], help="format to save the model (default is .safetensors)",)
-    parser.add_argument("--training_comment", type=str, default=None,)
     parser.add_argument("--start_epoch", type=int, default=0)
-    parser.add_argument("--max_train_steps", type=int, default=1600, help="training steps")
     parser.add_argument("--max_train_epochs", type=int, default=None, )
     parser.add_argument("--gradient_checkpointing", action="store_true", help="enable gradient checkpointing")
+    # [1]
+    parser.add_argument("--do_object_detection", action='store_true')
+    parser.add_argument("--do_normal_sample", action='store_true')
     parser.add_argument("--do_anomal_sample", action='store_true')
     parser.add_argument("--do_background_masked_sample", action='store_true')
-
+    # [2]
     parser.add_argument("--do_dist_loss", action='store_true')
     parser.add_argument("--dist_loss_weight", type=float, default=1.0)
-
     parser.add_argument("--do_attn_loss", action='store_true')
     parser.add_argument("--do_cls_train", action='store_true')
     parser.add_argument("--attn_loss_weight", type=float, default=1.0)
     parser.add_argument("--anormal_weight", type=float, default=1.0)
     parser.add_argument('--normal_weight', type=float, default=1.0)
     parser.add_argument("--trg_layer_list", type=arg_as_list, default=[])
-
     parser.add_argument("--do_map_loss", action='store_true')
     parser.add_argument("--use_focal_loss", action='store_true')
-    parser.add_argument("--adv_focal_loss", action='store_true')
-    parser.add_argument("--do_normal_sample", action='store_true')
-    parser.add_argument("--do_object_detection", action='store_true')
+    parser.add_argument("--use_noise_scheduler", action='store_true')
+    parser.add_argument("--do_normalized_score", action='store_true')
+
+    # [3]
     args = parser.parse_args()
     unet_passing_argument(args)
     passing_argument(args)
+    from attention_store.normal_activator import passing_normalize_argument
+    passing_normalize_argument(args)
     main(args)
