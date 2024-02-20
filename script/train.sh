@@ -1,14 +1,14 @@
 # !/bin/bash
 
-port_number=50002
+port_number=50003
 
-obj_name='cable_gland'
-trigger_word='cable'
+obj_name='cookie'
+trigger_word='cookie'
 bench_mark='MVTec3D-AD'
 save_folder_name="sub_3_background_masked_sample_anomal_sample"
 folder="attn_loss_normalized_score_map_loss"
 
-accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_config \
+accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_5_config \
  --main_process_port $port_number ../train.py \
  --log_with wandb \
  --output_dir "../../result/${bench_mark}/${obj_name}/${save_folder_name}/${folder}" \
