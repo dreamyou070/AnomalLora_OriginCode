@@ -53,8 +53,9 @@ class NormalActivator(nn.Module):
 
         def normalize_score(score):
             score = torch.softmax(score, dim=-1)
-            max_value = (torch.max(score, dim=-1)[0]).unsqueeze(-1)
-            normalized_trigger_map = score / max_value
+            """ Code Wrong !! """
+            #max_value = (torch.max(score, dim=-1)[0]).unsqueeze(-1)
+            #normalized_trigger_map = score / max_value
             return score
 
         # [1] preprocessing
@@ -211,8 +212,8 @@ class NormalActivator(nn.Module):
         self.resized_queries = []
         self.keys = []
         self.collect_attention_scores(attn_score,
-                                          anomal_position_vector,
-                                          do_normal_activating = do_normal_activating)
+                                      anomal_position_vector,
+                                      do_normal_activating = do_normal_activating)
         return attn_score
 
 
