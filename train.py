@@ -122,13 +122,10 @@ def main(args):
                 controller.reset()
                 for trg_layer in args.trg_layer_list:
                     # [1] dist
-
-                    query = query_dict[trg_layer][0].squeeze(0)  # pix_num, dim
                     anomal_position_vector = 1 - object_position
-                    attn_score = attn_dict[trg_layer][0]  # head, pix_num, 2
-
-
+                    query = query_dict[trg_layer][0].squeeze(0)  # pix_num, dim
                     normal_activator.collect_queries(query, anomal_position_vector)
+                    attn_score = attn_dict[trg_layer][0]  # head, pix_num, 2
                     normal_activator.collect_attention_scores(attn_score, anomal_position_vector)
                     normal_activator.collect_anomal_map_loss(attn_score, anomal_position_vector)
 

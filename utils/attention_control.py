@@ -49,6 +49,7 @@ def register_attention_control(unet: nn.Module,controller: AttentionStore):
 
     def ca_forward(self, layer_name):
         def forward(hidden_states, context=None, trg_layer_list=None, noise_type=None):
+
             is_cross_attention = False
             if context is not None:
                 is_cross_attention = True
@@ -59,7 +60,7 @@ def register_attention_control(unet: nn.Module,controller: AttentionStore):
 
             query = self.to_q(hidden_states)
             if trg_layer_list is not None and layer_name in trg_layer_list :
-                controller.save_query(query, layer_name)
+                controller.save_query(query, layer_name) # query = batch, seq_len, dim
             context = context if context is not None else hidden_states
             key = self.to_k(context)
             value = self.to_v(context)
@@ -67,9 +68,12 @@ def register_attention_control(unet: nn.Module,controller: AttentionStore):
             key = self.reshape_heads_to_batch_dim(key)
             value = self.reshape_heads_to_batch_dim(value)
 
+            """
             # cashing query, key
             if trg_layer_list is not None and layer_name in trg_layer_list :
                 controller.save_batshaped_qk(query, key, layer_name)
+                controller.save_scale(self.scale, layer_name)
+            """
 
             if self.upcast_attention:
                 query = query.float()
@@ -78,9 +82,8 @@ def register_attention_control(unet: nn.Module,controller: AttentionStore):
             attention_scores = torch.baddbmm(torch.empty(query.shape[0], query.shape[1], key.shape[1],
                                                          dtype=query.dtype, device=query.device), query,
                                              key.transpose(-1, -2), beta=0, alpha=self.scale, )
-            print(f'layer_name : {layer_name}')
-            print(f'alpha scale : {self.scale}')
             attention_probs = attention_scores.softmax(dim=-1).to(value.dtype)
+
             hidden_states = torch.bmm(attention_probs, value)
             hidden_states = self.reshape_batch_dim_to_heads(hidden_states)
             hidden_states = self.to_out[0](hidden_states)

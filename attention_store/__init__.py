@@ -23,6 +23,7 @@ class AttentionStore :
         self.query_dict_sub = {}
         self.batchshaped_query_dict = {}
         self.batchshaped_key_dict = {}
+        self.scale_dict = {}
 
     def get_empty_store(self):
         return {}
@@ -48,6 +49,11 @@ class AttentionStore :
         self.batchshaped_query_dict[layer_name].append(query)
         self.batchshaped_key_dict[layer_name].append(key)
 
+
+    def save_scale(self, scale, layer_name):
+        if layer_name not in self.scale_dict.keys():
+            self.scale_dict[layer_name] = []
+        self.scale_dict[layer_name].append(scale)
 
     def store_classifocation_map(self, map, layer_name):
         if layer_name not in self.classification_map_dict.keys():
@@ -130,3 +136,70 @@ class AttentionStore :
         self.query_dict_sub = {}
         self.batchshaped_query_dict = {}
         self.batchshaped_key_dict = {}
+        self.scale_dict = {}
+
+
+# layer_name : down_blocks_0_attentions_0_transformer_blocks_0_attn1
+# alpha scale : 0.15811388300841897
+# layer_name : down_blocks_0_attentions_0_transformer_blocks_0_attn2
+# alpha scale : 0.15811388300841897
+# layer_name : down_blocks_0_attentions_1_transformer_blocks_0_attn1
+# alpha scale : 0.15811388300841897
+# layer_name : down_blocks_0_attentions_1_transformer_blocks_0_attn2
+# alpha scale : 0.15811388300841897
+# layer_name : down_blocks_1_attentions_0_transformer_blocks_0_attn1
+# alpha scale : 0.11180339887498948
+# layer_name : down_blocks_1_attentions_0_transformer_blocks_0_attn2
+# alpha scale : 0.11180339887498948
+# layer_name : down_blocks_1_attentions_1_transformer_blocks_0_attn1
+# alpha scale : 0.11180339887498948
+# layer_name : down_blocks_1_attentions_1_transformer_blocks_0_attn2
+# alpha scale : 0.11180339887498948
+# layer_name : down_blocks_2_attentions_0_transformer_blocks_0_attn1
+# alpha scale : 0.07905694150420949
+# layer_name : down_blocks_2_attentions_0_transformer_blocks_0_attn2
+# alpha scale : 0.07905694150420949
+# layer_name : down_blocks_2_attentions_1_transformer_blocks_0_attn1
+# alpha scale : 0.07905694150420949
+# layer_name : down_blocks_2_attentions_1_transformer_blocks_0_attn2
+# alpha scale : 0.07905694150420949
+# layer_name : mid_block_attentions_0_transformer_blocks_0_attn1
+# alpha scale : 0.07905694150420949
+# layer_name : mid_block_attentions_0_transformer_blocks_0_attn2
+# alpha scale : 0.07905694150420949
+# layer_name : up_blocks_1_attentions_0_transformer_blocks_0_attn1
+# alpha scale : 0.07905694150420949
+# layer_name : up_blocks_1_attentions_0_transformer_blocks_0_attn2
+# alpha scale : 0.07905694150420949
+# layer_name : up_blocks_1_attentions_1_transformer_blocks_0_attn1
+# alpha scale : 0.07905694150420949
+# layer_name : up_blocks_1_attentions_1_transformer_blocks_0_attn2
+# alpha scale : 0.07905694150420949
+# layer_name : up_blocks_1_attentions_2_transformer_blocks_0_attn1
+# alpha scale : 0.07905694150420949
+# layer_name : up_blocks_1_attentions_2_transformer_blocks_0_attn2
+# alpha scale : 0.07905694150420949
+# layer_name : up_blocks_2_attentions_0_transformer_blocks_0_attn1
+# alpha scale : 0.11180339887498948
+# layer_name : up_blocks_2_attentions_0_transformer_blocks_0_attn2
+# alpha scale : 0.11180339887498948
+# layer_name : up_blocks_2_attentions_1_transformer_blocks_0_attn1
+# alpha scale : 0.11180339887498948
+# layer_name : up_blocks_2_attentions_1_transformer_blocks_0_attn2
+# alpha scale : 0.11180339887498948
+# layer_name : up_blocks_2_attentions_2_transformer_blocks_0_attn1
+# alpha scale : 0.11180339887498948
+# layer_name : up_blocks_2_attentions_2_transformer_blocks_0_attn2
+# alpha scale : 0.11180339887498948
+# layer_name : up_blocks_3_attentions_0_transformer_blocks_0_attn1
+# alpha scale : 0.15811388300841897
+# layer_name : up_blocks_3_attentions_0_transformer_blocks_0_attn2
+# alpha scale : 0.15811388300841897
+# layer_name : up_blocks_3_attentions_1_transformer_blocks_0_attn1
+# alpha scale : 0.15811388300841897
+# layer_name : up_blocks_3_attentions_1_transformer_blocks_0_attn2
+# alpha scale : 0.15811388300841897
+# layer_name : up_blocks_3_attentions_2_transformer_blocks_0_attn1
+# alpha scale : 0.15811388300841897
+# layer_name : up_blocks_3_attentions_2_transformer_blocks_0_attn2
+# alpha scale : 0.15811388300841897

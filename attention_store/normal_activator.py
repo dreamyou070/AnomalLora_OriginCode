@@ -34,7 +34,7 @@ class NormalActivator(nn.Module):
         self.normal_matching_query_loss = []
         self.resized_queries = []
         self.queries = []
-        self.keys = []
+        self.resized_attn_scores = []
 
     def collect_queries(self, origin_query, anomal_position_vector, do_collect_normal = True):
 
@@ -182,37 +182,32 @@ class NormalActivator(nn.Module):
         self.anomal_map_loss = []
         return map_loss
 
-    def collect_qk_features(self, query, key) :
+    def resize_query_features(self, query) :
 
         head_num, pix_num, dim = query.shape
         res = int(pix_num ** 0.5)
         query_map = query.view(head_num, res, res, dim).permute(0, 3, 1, 2).contiguous()
         resized_query_map = nn.functional.interpolate(query_map, size=(64, 64), mode='bilinear')
-        resized_query = resized_query_map.permute(0, 2, 3, 1).contiguous().view(head_num, -1, dim)  # head, 64*64, dim
+        resized_query = resized_query_map.permute(0, 2, 3, 1).contiguous().view(head_num, -1, dim)  # 1, 64*64, dim
         self.resized_queries.append(resized_query) # len = 3
-        self.keys.append(key)
+
+    def resize_attn_scores(self, attn_score) :
+        # attn_score = [head, pix_num, sen_len]
+        head_num, pix_num, sen_len = attn_score.shape
+        res = int(pix_num ** 0.5)
+        attn_map = attn_score.view(head_num, res, res, sen_len).permute(0, 3, 1, 2).contiguous()
+        resized_attn_map = nn.functional.interpolate(attn_map, size=(64, 64), mode='bilinear')
+        resized_attn_score = resized_attn_map.permute(0, 2, 3, 1).contiguous().view(head_num, -1, sen_len)  # 8, 64*64, sen_len
+        self.resized_attn_scores.append(resized_attn_score) # len = 3
 
 
-    def generate_conjugated_attention(self,):
+    def generate_conjugated(self,):
+        concat_query = torch.cat(self.resized_queries, dim=2)     # 1, 4096, 1960 ***
+        return concat_query
 
-        concat_query = torch.cat(self.resized_queries, dim=2)     # 8, 4096, 960 ***
-        def reshape_batch_dim_to_heads(tensor):
-            batch_size, seq_len, dim = tensor.shape
-            head_size = 8
-            tensor = tensor.reshape(batch_size // head_size, head_size, seq_len, dim)
-            tensor = tensor.permute(0, 2, 1, 3).reshape(batch_size // head_size, seq_len, dim * head_size)
-            return tensor
-        self.queries.append(reshape_batch_dim_to_heads(concat_query))
-
-        concat_key = torch.cat(self.keys, dim=2)  # 8, 77, 960
-        attention_scores = torch.baddbmm(torch.empty(concat_query.shape[0], concat_query.shape[1], concat_key.shape[1],
-                                                     dtype=concat_query.dtype, device=concat_query.device),
-                                         concat_query, concat_key.transpose(-1, -2), beta=0)
-        attention_probs = attention_scores.softmax(dim=-1).to(concat_query.dtype)
-        attn_score = attention_probs[:, :, :2]  # 8, 4096, 2
-        self.resized_queries = []
-        self.keys = []
-        return attn_score
+    def generate_conjugated_attn_score(self,):
+        concat_attn_score = torch.cat(self.resized_attn_scores, dim=2)     # 8, 4096, sen_len ***
+        return concat_attn_score[:,:,:2]
 
 
     def reset(self) -> None:
@@ -234,4 +229,4 @@ class NormalActivator(nn.Module):
         self.normal_matching_query_loss = []
         self.resized_queries = []
         self.queries = []
-        self.keys = []
+        self.resized_attn_scores = []
