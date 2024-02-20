@@ -24,6 +24,6 @@ accelerate launch --config_file ../../../gpu_config/gpu_0_config \
  --position_embedding_layer 'down_blocks_0_attentions_0_transformer_blocks_0_attn1' \
  --trg_layer_list "['up_blocks_3_attentions_2_transformer_blocks_0_attn2',]" \
  --start_epoch 0 --max_train_epochs 30 \
- --do_normal_sample \
+ --do_normal_sample --do_anomal_sample \
  --do_attn_loss --do_normalized_score \
  --do_map_loss
