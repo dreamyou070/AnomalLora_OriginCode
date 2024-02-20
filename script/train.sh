@@ -2,10 +2,10 @@
 
 port_number=50002
 pretrained_model_name_or_path="../../../pretrained_stable_diffusion/stable-diffusion-v1-5/v1-5-pruned.safetensors"
-obj_name='cookie'
-trigger_word='cookie'
+obj_name='carrot'
+trigger_word='carrot'
 bench_mark='MVTec3D-AD'
-sub_folder="sub_3_background_masked_sample_anomal_sample"
+sub_folder="sub_3_background_masked_sample_anomal_sample_train_code_check_again"
 folder_name="attn_loss_normalized_score_map_loss_train_code_without_normalized"
 output_dir="../../result/${bench_mark}/${obj_name}/${sub_folder}/${folder_name}"
 
