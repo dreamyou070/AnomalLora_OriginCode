@@ -184,7 +184,8 @@ class NormalActivator(nn.Module):
 
     def resize_query_features(self, query) :
 
-        print(f'in resize query function, query shape : {query.shape}')
+        if query.dim() == 2:
+            query = query.unsqueeze(0)
         head_num, pix_num, dim = query.shape
         res = int(pix_num ** 0.5)
         query_map = query.view(head_num, res, res, dim).permute(0, 3, 1, 2).contiguous()
