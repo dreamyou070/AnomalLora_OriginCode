@@ -195,9 +195,6 @@ class NormalActivator(nn.Module):
         query_map = query.view(head_num, res, res, dim).permute(0, 3, 1, 2).contiguous()
         resized_query_map = nn.functional.interpolate(query_map, size=(64, 64), mode='bilinear')
         resized_query = resized_query_map.permute(0, 2, 3, 1).contiguous().view(head_num, -1, dim)  # head, 64*64, dim
-        print(f'resized query shape (head=8, 64*64, dim) : {resized_query.shape}')
-        print(f'key shape (head=8, 77, dim) : {key.shape}')
-
         self.resized_queries.append(resized_query) # len = 3
         self.keys.append(key)
 
@@ -205,24 +202,20 @@ class NormalActivator(nn.Module):
                                       anomal_position_vector,
                                       do_normal_activating = True):
 
-        concat_query = torch.cat(self.resized_queries, dim=2)  # 8, 4096, 960 ***
-        print(f'concat_query shape (head=8, 4096, high dim) : {concat_query.shape}')
-        if anomal_position_vector is not None:
-            self.collect_queries(concat_query.mean(dim=0),         # 4096, 960
-                                 anomal_position_vector,
-                                 do_collect_normal=do_normal_activating)
-
+        concat_query = torch.cat(self.resized_queries, dim=2)     # 8, 4096, 960 ***
         concat_key = torch.cat(self.keys, dim=2)  # 8, 77, 960
-        attn_score = torch.bmm(concat_query, concat_key.permute(0, 2, 1))  # 8, 4096, 77
-        attention_probs = attn_score.softmax(dim=-1)
-        attn_score = attention_probs[:, :, :2] # 8, 4096, 2
-        print(f'attn_score shape (head=8, 4096, 2) : {attn_score.shape}')
+        attention_scores = torch.baddbmm(torch.empty(concat_query.shape[0], concat_query.shape[1], concat_key.shape[1],
+                                                     dtype=concat_query.dtype, device=concat_query.device),
+                                         concat_query, concat_key.transpose(-1, -2), beta=0)
+        attention_probs = attention_scores.softmax(dim=-1).to(concat_query.dtype)
+        attn_score = attention_probs[:, :, :2]  # 8, 4096, 2
+
         self.resized_queries = []
         self.keys = []
         self.collect_attention_scores(attn_score,
                                       anomal_position_vector,
                                       do_normal_activating = do_normal_activating)
-        return attn_score
+        return attn_score, concat_query, concat_key
 
 
     def reset(self) -> None:

@@ -106,31 +106,24 @@ def main(args):
             loss_dict = {}
             with torch.set_grad_enabled(True):
                 encoder_hidden_states = text_encoder(batch["input_ids"].to(device))["last_hidden_state"]
-
-            # --------------------------------------------------------------------------------------------------------- #
             # [1] normal sample
             if args.do_normal_sample:
                 with torch.no_grad():
                     latents = vae.encode(
                         batch["image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
-                object_position = batch['object_mask'].squeeze().flatten()
-                anomal_position_vector = torch.zeros_like(object_position)
+                anomal_position_vector = torch.zeros_like(batch['object_mask'].squeeze().flatten())
                 with torch.set_grad_enabled(True):
                     unet(latents, 0, encoder_hidden_states, trg_layer_list=args.trg_layer_list, noise_type=position_embedder)
                 b_query_dict, b_key_dict = controller.batchshaped_query_dict, controller.batchshaped_key_dict
                 controller.reset()
                 for trg_layer in args.trg_layer_list:
-
-                    query = b_query_dict[trg_layer][0].squeeze(0) # head, pix_num, dim
+                    query = b_query_dict[trg_layer][0].squeeze(0)    # head, pix_num, dim
                     key = b_key_dict[trg_layer][0].squeeze(0)
-                    normal_activator.collect_qk_features(query, key)
-                # [1] generate attention map
-                attn_score = normal_activator.generate_conjugated_attention(anomal_position_vector=anomal_position_vector,
-                                                                            do_normal_activating=True)
-
-                # [2] map loss
-                normal_activator.collect_anomal_map_loss(attn_score, # 8, 4096, 2
-                                                         anomal_position_vector)
+                    normal_activator.collect_qk_features(query, key) # collector
+                attn_score, c_query, c_key = normal_activator.generate_conjugated_attention(anomal_position_vector=anomal_position_vector,
+                                                                                            do_normal_activating=True)
+                normal_activator.collect_queries(c_query, anomal_position_vector)
+                normal_activator.collect_anomal_map_loss(attn_score, anomal_position_vector)
             # --------------------------------------------------------------------------------------------------------- #
             if args.do_anomal_sample:
                 with torch.no_grad():
@@ -142,19 +135,17 @@ def main(args):
                 b_query_dict, b_key_dict = controller.batchshaped_query_dict, controller.batchshaped_key_dict
                 controller.reset()
                 for trg_layer in args.trg_layer_list:
-                    print(f'try layer : {trg_layer}')
-                    query = b_query_dict[trg_layer][0].squeeze(0)
+                    query = b_query_dict[trg_layer][0].squeeze(0)    # head, pix_num, dim
                     key = b_key_dict[trg_layer][0].squeeze(0)
-                    print(f'batch shaped query : {query.shape}, key : {key.shape}')
-                    normal_activator.collect_qk_features(query, key)
+                    normal_activator.collect_qk_features(query, key) # collector
                 if args.do_normal_sample:
-                    attn_score = normal_activator.generate_conjugated_attention(anomal_position_vector=anomal_position_vector,
-                                                                                do_normal_activating=False)
-                else:
-                    attn_score = normal_activator.generate_conjugated_attention(anomal_position_vector=anomal_position_vector,
-                                                                                do_normal_activating=True)
+                    attn_score, c_query, c_key = normal_activator.generate_conjugated_attention(anomal_position_vector=anomal_position_vector,
+                                                                                            do_normal_activating=False)
+                else :
+                    attn_score, c_query, c_key = normal_activator.generate_conjugated_attention(anomal_position_vector=anomal_position_vector,
+                                                                                            do_normal_activating=True)
+                normal_activator.collect_queries(c_query, anomal_position_vector)
                 normal_activator.collect_anomal_map_loss(attn_score, anomal_position_vector)
-
             # --------------------------------------------------------------------------------------------------------- #
             if args.do_background_masked_sample:
                 with torch.no_grad():
@@ -167,17 +158,19 @@ def main(args):
                 b_query_dict, b_key_dict = controller.batchshaped_query_dict, controller.batchshaped_key_dict
                 controller.reset()
                 for trg_layer in args.trg_layer_list:
-                    query = b_query_dict[trg_layer][0].squeeze(0)
+                    query = b_query_dict[trg_layer][0].squeeze(0)  # head, pix_num, dim
                     key = b_key_dict[trg_layer][0].squeeze(0)
-                    normal_activator.collect_qk_features(query, key)
+                    normal_activator.collect_qk_features(query, key)  # collector
                 if args.do_normal_sample:
-                    attn_score = normal_activator.generate_conjugated_attention(anomal_position_vector=anomal_position_vector,
-                                                                                do_normal_activating=False)
+                    attn_score, c_query, c_key = normal_activator.generate_conjugated_attention(
+                        anomal_position_vector=anomal_position_vector,
+                        do_normal_activating=False)
                 else:
-                    attn_score = normal_activator.generate_conjugated_attention(anomal_position_vector=anomal_position_vector,
-                                                                                do_normal_activating=True)
+                    attn_score, c_query, c_key = normal_activator.generate_conjugated_attention(
+                        anomal_position_vector=anomal_position_vector,
+                        do_normal_activating=True)
+                normal_activator.collect_queries(c_query, anomal_position_vector)
                 normal_activator.collect_anomal_map_loss(attn_score, anomal_position_vector)
-
 
             # ----------------------------------------------------------------------------------------------------------
             # [5] backprop (1) distance loss
