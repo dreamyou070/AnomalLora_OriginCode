@@ -1,7 +1,7 @@
 #! /bin/bash
 
 class_name="carrot"
-second_folder_name="1_5_anormal_sample_background_masked_sample_attn_loss_dist_loss_map_loss_focal_only_zero_timestep_normalized_score"
+second_folder_name="attn_loss_dist_loss_map_loss_focal_only_zero_timestep_normalized_score"
 bench_mark="MVTec3D-AD"
 
 
