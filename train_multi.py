@@ -129,20 +129,17 @@ def main(args):
                     latents = vae.encode(batch["anomal_image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
                 anomal_position_vector = batch["anomal_mask"].squeeze().flatten()
                 with torch.set_grad_enabled(True):
-                    unet(latents, 0, encoder_hidden_states, trg_layer_list=args.trg_layer_list, noise_type=position_embedder)
+                    unet(latents, 0, encoder_hidden_states, trg_layer_list=args.trg_layer_list,
+                         noise_type=position_embedder)
                 query_dict, attn_dict = controller.query_dict, controller.step_store
                 controller.reset()
                 for trg_layer in args.trg_layer_list:
-                    query = query_dict[trg_layer][0].squeeze(0)  # pix_num, dim
-                    normal_activator.resize_query_features(query)
-                    attn_score = attn_dict[trg_layer][0]  # head, pix_num, 2
-                    normal_activator.resize_attn_scores(attn_score)
+                    normal_activator.resize_query_features(query_dict[trg_layer][0].squeeze(0))
+                    normal_activator.resize_attn_scores(attn_dict[trg_layer][0])
                 c_query = normal_activator.generate_conjugated()
                 normal_activator.collect_queries(c_query, anomal_position_vector, do_collect_normal=True)
-                # [2]
                 c_attn_score = normal_activator.generate_conjugated_attn_score()
                 normal_activator.collect_attention_scores(c_attn_score, anomal_position_vector)
-                # [3]
                 normal_activator.collect_anomal_map_loss(c_attn_score, anomal_position_vector)
             # --------------------------------------------------------------------------------------------------------- #
             if args.do_background_masked_sample:
@@ -155,16 +152,12 @@ def main(args):
                 query_dict, attn_dict = controller.query_dict, controller.step_store
                 controller.reset()
                 for trg_layer in args.trg_layer_list:
-                    query = query_dict[trg_layer][0].squeeze(0)  # pix_num, dim
-                    normal_activator.resize_query_features(query)
-                    attn_score = attn_dict[trg_layer][0]  # head, pix_num, 2
-                    normal_activator.resize_attn_scores(attn_score)
+                    normal_activator.resize_query_features(query_dict[trg_layer][0].squeeze(0))
+                    normal_activator.resize_attn_scores(attn_dict[trg_layer][0])
                 c_query = normal_activator.generate_conjugated()
                 normal_activator.collect_queries(c_query, anomal_position_vector, do_collect_normal=True)
-                # [2]
                 c_attn_score = normal_activator.generate_conjugated_attn_score()
                 normal_activator.collect_attention_scores(c_attn_score, anomal_position_vector)
-                # [3]
                 normal_activator.collect_anomal_map_loss(c_attn_score, anomal_position_vector)
             # ----------------------------------------------------------------------------------------------------------
             # [5] backprop
@@ -172,7 +165,6 @@ def main(args):
             if args.do_dist_loss:
                 loss += dist_loss
                 loss_dict['dist_loss'] = dist_loss.item()
-
             if args.do_attn_loss:
                 normal_cls_loss, normal_trigger_loss, anormal_cls_loss, anormal_trigger_loss = normal_activator.generate_attention_loss()
                 if type(anormal_cls_loss) == float:

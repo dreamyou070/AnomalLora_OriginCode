@@ -132,10 +132,6 @@ class NormalActivator(nn.Module):
             m = torch.dot(delta, torch.matmul(cov, delta))
             return torch.sqrt(m)
 
-        print('fin generate mahalanobis distance loss function' )
-        for f in self.normal_feat_list:
-            print(f'feat : {f.shape}')
-
         normal_feats = torch.cat(self.normal_feat_list, dim=0)
         mu = torch.mean(normal_feats, dim=0)
         cov = torch.cov(normal_feats.transpose(0, 1))
@@ -211,7 +207,6 @@ class NormalActivator(nn.Module):
         concat_attn_score = torch.cat(self.resized_attn_scores, dim=2)     # 8, 4096, sen_len ***
         self.resized_attn_scores = []
         return concat_attn_score[:,:,:2]
-
 
     def reset(self) -> None:
 
