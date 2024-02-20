@@ -55,7 +55,6 @@ class NormalActivator(nn.Module):
             """ Code Wrong !! """
             max_value = (torch.max(score, dim=-1)[0]).unsqueeze(-1)
             normalized_trigger_map = score / max_value
-            score = normalized_trigger_map
             return score
 
         # [1] preprocessing
