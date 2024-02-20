@@ -30,7 +30,15 @@ def main(args):
             train_rgb_dir = os.path.join(train_good_dir, 'rgb')
             train_object_mask_dir = os.path.join(train_good_dir, 'object_mask_test')
             os.makedirs(train_object_mask_dir, exist_ok=True)
-            print(f'train_object_mask_dir: {train_object_mask_dir}')
+
+            train_object_mask_dir_1 = os.path.join(train_object_mask_dir, 'predict_1')
+            os.makedirs(train_object_mask_dir_1, exist_ok=True)
+            train_object_mask_dir_2 = os.path.join(train_object_mask_dir, 'predict_2')
+            os.makedirs(train_object_mask_dir_2, exist_ok=True)
+            train_object_mask_dir_3 = os.path.join(train_object_mask_dir, 'predict_3')
+            os.makedirs(train_object_mask_dir_3, exist_ok=True)
+
+
 
             images = os.listdir(train_rgb_dir)
             for image in images:
@@ -45,17 +53,22 @@ def main(args):
                 predictor.set_image(np_img)
 
                 h, w, c = np_img.shape
-                x_start = w / 10
-                x_final = 9 * w / 10
-                y_start = h / 10
-                y_final = 9 * h / 10
-                box = np.array([x_start, x_final,
-                                y_start, y_final])
+                input_point = np.array([[0,0]])
+                # point_labels (np.ndarray or None): A length N array of labels for the
+                #             point prompts. 1 indicates a foreground point and 0 indicates a
+                #             background point.
+                input_label = np.array([1])
 
-
-                masks, scores, logits = predictor.predict(box=box,
-                                                          multimask_output=False)
+                masks, scores, logits = predictor.predict(input_point=input_point,
+                                                          input_label=input_label,
+                                                          multimask_output=True)
                 for i, (mask, score) in enumerate(zip(masks, scores)):
+                    if i == 0:
+                        save_dir = os.path.join(train_object_mask_dir_1, image)
+                    elif i == 1:
+                        save_dir = os.path.join(train_object_mask_dir_2, image)
+                    elif i == 2:
+                        save_dir = os.path.join(train_object_mask_dir_3, image)
                     np_mask = (mask * 1)
                     np_mask = np.where(np_mask == 1, 0, 1) * 255
                     sam_result_pil = Image.fromarray(np_mask.astype(np.uint8))
