@@ -1,9 +1,9 @@
 # !/bin/bash
 
-port_number=50001
+port_number=50002
 
-obj_name='bagel'
-trigger_word='bagel'
+obj_name='cable_gland'
+trigger_word='cable'
 bench_mark='MVTec3D-AD'
 save_folder_name="sub_3_background_masked_sample_anomal_sample"
 folder="attn_loss_normalized_score_map_loss"
