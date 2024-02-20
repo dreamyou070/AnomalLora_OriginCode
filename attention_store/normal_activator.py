@@ -123,7 +123,6 @@ class NormalActivator(nn.Module):
             trg_trigger_score = 1 - anomal_position_vector
             map_loss = self.loss_l2(trigger_score.float(), trg_trigger_score.float())
 
-
         self.anomal_map_loss.append(map_loss)
 
     def generate_mahalanobis_distance_loss(self):
@@ -134,6 +133,7 @@ class NormalActivator(nn.Module):
             return torch.sqrt(m)
 
         normal_feats = torch.cat(self.normal_feat_list, dim=0)
+        print(f'[1] dist loss, normal_feats shape : {normal_feats.shape}')
         mu = torch.mean(normal_feats, dim=0)
         cov = torch.cov(normal_feats.transpose(0, 1))
         normal_mahalanobis_dists = [mahal(feat, mu, cov) for feat in normal_feats]
@@ -148,8 +148,10 @@ class NormalActivator(nn.Module):
             normal_dist_loss = (normal_dist_mean / total_dist).requires_grad_()
         else :
             normal_dist_loss = normal_dist_max.requires_grad_()
+
         self.normal_feat_list = []
         self.anomal_feat_list = []
+
         return normal_dist_loss, normal_dist_mean, normal_dist_max
 
     def generate_attention_loss(self):
@@ -157,12 +159,14 @@ class NormalActivator(nn.Module):
         normal_cls_loss = 0.0
         normal_trigger_loss = 0.0
         if len(self.attention_loss['normal_cls_loss']) != 0:
+            print(f'len of normal_cls_loss (2 because anomal and back sample) : {len(self.attention_loss["normal_cls_loss"])}')
             normal_cls_loss = torch.stack(self.attention_loss['normal_cls_loss'], dim=0).mean(dim=0)
             normal_trigger_loss = torch.stack(self.attention_loss['normal_trigger_loss'], dim=0).mean(dim=0)
 
         anormal_cls_loss = 0.0
         anormal_trigger_loss = 0.0
         if len(self.attention_loss['anormal_cls_loss']) != 0:
+            print(f'len of anormal_cls_loss (2 because anomal and back sample) : {len(self.attention_loss["anormal_cls_loss"])}')
             anormal_cls_loss = torch.stack(self.attention_loss['anormal_cls_loss'], dim=0).mean(dim=0)
             anormal_trigger_loss = torch.stack(self.attention_loss['anormal_trigger_loss'], dim=0).mean(dim=0)
 

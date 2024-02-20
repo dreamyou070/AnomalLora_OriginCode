@@ -144,8 +144,8 @@ def main(args):
                 for trg_layer in args.trg_layer_list:
                     print(f'try layer : {trg_layer}')
                     query = b_query_dict[trg_layer][0].squeeze(0)
-                    print(f'batch shaped query : {query.shape}, key : {key.shape}')
                     key = b_key_dict[trg_layer][0].squeeze(0)
+                    print(f'batch shaped query : {query.shape}, key : {key.shape}')
                     normal_activator.collect_qk_features(query, key)
                 if args.do_normal_sample:
                     attn_score = normal_activator.generate_conjugated_attention(anomal_position_vector=anomal_position_vector,
