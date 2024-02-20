@@ -135,6 +135,7 @@ def main(args):
                                 b_query_dict, b_key_dict = controller.batchshaped_query_dict, controller.batchshaped_key_dict
                                 controller.reset()
                                 for trg_layer in args.trg_layer_list:
+                                    print(f'layer : {trg_layer}')
                                     normal_activator.collect_qk_features(b_query_dict[trg_layer][0].squeeze(0),
                                                                          b_key_dict[trg_layer][0].squeeze(0))
                                 attn_score = normal_activator.generate_conjugated_attention()
