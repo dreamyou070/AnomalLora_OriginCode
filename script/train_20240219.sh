@@ -7,7 +7,7 @@ trigger_word='carrot'
 bench_mark='MVTec3D-AD'
 save_folder_name="do_normal_sample_do_anomal_sample_dist_loss_attn_loss_normalized_score"
 
-accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_config \
+accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_config \
  --main_process_port $port_number ../train_20240219.py \
  --log_with wandb \
  --output_dir "../../result/${bench_mark}/${obj_name}/${save_folder_name}" \
