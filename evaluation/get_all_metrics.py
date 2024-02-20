@@ -2,10 +2,8 @@ import os, json
 import argparse
 def main(args) :
 
-    second_folder_name = args.second_folder_name
     class_name = args.class_name
-    bench_mark = 'MVTec3D-AD'
-    base_save_dir = f'/home/dreamyou070/AnomalLora/result/{bench_mark}/{class_name}/{second_folder_name}'
+    base_save_dir = args.base_save_dir
     total_matric_save_dir = os.path.join(base_save_dir, f'{class_name}_total_metrics.csv')
 
     metric_base_folder = os.path.join(base_save_dir, 'reconstruction')
@@ -46,6 +44,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--class_name', type=str, default='carrot')
     parser.add_argument('--second_folder_name', type=str, default='2_2_res_64_up_attn2_t_2_20240121')
+    parser.add_argument('--base_save_dir', type=str, )
 
     args = parser.parse_args()
     main(args)
