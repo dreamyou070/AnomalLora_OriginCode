@@ -41,6 +41,7 @@ class NormalActivator(nn.Module):
         pix_num = origin_query.shape[0]
         for pix_idx in range(pix_num):
             feat = origin_query[pix_idx].squeeze(0)
+            print(f'in collect query function, feat : {feat.shape}')
             anomal_flag = anomal_position_vector[pix_idx]
             if anomal_flag == 1:
                 self.anomal_feat_list.append(feat.unsqueeze(0))

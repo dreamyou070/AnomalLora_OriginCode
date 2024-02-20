@@ -121,8 +121,7 @@ def main(args):
                     attn_score = attn_dict[trg_layer][0]  # head, pix_num, 2
                     normal_activator.resize_attn_scores(attn_score)
                 c_query = normal_activator.generate_conjugated()
-                print(f'c_query shape (64*64, long dim) : {c_query.shape}')
-                normal_activator.collect_queries(c_query, anomal_position_vector,do_collect_normal = True)
+                normal_activator.collect_queries(c_query, anomal_position_vector, do_collect_normal = True)
                 # [2]
                 c_attn_score = normal_activator.generate_conjugated_attn_score()
                 normal_activator.collect_attention_scores(c_attn_score, anomal_position_vector)
