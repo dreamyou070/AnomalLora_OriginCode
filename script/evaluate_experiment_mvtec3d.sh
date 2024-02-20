@@ -3,7 +3,7 @@
 class_name="carrot"
 bench_mark="MVTec3D-AD"
 dataset_dir="../../../MyData/anomaly_detection/${bench_mark}"
-sub_folder="1_2_anomal_sample_attn_loss_dist_loss_map_loss_only_zero_timestep"
+sub_folder="1_3_background_masked_sample_attn_loss_dist_loss_map_loss_focal_only_zero_timestep"
 
 output_dir="metrics"
 
