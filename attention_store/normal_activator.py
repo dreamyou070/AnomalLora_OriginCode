@@ -184,26 +184,26 @@ class NormalActivator(nn.Module):
 
     def collect_qk_features(self, query, key) :
 
+        head_num, pix_num, dim = query.shape
+        res = int(pix_num ** 0.5)
+        query_map = query.view(head_num, res, res, dim).permute(0, 3, 1, 2).contiguous()
+        resized_query_map = nn.functional.interpolate(query_map, size=(64, 64), mode='bilinear')
+        resized_query = resized_query_map.permute(0, 2, 3, 1).contiguous().view(head_num, -1, dim)  # head, 64*64, dim
+        self.resized_queries.append(resized_query) # len = 3
+        self.keys.append(key)
+
+
+    def generate_conjugated_attention(self,):
+
+        concat_query = torch.cat(self.resized_queries, dim=2)     # 8, 4096, 960 ***
         def reshape_batch_dim_to_heads(tensor):
             batch_size, seq_len, dim = tensor.shape
             head_size = 8
             tensor = tensor.reshape(batch_size // head_size, head_size, seq_len, dim)
             tensor = tensor.permute(0, 2, 1, 3).reshape(batch_size // head_size, seq_len, dim * head_size)
             return tensor
+        self.queries.append(reshape_batch_dim_to_heads(concat_query))
 
-        head_num, pix_num, dim = query.shape
-        res = int(pix_num ** 0.5)
-        query_map = query.view(head_num, res, res, dim).permute(0, 3, 1, 2).contiguous()
-        resized_query_map = nn.functional.interpolate(query_map, size=(64, 64), mode='bilinear')
-        resized_query = resized_query_map.permute(0, 2, 3, 1).contiguous().view(head_num, -1, dim)  # head, 64*64, dim
-        query = reshape_batch_dim_to_heads(query) # 1, 4096, 960
-        self.resized_queries.append(resized_query) # len = 3
-        self.keys.append(key)
-        self.queries.append(query)
-
-    def generate_conjugated_attention(self,):
-
-        concat_query = torch.cat(self.resized_queries, dim=2)     # 8, 4096, 960 ***
         concat_key = torch.cat(self.keys, dim=2)  # 8, 77, 960
         attention_scores = torch.baddbmm(torch.empty(concat_query.shape[0], concat_query.shape[1], concat_key.shape[1],
                                                      dtype=concat_query.dtype, device=concat_query.device),
