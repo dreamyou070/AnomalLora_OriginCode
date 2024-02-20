@@ -53,7 +53,13 @@ def main(args):
                 predictor.set_image(np_img)
 
                 h, w, c = np_img.shape
-                input_point = np.array([[0,0]])
+                for h_index in range(h):
+                    for w_index in range(w):
+                        value = np_img[h_index, w_index, :].sum()
+                        if value > 100:
+                            break
+
+                input_point = np.array([[h_index, w_index]])
                 # point_labels (np.ndarray or None): A length N array of labels for the
                 #             point prompts. 1 indicates a foreground point and 0 indicates a
                 #             background point.
