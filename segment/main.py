@@ -58,7 +58,7 @@ def main(args):
                                       int(w/10), int(9*w/10)])
 
                 # [3]
-                input_point = np.array([[int(h/2),int(w/2)]])
+                input_point = np.array([[0,0]])
                 # [3]
                 input_label = np.array([0])
 
