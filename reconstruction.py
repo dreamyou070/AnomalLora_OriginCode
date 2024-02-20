@@ -191,7 +191,7 @@ if __name__ == '__main__':
     parser.add_argument("--trg_layer_list", type=arg_as_list, default=[])
     parser.add_argument("--position_embedding_layer", type=str)
     parser.add_argument("--use_position_embedder", action='store_true')
-    parser.add_argument("--use_pe_pooling", action='store_true')
+    parser.add_argument("--do_normalized_score", action='store_true')
     parser.add_argument("--d_dim", default=320, type=int)
     parser.add_argument("--thred", default=0.5, type=float)
     parser.add_argument("--image_classification_layer", type=str)
