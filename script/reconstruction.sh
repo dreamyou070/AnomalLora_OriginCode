@@ -1,8 +1,8 @@
 # !/bin/bash
 
-port_number=50001
-obj_name='bagel'
-caption='bagel'
+port_number=50003
+obj_name='cookie'
+caption='cookie'
 sub_folder="sub_3_background_masked_sample_anomal_sample"
 folder_name="attn_loss_normalized_score_map_loss"
 bench_mark="MVTec3D-AD"
