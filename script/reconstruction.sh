@@ -1,8 +1,8 @@
 # !/bin/bash
 
 port_number=51111
-obj_name='cookie'
-caption='cookie'
+obj_name='carrot'
+caption='carrot'
 sub_folder="sub_3_background_masked_sample_anomal_sample_train_code_check_again"
 folder_name="attn_loss_normalized_score_map_loss_train_code_without_normalized"
 bench_mark="MVTec3D-AD"
