@@ -189,7 +189,6 @@ class NormalActivator(nn.Module):
 
         def reshape_batch_dim_to_heads(tensor, head_size=8):
             batch_size, seq_len, dim = tensor.shape
-            head_size = self.heads
             tensor = tensor.reshape(batch_size // head_size, head_size, seq_len, dim)
 
             b_size, pix_num, dim = resized_query.shape

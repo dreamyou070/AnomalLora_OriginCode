@@ -126,41 +126,49 @@ def main(args):
                             encoder_hidden_states = text_encoder(input_ids.to(text_encoder.device))["last_hidden_state"]
                             unet(vae_latent, 0, encoder_hidden_states,
                                  trg_layer_list=args.trg_layer_list, noise_type=position_embedder)
-                            query_dict, attn_dict = controller.query_dict, controller.step_store
-                            b_query_dict, b_key_dict = controller.batchshaped_query_dict, controller.batchshaped_key_dict
                             if args.single_layer :
+                                query_dict, attn_dict = controller.query_dict, controller.step_store
+                                controller.reset()
                                 for trg_layer in args.trg_layer_list:
                                     attn_score = attn_dict[trg_layer][0]  # head, pix_num, 2
-                                    normal_activator.collect_attention_scores(attn_score, None)
                             else :
+                                b_query_dict, b_key_dict = controller.batchshaped_query_dict, controller.batchshaped_key_dict
+                                controller.reset()
                                 for trg_layer in args.trg_layer_list:
-                                    query = b_query_dict[trg_layer][0].squeeze(0)
-                                    key = b_key_dict[trg_layer][0].squeeze(0)
-                                    normal_activator.collect_qk_features(query, key)
-                                normal_activator.generate_conjugated_attention(anomal_position_vector=torch.zeros(64*64), do_normal_activating=True)
-                            trigger_map = normal_activator.normal_map
+                                    normal_activator.collect_qk_features(b_query_dict[trg_layer][0].squeeze(0),
+                                                                         b_key_dict[trg_layer][0].squeeze(0))
+                                attn_score = normal_activator.generate_conjugated_attention()
+                            cls_map = attn_score[:, :, 0].squeeze().mean(dim=0)  # [res*res]
+                            trigger_map = attn_score[:, :, 1].squeeze().mean(dim=0)
+                            pix_num = trigger_map.shape[0]
+                            res = int(pix_num ** 0.5)
+
+                            cls_map = cls_map.unsqueeze(0).view(res, res)
+                            cls_map_pil = Image.fromarray(
+                                (255 * cls_map).cpu().detach().numpy().astype(np.uint8)).resize((org_h, org_w))
+                            cls_map_pil.save(os.path.join(save_base_folder, f'{name}_cls_map.png'))
+
                             normal_map = torch.where(trigger_map > thred, 1, trigger_map).squeeze()
-                            res = int(np.sqrt(normal_map.shape[0]))
                             normal_map = normal_map.unsqueeze(0).view(res, res)
-                            print(f'normal_map : {normal_map}')
-                            # [1]
                             normal_map_pil = Image.fromarray(
                                 normal_map.cpu().detach().numpy().astype(np.uint8) * 255).resize((org_h, org_w))
                             normal_map_pil.save(
-                                os.path.join(save_base_folder, f'{name}_n_score.png'))
-                            # [2]
+                                os.path.join(save_base_folder, f'{name}_normal_score_map.png'))
+
                             anomal_np = ((1 - normal_map) * 255).cpu().detach().numpy().astype(np.uint8)
                             anomaly_map_pil = Image.fromarray(anomal_np).resize((org_h, org_w))
                             anomaly_map_pil.save(
                                 os.path.join(save_base_folder, f'{name}_anomaly_score_map.png'))
                             anomaly_map_pil.save(os.path.join(answer_anomal_folder, f'{name}.tiff'))
-                            # --------------------------------------------------------------------------------------- #
-                            Image.open(gt_img_dir).resize((org_h, org_w)).save(os.path.join(save_base_folder,
-                                                                                            f'{name}_gt.png'))
-                            controller.reset()
-                            normal_activator.reset()
+
+                        gt_img_save_dir = os.path.join(save_base_folder, f'{name}_gt.png')
+                        Image.open(gt_img_dir).resize((org_h, org_w)).save(gt_img_save_dir)
+                        controller.reset()
+                        normal_activator.reset()
+
         for k in raw_state_dict_orig.keys():
             raw_state_dict[k] = raw_state_dict_orig[k]
+
         network.load_state_dict(raw_state_dict)
 
 if __name__ == '__main__':
