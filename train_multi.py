@@ -122,7 +122,7 @@ def main(args):
                 for trg_layer in args.trg_layer_list:
                     query = b_query_dict[trg_layer][0].squeeze(0) # head, pix_num, dim
                     key = b_key_dict[trg_layer][0].squeeze(0)
-                    normal_activator.collect_qk_features(query, key, anomal_position_vector)
+                    normal_activator.collect_qk_features(query, key)
                 attn_score = normal_activator.generate_conjugated_attention(anomal_position_vector=anomal_position_vector,
                                                                             do_normal_activating=True)
                 normal_activator.collect_anomal_map_loss(attn_score, # 8, 4096, 2
@@ -140,7 +140,7 @@ def main(args):
                 for trg_layer in args.trg_layer_list:
                     query = b_query_dict[trg_layer][0].squeeze(0)
                     key = b_key_dict[trg_layer][0].squeeze(0)
-                    normal_activator.collect_qk_features(query, key, anomal_position_vector)
+                    normal_activator.collect_qk_features(query, key)
                 if args.do_normal_sample:
                     attn_score = normal_activator.generate_conjugated_attention(anomal_position_vector=anomal_position_vector,
                                                                                 do_normal_activating=False)
@@ -163,7 +163,7 @@ def main(args):
                 for trg_layer in args.trg_layer_list:
                     query = b_query_dict[trg_layer][0].squeeze(0)
                     key = b_key_dict[trg_layer][0].squeeze(0)
-                    normal_activator.collect_qk_features(query, key, anomal_position_vector)
+                    normal_activator.collect_qk_features(query, key)
                 if args.do_normal_sample:
                     attn_score = normal_activator.generate_conjugated_attention(anomal_position_vector=anomal_position_vector,
                                                                                 do_normal_activating=False)
