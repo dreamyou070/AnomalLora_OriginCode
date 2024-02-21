@@ -1,6 +1,6 @@
 #! /bin/bash
 
-class_name="cookie"
+class_name="carrot"
 bench_mark="MVTec3D-AD"
 dataset_dir="../../../MyData/anomaly_detection/${bench_mark}"
 
