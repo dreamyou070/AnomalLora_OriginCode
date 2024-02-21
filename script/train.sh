@@ -5,8 +5,8 @@ pretrained_model_name_or_path="../../../pretrained_stable_diffusion/stable-diffu
 obj_name='carrot'
 trigger_word='carrot'
 bench_mark='MVTec3D-AD'
-sub_folder="train_code_check"
-folder_name="train_code_check"
+sub_folder="train_code_check_with_anomal_src"
+folder_name="train_code_check_with_anomal_src"
 output_dir="../../result/${bench_mark}/${obj_name}/${sub_folder}/${folder_name}"
 
 
