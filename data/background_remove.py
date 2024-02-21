@@ -11,7 +11,6 @@ def remove_background(input_path, output_path):
             output = remove(input)
             o.write(output)
 
-
 def main(args):
 
     print(f'step 2. prepare images')
