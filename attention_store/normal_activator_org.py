@@ -4,12 +4,13 @@ import torch.nn as nn
 def passing_normalize_argument(args) :
     global argument
     argument = args
+
 class NormalActivator(nn.Module):
 
     def __init__(self, loss_focal, loss_l2, use_focal_loss):
         super(NormalActivator, self).__init__()
 
-        self.do_normalized_scroe = argument.do_normalized_scroe
+        self.do_normalized_score = argument.do_normalized_score
 
         # [1]
         self.anomal_feat_list = []
@@ -57,7 +58,7 @@ class NormalActivator(nn.Module):
         cls_score, trigger_score = attn_score.chunk(2, dim=-1)
         cls_score, trigger_score = cls_score.squeeze(), trigger_score.squeeze()      # head, pix_num
 
-        if self.do_normalized_scroe :
+        if self.do_normalized_score :
             cls_score, trigger_score = normalize_score(cls_score), normalize_score(trigger_score)
 
         cls_score, trigger_score = cls_score.mean(dim=0), trigger_score.mean(dim=0)  # pix_num
