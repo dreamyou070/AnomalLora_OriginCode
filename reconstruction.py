@@ -80,7 +80,7 @@ def main(args):
 
         # [3] folder
         parent, _ = os.path.split(args.network_folder)
-        recon_base_folder = os.path.join(parent, 'reconstruction')
+        recon_base_folder = os.path.join(parent, 'reconstruction_only_with_32_res')
         os.makedirs(recon_base_folder, exist_ok=True)
         lora_base_folder = os.path.join(recon_base_folder, f'lora_epoch_{lora_epoch}')
         os.makedirs(lora_base_folder, exist_ok=True)
