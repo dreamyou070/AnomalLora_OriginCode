@@ -173,6 +173,7 @@ class MVTecDRAEMTrainDataset(Dataset):
         while True :
 
             while True :
+
                 perlin_scale = 6
                 min_perlin_scale = 0
                 perlin_scalex = 2 ** (torch.randint(min_perlin_scale, perlin_scale, (1,)).numpy()[0])
@@ -189,6 +190,7 @@ class MVTecDRAEMTrainDataset(Dataset):
                     total_object_pixel = np.sum(object_position)
                     perlin_thr = perlin_thr * object_position
                 binary_2D_mask = (np.where(perlin_thr == 0, 0, 1)).astype(np.float32)  # [512,512,3]
+                print(f'[anomal] np.sum(binary_2D_mask) = {np.sum(binary_2D_mask)}')
                 if np.sum(binary_2D_mask) > anomal_p * total_object_pixel :
                     break
             blur_3D_mask = np.expand_dims(perlin_thr, axis=2)  # [512,512,3]
@@ -225,6 +227,7 @@ class MVTecDRAEMTrainDataset(Dataset):
                     total_object_pixel = np.sum(object_position)
                     blur_2D_mask = (result_thr * object_position).astype(np.float32)
                 binary_2D_mask = (np.where(blur_2D_mask == 0, 0, 1)).astype(np.float32)  # [512,512,3]
+                print(f'[gaussian] np.sum(binary_2D_mask) = {np.sum(binary_2D_mask)}')
                 if np.sum(binary_2D_mask) > anomal_p * total_object_pixel :
                     break
             blur_3D_mask = np.expand_dims(blur_2D_mask, axis=2)  # [512,512,3]
