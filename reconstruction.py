@@ -80,7 +80,7 @@ def main(args):
 
         # [3] folder
         parent, _ = os.path.split(args.network_folder)
-        recon_base_folder = os.path.join(parent, 'reconstruction_only_with_64_res')
+        recon_base_folder = os.path.join(parent, 'reconstruction_only_with_16_res')
         os.makedirs(recon_base_folder, exist_ok=True)
         lora_base_folder = os.path.join(recon_base_folder, f'lora_epoch_{lora_epoch}')
         os.makedirs(lora_base_folder, exist_ok=True)
@@ -135,6 +135,7 @@ def main(args):
                                 for trg_layer in args.trg_layer_list:
                                     normal_activator.resize_attn_scores(attn_dict[trg_layer][0])
                                 attn_score = normal_activator.generate_conjugated_attn_score()
+
                             cls_map = attn_score[:, :, 0].squeeze().mean(dim=0)  # [res*res]
                             trigger_map = attn_score[:, :, 1].squeeze().mean(dim=0)
                             pix_num = trigger_map.shape[0]
