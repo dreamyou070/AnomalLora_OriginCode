@@ -114,6 +114,7 @@ def main(args):
                 with torch.set_grad_enabled(True):
                     unet(latents, 0, encoder_hidden_states, trg_layer_list=args.trg_layer_list, noise_type=position_embedder)
                 query_dict, attn_dict = controller.query_dict, controller.step_store
+                if args.batch
                 controller.reset()
                 for trg_layer in args.trg_layer_list:
                     normal_activator.resize_query_features(query_dict[trg_layer][0].squeeze(0))
@@ -321,6 +322,7 @@ if __name__ == "__main__":
     parser.add_argument("--do_normalized_score", action='store_true')
     parser.add_argument("--dataset_ex", action='store_true')
     parser.add_argument("--original_normalized_score", action='store_true')
+    parser.add_argument("--gen_batchwise_attn", action='store_true')
 
     # [3]
     args = parser.parse_args()

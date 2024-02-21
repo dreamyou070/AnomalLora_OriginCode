@@ -68,12 +68,13 @@ def register_attention_control(unet: nn.Module,controller: AttentionStore):
             key = self.reshape_heads_to_batch_dim(key)
             value = self.reshape_heads_to_batch_dim(value)
 
-            """
+            
             # cashing query, key
-            if trg_layer_list is not None and layer_name in trg_layer_list :
-                controller.save_batshaped_qk(query, key, layer_name)
-                controller.save_scale(self.scale, layer_name)
-            """
+            if argument.gen_bachwise_attn :
+                if trg_layer_list is not None and layer_name in trg_layer_list :
+                    controller.save_batshaped_qk(query, key, layer_name)
+                    controller.save_scale(self.scale, layer_name)
+            
 
             if self.upcast_attention:
                 query = query.float()
