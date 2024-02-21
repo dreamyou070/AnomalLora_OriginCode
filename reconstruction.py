@@ -21,7 +21,7 @@ from attention_store.normal_activator import passing_normalize_argument
 
 def inference(latent,
               tokenizer, text_encoder, unet, controller, normal_activator, position_embedder,
-              args, org_h, org_w):
+              args, org_h, org_w, thred):
     # [1] text
     input_ids, attention_mask = get_input_ids(tokenizer, args.prompt)
     encoder_hidden_states = text_encoder(input_ids.to(text_encoder.device))["last_hidden_state"]
@@ -165,7 +165,7 @@ def main(args):
                                                                                      tokenizer, text_encoder, unet,
                                                                                      controller, normal_activator,
                                                                                      position_embedder,
-                                                                                     args,org_h, org_w)
+                                                                                     args,org_h, org_w, thred)
                             cls_map_pil.save(os.path.join(save_base_folder, f'{name}_cls.png'))
                             normal_map_pil.save(os.path.join(save_base_folder, f'{name}_normal.png'))
                             anomaly_map_pil.save( os.path.join(save_base_folder, f'{name}_anomal.png'))
@@ -197,7 +197,7 @@ def main(args):
                                                                                      tokenizer, text_encoder, unet,
                                                                                      controller, normal_activator,
                                                                                      position_embedder,
-                                                                                     args, org_h, org_w)
+                                                                                     args, org_h, org_w, thred)
                             cls_map_pil.save(os.path.join(save_base_folder, f'{name}_cls.png'))
                             normal_map_pil.save(os.path.join(save_base_folder, f'{name}_normal.png'))
                             anomaly_map_pil.save(os.path.join(save_base_folder, f'{name}_anomaly.png'))
