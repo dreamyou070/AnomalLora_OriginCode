@@ -48,76 +48,73 @@ class NormalActivator(nn.Module):
                 self.normal_feat_list.append(feat.unsqueeze(0))
 
 
-    def collect_attention_scores(self, attn_score, anomal_position_vector,do_normal_activating = True):
+    def collect_attention_scores(self, attn_score, anomal_position_vector,
+                                 do_normal_activating = True):
 
         def normalize_score(score):
             score = torch.softmax(score, dim=-1)
-            """ Code Wrong !! """
             max_value = (torch.max(score, dim=-1)[0]).unsqueeze(-1)
             normalized_trigger_map = score / max_value
             return score
 
         # [1] preprocessing
-        cls_score, trigger_score = attn_score.chunk(2, dim=-1)                       # 8, 4096,
+        cls_score, trigger_score = attn_score.chunk(2, dim=-1)
         cls_score, trigger_score = cls_score.squeeze(), trigger_score.squeeze()      # head, pix_num
 
         if self.do_normalized_score :
-            cls_score, trigger_score = normalize_score(cls_score), normalize_score(trigger_score) # head, pix_num
+            cls_score, trigger_score = normalize_score(cls_score), normalize_score(trigger_score)
 
         cls_score, trigger_score = cls_score.mean(dim=0), trigger_score.mean(dim=0)  # pix_num
-        res = int(cls_score.shape[0] ** 0.5)
-        self.normal_map = trigger_score.unsqueeze(0).view(res, res)
         total_score = torch.ones_like(cls_score)
 
-        if anomal_position_vector is not None :
-            # [2]
-            normal_cls_score = cls_score * (1 - anomal_position_vector)
-            normal_trigger_score = trigger_score * (1 - anomal_position_vector)
-            anomal_cls_score = cls_score * anomal_position_vector
-            anomal_trigger_score = trigger_score * anomal_position_vector
+        # [2]
+        normal_cls_score = cls_score * (1 - anomal_position_vector)
+        normal_trigger_score = trigger_score * (1 - anomal_position_vector)
+        anomal_cls_score = cls_score * anomal_position_vector
+        anomal_trigger_score = trigger_score * anomal_position_vector
 
 
-            # [3]
-            normal_cls_score = normal_cls_score / total_score
-            normal_trigger_score = normal_trigger_score / total_score
-            anomal_cls_score = anomal_cls_score / total_score
-            anomal_trigger_score = anomal_trigger_score / total_score
+        # [3]
+        normal_cls_score = normal_cls_score / total_score
+        normal_trigger_score = normal_trigger_score / total_score
+        anomal_cls_score = anomal_cls_score / total_score
+        anomal_trigger_score = anomal_trigger_score / total_score
 
-            # [4]
-            normal_cls_loss = normal_cls_score ** 2
-            normal_trigger_loss = (1 - normal_trigger_score ** 2 )  #normal cls score 이랑 같은 상황
-            anomal_cls_loss = (1 - anomal_cls_score ** 2)
-            anomal_trigger_loss = anomal_trigger_score ** 2
+        # [4]
+        normal_cls_loss = normal_cls_score ** 2
+        normal_trigger_loss = (1 - normal_trigger_score ** 2 )  #normal cls score 이랑 같은 상황
+        anomal_cls_loss = (1 - anomal_cls_score ** 2)
+        anomal_trigger_loss = anomal_trigger_score ** 2
 
-            # [5]
-            if do_normal_activating:
-                self.attention_loss['normal_cls_loss'].append(normal_cls_loss.mean())
-                self.attention_loss['normal_trigger_loss'].append(normal_trigger_loss.mean())
+        # [5]
+        if do_normal_activating:
+            self.attention_loss['normal_cls_loss'].append(normal_cls_loss.mean())
+            self.attention_loss['normal_trigger_loss'].append(normal_trigger_loss.mean())
 
-            anomal_pixel_num = anomal_position_vector.sum()
-            if anomal_pixel_num > 0:
-                self.attention_loss['anormal_cls_loss'].append(anomal_cls_loss.mean())
-                self.attention_loss['anormal_trigger_loss'].append(anomal_trigger_loss.mean())
+        anomal_pixel_num = anomal_position_vector.sum()
+        if anomal_pixel_num > 0:
+            self.attention_loss['anormal_cls_loss'].append(anomal_cls_loss.mean())
+            self.attention_loss['anormal_trigger_loss'].append(anomal_trigger_loss.mean())
 
     def collect_anomal_map_loss(self, attn_score, anomal_position_vector):
 
         if self.use_focal_loss:
 
             cls_score, trigger_score = attn_score.chunk(2, dim=-1)
-            res = int(cls_score.shape[1] ** 0.5)
-            head_num = cls_score.shape[0]
-            cls_score = cls_score.view(-1, res, res).unsqueeze(1) # [8,1,64,64]
-            trigger_score = trigger_score.view(-1, res, res).unsqueeze(1) # [8,1,64,64]
-            focal_loss_in = torch.cat([cls_score,trigger_score], 1) # [8,2,64,64]
+            cls_score, trigger_score = cls_score.squeeze(), trigger_score.squeeze()  # head, pix_num
+            cls_score, trigger_score = cls_score.mean(dim=0), trigger_score.mean(dim=0)  # pix_num
+            res = int(attn_score.shape[0] ** 0.5)
+            focal_loss_in = torch.cat([cls_score.view(res, res).unsqueeze(0).unsqueeze(0),
+                                       trigger_score.view(res, res).unsqueeze(0).unsqueeze(0)], 1)
 
             # [2] target
-            focal_loss_trg = anomal_position_vector.view(res, res).unsqueeze(0).unsqueeze(0).repeat(head_num,1,1,1)
+            focal_loss_trg = anomal_position_vector.view(res, res).unsqueeze(0).unsqueeze(0)
             map_loss = self.loss_focal(focal_loss_in,
                                        focal_loss_trg.to(dtype=trigger_score.dtype))
 
         else:
             cls_score, trigger_score = attn_score.chunk(2, dim=-1)
-            cls_score, trigger_score = cls_score.squeeze(), trigger_score.squeeze()      # head, pix_num
+            cls_score, trigger_score = cls_score.squeeze(), trigger_score.squeeze()  # head, pix_num
             cls_score, trigger_score = cls_score.mean(dim=0), trigger_score.mean(dim=0)  # pix_num
             trg_trigger_score = 1 - anomal_position_vector
             map_loss = self.loss_l2(trigger_score.float(), trg_trigger_score.float())

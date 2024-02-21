@@ -32,4 +32,4 @@ accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_5_config \
  --do_attn_loss \
  --do_dist_loss \
  --do_map_loss \
- --do_normalized_scroe
+ --do_normalized_score
