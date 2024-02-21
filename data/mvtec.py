@@ -11,7 +11,9 @@ import imgaug.augmenters as iaa
 
 def passing_mvtec_argument(args):
     global argument
+    global anomal_p
     argument = args
+    anomal_p = args.anomal_p
 
 class MVTecDRAEMTestDataset(Dataset):
 
@@ -66,7 +68,7 @@ class MVTecDRAEMTestDataset(Dataset):
         return sample
 
 
-anomal_p = argument.anomal_p
+
 
 class MVTecDRAEMTrainDataset(Dataset):
 

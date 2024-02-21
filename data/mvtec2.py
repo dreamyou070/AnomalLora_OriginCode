@@ -10,6 +10,12 @@ import cv2
 import imgaug.augmenters as iaa
 import random
 
+def passing_mvtec_argument(args):
+    global argument
+    global anomal_p
+    argument = args
+    anomal_p = args.anomal_p
+
 class MVTecDRAEMTestDataset(Dataset):
 
     def __init__(self, root_dir, resize_shape=None):
@@ -62,8 +68,6 @@ class MVTecDRAEMTestDataset(Dataset):
 
         return sample
 
-
-anomal_p = 0.04
 
 
 class MVTecDRAEMTrainDataset(Dataset):
