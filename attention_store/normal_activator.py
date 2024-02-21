@@ -54,7 +54,7 @@ class NormalActivator(nn.Module):
             """ Change Code """
             max_value = (torch.max(score, dim=-1)[0]).unsqueeze(-1)
             normalized_trigger_map = score / max_value
-            if self.original_normalized_score:
+            if argument.original_normalized_score:
                 return score
             else :
                 score = normalized_trigger_map
