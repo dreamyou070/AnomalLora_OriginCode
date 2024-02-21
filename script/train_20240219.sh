@@ -7,13 +7,14 @@ port_number=50005
 obj_name='carrot'
 trigger_word='carrot'
 bench_mark='MVTec3D-AD'
-save_folder_name="1_5_anormal_sample_background_masked_sample_attn_loss_dist_loss_map_loss_only_zero_timestep_normalized_score"
+save_folder_name="with_origin"
+folder_name="with_origin"
 #--do_normal_sample \
 #
 accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_5_config \
  --main_process_port $port_number ../train_20240219.py \
  --log_with wandb \
- --output_dir "../../result/${bench_mark}/${obj_name}/${save_folder_name}" \
+ --output_dir "../../result/${bench_mark}/${obj_name}/${save_folder_name}/${folder_name}" \
  --pretrained_model_name_or_path ../../../pretrained_stable_diffusion/stable-diffusion-v1-5/v1-5-pruned.safetensors \
  --data_path "../../../MyData/anomaly_detection/${bench_mark}" --beta_scale_factor 0.8 \
  --bgrm_test \

@@ -185,3 +185,4 @@ class NormalActivator(nn.Module):
                                'anormal_cls_loss': [], 'anormal_trigger_loss': []}
         self.anomal_map_loss = []
         self.normal_matching_query_loss = []
+        self.normal_matching_query_loss = []
