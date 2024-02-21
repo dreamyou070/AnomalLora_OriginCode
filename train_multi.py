@@ -114,7 +114,6 @@ def main(args):
                 with torch.set_grad_enabled(True):
                     unet(latents, 0, encoder_hidden_states, trg_layer_list=args.trg_layer_list, noise_type=position_embedder)
                 query_dict, attn_dict = controller.query_dict, controller.step_store
-                if args.batch
                 controller.reset()
                 for trg_layer in args.trg_layer_list:
                     normal_activator.resize_query_features(query_dict[trg_layer][0].squeeze(0))
