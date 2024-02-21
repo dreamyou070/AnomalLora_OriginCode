@@ -121,6 +121,9 @@ class MVTecDRAEMTrainDataset(Dataset):
         num_repeat = len(self.rot_augmenters)
         self.image_paths = [image_path for image_path in image_paths for i in range(num_repeat)]
 
+        print(f' img num = {len(self.image_paths)}')
+        print(f' anomal img num = {len(self.anomaly_source_paths)}')
+
         self.anomal_only_on_object = anomal_only_on_object
         self.anomal_training = anomal_training
         self.latent_res = latent_res

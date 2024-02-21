@@ -100,6 +100,7 @@ def main(args):
         accelerator.print(f"\nepoch {epoch + 1}/{args.start_epoch + args.max_train_epochs}")
 
         for step, batch in enumerate(train_dataloader):
+            print(f' step : {step} / {len(train_dataloader)}')
 
             device = accelerator.device
             loss = torch.tensor(0.0, dtype=weight_dtype, device=accelerator.device)
