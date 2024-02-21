@@ -1,12 +1,12 @@
 # !/bin/bash
 
-port_number=53203
+port_number=53202
 pretrained_model_name_or_path="../../../pretrained_stable_diffusion/stable-diffusion-v1-5/v1-5-pruned.safetensors"
 obj_name='carrot'
 trigger_word='carrot'
 bench_mark='MVTec3D-AD'
 sub_folder="sub_3_background_masked_sample_anomal_sample"
-folder_name="attn_loss_original_normalized_score_map_loss_dataset_ex"
+folder_name="attn_loss_original_normalized_score_map_loss"
 output_dir="../../result/${bench_mark}/${obj_name}/${sub_folder}/${folder_name}"
 
 accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_5_config \
@@ -27,5 +27,4 @@ accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_5_config \
  --do_background_masked_sample \
  --do_attn_loss --do_normalized_score \
  --do_map_loss \
- --original_normalized_score \
- --dataset_ex
+ --original_normalized_score
