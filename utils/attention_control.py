@@ -70,7 +70,7 @@ def register_attention_control(unet: nn.Module,controller: AttentionStore):
 
             
             # cashing query, key
-            if argument.gen_bachwise_attn :
+            if argument.gen_batchwise_attn :
                 if trg_layer_list is not None and layer_name in trg_layer_list :
                     controller.save_batshaped_qk(query, key, layer_name)
                     controller.save_scale(self.scale, layer_name)

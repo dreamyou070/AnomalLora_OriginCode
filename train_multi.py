@@ -322,7 +322,6 @@ if __name__ == "__main__":
     parser.add_argument("--dataset_ex", action='store_true')
     parser.add_argument("--original_normalized_score", action='store_true')
     parser.add_argument("--gen_batchwise_attn", action='store_true')
-
     # [3]
     args = parser.parse_args()
     unet_passing_argument(args)
