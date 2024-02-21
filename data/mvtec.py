@@ -302,6 +302,7 @@ class MVTecDRAEMTrainDataset(Dataset):
                 if self.anomal_only_on_object:
                     object_img_aug = aug(image=self.load_image(object_mask_dir, self.resize_shape[0], self.resize_shape[1], type='L') )
                     object_position = np.where((np.array(object_img_aug)) == 0, 0, 1)             # [512,512]
+                    print(f'object position num = {np.sum(object_position)}')
                     # [4.1] anomal img
                     anomaly_source_img = self.load_image(self.anomaly_source_paths[anomal_src_idx], self.resize_shape[0], self.resize_shape[1])
                     anomal_img, anomal_mask_torch = self.augment_image(img,anomaly_source_img, beta_scale_factor=self.beta_scale_factor,
