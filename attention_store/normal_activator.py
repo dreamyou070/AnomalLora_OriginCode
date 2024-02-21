@@ -151,7 +151,15 @@ class NormalActivator(nn.Module):
             m = torch.dot(delta, torch.matmul(cov, delta))
             return torch.sqrt(m)
 
+
+
         normal_feats = torch.cat(self.normal_feat_list, dim=0)
+        if argument.feature_normalize_on_mahal_dist :
+            """ add noramlizing """
+            normalized_query = torch.nn.functional.normalize(normal_feats, p=2, dim=1, eps=1e-12, out=None)
+
+
+
         mu = torch.mean(normal_feats, dim=0)
         cov = torch.cov(normal_feats.transpose(0, 1))
         normal_mahalanobis_dists = [mahal(feat, mu, cov) for feat in normal_feats]

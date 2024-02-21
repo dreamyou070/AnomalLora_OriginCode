@@ -354,7 +354,8 @@ if __name__ == "__main__":
     parser.add_argument("--original_normalized_score", action='store_true')
     parser.add_argument("--gen_batchwise_attn", action='store_true')
     parser.add_argument("--normal_mahal_test", action='store_true')
-    parser.add_argument("--test_noise_predicting_task_loss", action='store_true')    
+    parser.add_argument("--test_noise_predicting_task_loss", action='store_true')
+    parser.add_argument("--feature_normalize_on_mahal_dist", action='store_true')
     # [3]
     args = parser.parse_args()
     unet_passing_argument(args)
