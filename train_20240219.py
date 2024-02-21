@@ -5,11 +5,7 @@ from diffusers import DDPMScheduler
 import torch
 import os
 from attention_store import AttentionStore
-<<<<<<< HEAD
 from attention_store.normal_activator_org import NormalActivator
-=======
-from attention_store.normal_activator import NormalActivator
->>>>>>> b32352aa185b47160e583f569c83fbe9e398f93f
 from model.diffusion_model import transform_models_if_DDP
 from model.unet import unet_passing_argument
 from utils import get_epoch_ckpt_name, save_model, prepare_dtype, arg_as_list

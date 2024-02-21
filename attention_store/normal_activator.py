@@ -36,17 +36,17 @@ class NormalActivator(nn.Module):
         self.queries = []
         self.resized_attn_scores = []
 
-    def collect_queries(self, origin_query, anomal_position_vector, do_collect_normal = True):
+    def collect_queries(self, origin_query, anomal_position_vector):
 
         pix_num = origin_query.shape[0]
         for pix_idx in range(pix_num):
-            feat = origin_query[pix_idx].squeeze(0) # always same dim
+            feat = origin_query[pix_idx].squeeze(0)
             anomal_flag = anomal_position_vector[pix_idx]
             if anomal_flag == 1:
                 self.anomal_feat_list.append(feat.unsqueeze(0))
             else:
-                if do_collect_normal:
-                    self.normal_feat_list.append(feat.unsqueeze(0))
+                self.normal_feat_list.append(feat.unsqueeze(0))
+
 
     def collect_attention_scores(self, attn_score, anomal_position_vector,do_normal_activating = True):
 
