@@ -1,10 +1,10 @@
 # !/bin/bash
 
-port_number=50001
+port_number=50002
 obj_name='carrot'
 caption='carrot'
 sub_folder="sub_3_background_masked_sample_anomal_sample"
-folder_name="attn_loss_original_normalized_score_map_loss"
+folder_name="attn_loss_original_normalized_score_map_loss_normalizing_mahal_feat"
 bench_mark="MVTec3D-AD"
 position_embedding_layer="down_blocks_0_attentions_0_transformer_blocks_0_attn1"
 
