@@ -104,7 +104,7 @@ def main(args):
             device = accelerator.device
             loss = torch.tensor(0.0, dtype=weight_dtype, device=accelerator.device)
             loss_dict = {}
-            noise = torch.randn_like(latents, device=latents.device)
+
             with torch.set_grad_enabled(True):
                 encoder_hidden_states = text_encoder(batch["input_ids"].to(device))["last_hidden_state"]
             object_position_vector = batch['object_mask'].squeeze().flatten()
@@ -112,6 +112,7 @@ def main(args):
             if args.do_normal_sample:
                 with torch.no_grad():
                     latents = vae.encode(batch["image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
+                noise = torch.randn_like(latents, device=latents.device)
                 anomal_position_vector = torch.zeros_like(batch['object_mask'].squeeze().flatten())
                 object_normal_position_vector = torch.where((object_position_vector == 1) & (anomal_position_vector == 0), 1, 0)
                 with torch.set_grad_enabled(True):
@@ -137,6 +138,7 @@ def main(args):
             if args.do_anomal_sample:
                 with torch.no_grad():
                     latents = vae.encode(batch["anomal_image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
+                noise = torch.randn_like(latents, device=latents.device)
                 anomal_position_vector = batch["anomal_mask"].squeeze().flatten()
                 object_normal_position_vector = torch.where((object_position_vector == 1) & (anomal_position_vector == 0),1,0)
                 with torch.set_grad_enabled(True):
@@ -161,6 +163,7 @@ def main(args):
             if args.do_background_masked_sample:
                 with torch.no_grad():
                     latents = vae.encode(batch["bg_anomal_image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
+                noise = torch.randn_like(latents, device=latents.device)
                 anomal_position_vector = batch["bg_anomal_mask"].squeeze().flatten()
                 object_normal_position_vector = torch.where(
                     (object_position_vector == 1) & (anomal_position_vector == 0), 1, 0)
