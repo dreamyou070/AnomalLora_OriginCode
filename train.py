@@ -186,7 +186,7 @@ def main(args):
 
             if args.do_attn_loss:
                 normal_cls_loss, normal_trigger_loss, anormal_cls_loss, anormal_trigger_loss = normal_activator.generate_attention_loss()
-                if type(anormal_cls_loss) == float :
+                if type(anormal_cls_loss) == float:
                     attn_loss = args.normal_weight * normal_trigger_loss.mean()
                 else:
                     attn_loss = args.normal_weight * normal_cls_loss.mean() + args.anormal_weight * anormal_cls_loss.mean()
@@ -225,8 +225,6 @@ def main(args):
                 with open(logging_file, 'a') as f:
                     f.write(logging_info + '\n')
                 progress_bar.set_postfix(**loss_dict)
-            normal_activator.reset()
-            controller.reset()
             if global_step >= args.max_train_steps:
                 break
         # ----------------------------------------------------------------------------------------------------------- #

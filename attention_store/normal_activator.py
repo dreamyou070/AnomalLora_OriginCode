@@ -135,15 +135,14 @@ class NormalActivator(nn.Module):
         normal_dist_max = torch.tensor(normal_mahalanobis_dists).max()
         normal_dist_mean = torch.tensor(normal_mahalanobis_dists).mean()
 
-        if len(self.anomal_feat_list) > 0 :
+        if len(self.anomal_feat_list) > 0:
             anormal_feats = torch.cat(self.anomal_feat_list, dim=0)
             anormal_mahalanobis_dists = [mahal(feat, mu, cov) for feat in anormal_feats]
             anormal_dist_mean = torch.tensor(anormal_mahalanobis_dists).mean()
             total_dist = normal_dist_mean + anormal_dist_mean
             normal_dist_loss = (normal_dist_mean / total_dist).requires_grad_()
-        else :
+        else:
             normal_dist_loss = normal_dist_max.requires_grad_()
-
         self.normal_feat_list = []
         self.anomal_feat_list = []
 
@@ -162,7 +161,6 @@ class NormalActivator(nn.Module):
         if len(self.attention_loss['anormal_cls_loss']) != 0:
             anormal_cls_loss = torch.stack(self.attention_loss['anormal_cls_loss'], dim=0).mean(dim=0)
             anormal_trigger_loss = torch.stack(self.attention_loss['anormal_trigger_loss'], dim=0).mean(dim=0)
-
 
         self.attention_loss = {'normal_cls_loss': [], 'normal_trigger_loss': [],
                                'anormal_cls_loss': [], 'anormal_trigger_loss': []}
