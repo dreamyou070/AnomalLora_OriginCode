@@ -54,8 +54,11 @@ class NormalActivator(nn.Module):
             """ Change Code """
             max_value = (torch.max(score, dim=-1)[0]).unsqueeze(-1)
             normalized_trigger_map = score / max_value
-            score = normalized_trigger_map
-            return score
+            if self.original_normalized_score:
+                return score
+            else :
+                score = normalized_trigger_map
+                return score
 
         # [1] preprocessing
         cls_score, trigger_score = attn_score.chunk(2, dim=-1)
