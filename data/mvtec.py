@@ -78,7 +78,8 @@ class MVTecDRAEMTrainDataset(Dataset):
                  kernel_size : int = 5,
                  beta_scale_factor : float = 0.8,
                  bgrm_test : bool = True,
-                 reference_check : bool = True,) :
+                 reference_check : bool = True,
+                 do_anomal_sample : bool = True) :
 
         self.bgrm_test = bgrm_test
 
@@ -97,6 +98,9 @@ class MVTecDRAEMTrainDataset(Dataset):
                 image_paths.append(image_path)
 
         self.resize_shape=resize_shape
+
+        if do_anomal_sample :
+            assert anomaly_source_path is not None, "anomaly_source_path should be given"
 
         if anomaly_source_path is not None:
             self.anomaly_source_paths = []

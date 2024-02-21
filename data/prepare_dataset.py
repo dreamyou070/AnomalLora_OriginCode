@@ -29,7 +29,8 @@ def call_dataset(args) :
                                      kernel_size=args.kernel_size,
                                      beta_scale_factor=args.beta_scale_factor,
                                      bgrm_test = args.bgrm_test,
-                                     reference_check = args.reference_check,)
+                                     reference_check = args.reference_check,
+                                     do_anomal_sample =args.do_anomal_sample,)
 
     dataloader = torch.utils.data.DataLoader(dataset,
                                              batch_size=args.batch_size,
