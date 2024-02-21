@@ -10,7 +10,7 @@ sub_folder="sub_3_background_masked_sample_anomal_sample_up_16_32_64_mid"
 folder_name="attn_loss_original_normalized_score_map_loss"
 output_dir="../../result/${bench_mark}/${obj_name}/${sub_folder}/${folder_name}"
 
-accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_5_config \
+accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_config \
  --main_process_port $port_number ../train_multi.py \
  --log_with wandb \
  --output_dir ${output_dir} \
