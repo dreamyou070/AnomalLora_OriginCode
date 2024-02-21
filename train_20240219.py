@@ -5,7 +5,7 @@ from diffusers import DDPMScheduler
 import torch
 import os
 from attention_store import AttentionStore
-from attention_store.normal_activator_org import NormalActivator
+from attention_store.normal_activator_org import NormalActivator, passing_normalize_argument
 from model.diffusion_model import transform_models_if_DDP
 from model.unet import unet_passing_argument
 from utils import get_epoch_ckpt_name, save_model, prepare_dtype, arg_as_list
@@ -385,6 +385,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
     unet_passing_argument(args)
     passing_argument(args)
-    from attention_store.normal_activator import passing_normalize_argument
     passing_normalize_argument(args)
     main(args)
