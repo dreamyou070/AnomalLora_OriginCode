@@ -1,6 +1,6 @@
 # !/bin/bash
 
-port_number=50002
+port_number=50000
 pretrained_model_name_or_path="../../../pretrained_stable_diffusion/stable-diffusion-v1-5/v1-5-pruned.safetensors"
 obj_name='carrot'
 trigger_word='carrot'
