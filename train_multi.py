@@ -106,11 +106,13 @@ def main(args):
             loss_dict = {}
             with torch.set_grad_enabled(True):
                 encoder_hidden_states = text_encoder(batch["input_ids"].to(device))["last_hidden_state"]
+            object_position_vector = batch['object_mask'].squeeze().flatten()
             # --------------------------------------------------------------------------------------------------------- #
             if args.do_normal_sample:
                 with torch.no_grad():
                     latents = vae.encode(batch["image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
                 anomal_position_vector = torch.zeros_like(batch['object_mask'].squeeze().flatten())
+                object_normal_position_vector = torch.where((object_position_vector == 1) & (anomal_position_vector == 0), 1, 0)
                 with torch.set_grad_enabled(True):
                     unet(latents, 0, encoder_hidden_states, trg_layer_list=args.trg_layer_list, noise_type=position_embedder)
                 query_dict, attn_dict = controller.query_dict, controller.step_store
@@ -119,7 +121,11 @@ def main(args):
                     normal_activator.resize_query_features(query_dict[trg_layer][0].squeeze(0))
                     normal_activator.resize_attn_scores(attn_dict[trg_layer][0])
                 c_query = normal_activator.generate_conjugated()
-                normal_activator.collect_queries(c_query, anomal_position_vector, do_collect_normal = True)
+                if args.normal_mahal_test:
+                    normal_activator.collect_queries(c_query, object_normal_position_vector, do_collect_normal=True)
+                else :
+                    normal_activator.collect_queries(c_query, anomal_position_vector, do_collect_normal = True)
+                
                 c_attn_score = normal_activator.generate_conjugated_attn_score()
                 normal_activator.collect_attention_scores(c_attn_score, anomal_position_vector)
                 normal_activator.collect_anomal_map_loss(c_attn_score, anomal_position_vector)
@@ -128,6 +134,7 @@ def main(args):
                 with torch.no_grad():
                     latents = vae.encode(batch["anomal_image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
                 anomal_position_vector = batch["anomal_mask"].squeeze().flatten()
+                object_normal_position_vector = torch.where((object_position_vector == 1) & (anomal_position_vector == 0),1,0)
                 with torch.set_grad_enabled(True):
                     unet(latents, 0, encoder_hidden_states, trg_layer_list=args.trg_layer_list,
                          noise_type=position_embedder)
@@ -137,7 +144,10 @@ def main(args):
                     normal_activator.resize_query_features(query_dict[trg_layer][0].squeeze(0))
                     normal_activator.resize_attn_scores(attn_dict[trg_layer][0])
                 c_query = normal_activator.generate_conjugated()
-                normal_activator.collect_queries(c_query, anomal_position_vector, do_collect_normal=True)
+                if args.normal_mahal_test:
+                    normal_activator.collect_queries(c_query, object_normal_position_vector, do_collect_normal=True)
+                else:
+                    normal_activator.collect_queries(c_query, anomal_position_vector, do_collect_normal=True)
                 c_attn_score = normal_activator.generate_conjugated_attn_score()
                 normal_activator.collect_attention_scores(c_attn_score, anomal_position_vector)
                 normal_activator.collect_anomal_map_loss(c_attn_score, anomal_position_vector)
@@ -146,6 +156,8 @@ def main(args):
                 with torch.no_grad():
                     latents = vae.encode(batch["bg_anomal_image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
                 anomal_position_vector = batch["bg_anomal_mask"].squeeze().flatten()
+                object_normal_position_vector = torch.where(
+                    (object_position_vector == 1) & (anomal_position_vector == 0), 1, 0)
                 with torch.set_grad_enabled(True):
                     unet(latents, 0, encoder_hidden_states, trg_layer_list=args.trg_layer_list,
                          noise_type=position_embedder)
@@ -155,7 +167,10 @@ def main(args):
                     normal_activator.resize_query_features(query_dict[trg_layer][0].squeeze(0))
                     normal_activator.resize_attn_scores(attn_dict[trg_layer][0])
                 c_query = normal_activator.generate_conjugated()
-                normal_activator.collect_queries(c_query, anomal_position_vector, do_collect_normal=True)
+                if args.normal_mahal_test:
+                    normal_activator.collect_queries(c_query, object_normal_position_vector, do_collect_normal=True)
+                else:
+                    normal_activator.collect_queries(c_query, anomal_position_vector, do_collect_normal=True)
                 c_attn_score = normal_activator.generate_conjugated_attn_score()
                 normal_activator.collect_attention_scores(c_attn_score, anomal_position_vector)
                 normal_activator.collect_anomal_map_loss(c_attn_score, anomal_position_vector)
@@ -322,6 +337,8 @@ if __name__ == "__main__":
     parser.add_argument("--dataset_ex", action='store_true')
     parser.add_argument("--original_normalized_score", action='store_true')
     parser.add_argument("--gen_batchwise_attn", action='store_true')
+    parser.add_argument("--normal_mahal_test", action='store_true')
+    
     # [3]
     args = parser.parse_args()
     unet_passing_argument(args)
