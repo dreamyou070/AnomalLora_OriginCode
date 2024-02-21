@@ -32,6 +32,7 @@ class NormalActivator(nn.Module):
         self.resized_queries = []
         self.queries = []
         self.resized_attn_scores = []
+        self.noise_prediction_loss = []
 
     def collect_queries(self, origin_query, anomal_position_vector, do_collect_normal):
 
@@ -134,6 +135,15 @@ class NormalActivator(nn.Module):
 
         self.anomal_map_loss.append(map_loss)
 
+    def collect_noise_prediction_loss(self, noise_pred, noise, anomal_position_vector):    
+        b, c, h, w = noise_pred.shape
+        anomal_position = anomal_position_vector.reshape(h, w).unsqueeze(0).unsqueeze(0)
+        anomal_position = anomal_position.repeat(b, c, 1, 1)
+        trg_noise_pred = noise * anomal_position
+        noise_pred_loss = self.loss_l2(noise_pred.float(), trg_noise_pred.float())
+        self.noise_prediction_loss.append(noise_pred_loss)
+        
+        
     def generate_mahalanobis_distance_loss(self):
 
         def mahal(u, v, cov):
@@ -184,6 +194,14 @@ class NormalActivator(nn.Module):
         map_loss = map_loss.mean()
         self.anomal_map_loss = []
         return map_loss
+    
+    def generate_noise_prediction_loss(self):
+        noise_pred_loss = torch.stack(self.noise_prediction_loss, dim=0)
+        noise_pred_loss = noise_pred_loss.mean()
+        self.noise_prediction_loss = []
+        return noise_pred_loss
+
+        
 
     def resize_query_features(self, query) :
 
@@ -232,3 +250,4 @@ class NormalActivator(nn.Module):
         self.resized_queries = []
         self.queries = []
         self.resized_attn_scores = []
+        self.noise_prediction_loss = []

@@ -104,6 +104,7 @@ def main(args):
             device = accelerator.device
             loss = torch.tensor(0.0, dtype=weight_dtype, device=accelerator.device)
             loss_dict = {}
+            noise = torch.randn_like(latents, device=latents.device)
             with torch.set_grad_enabled(True):
                 encoder_hidden_states = text_encoder(batch["input_ids"].to(device))["last_hidden_state"]
             object_position_vector = batch['object_mask'].squeeze().flatten()
@@ -114,7 +115,7 @@ def main(args):
                 anomal_position_vector = torch.zeros_like(batch['object_mask'].squeeze().flatten())
                 object_normal_position_vector = torch.where((object_position_vector == 1) & (anomal_position_vector == 0), 1, 0)
                 with torch.set_grad_enabled(True):
-                    unet(latents, 0, encoder_hidden_states, trg_layer_list=args.trg_layer_list, noise_type=position_embedder)
+                    noise_pred = unet(latents, 0, encoder_hidden_states, trg_layer_list=args.trg_layer_list, noise_type=position_embedder).sample
                 query_dict, attn_dict = controller.query_dict, controller.step_store
                 controller.reset()
                 for trg_layer in args.trg_layer_list:
@@ -129,6 +130,9 @@ def main(args):
                 c_attn_score = normal_activator.generate_conjugated_attn_score()
                 normal_activator.collect_attention_scores(c_attn_score, anomal_position_vector)
                 normal_activator.collect_anomal_map_loss(c_attn_score, anomal_position_vector)
+                if args.test_noise_predicting_task_loss:
+                    normal_activator.collect_noise_prediction_loss(noise_pred, noise, anomal_position_vector)
+                    
             # --------------------------------------------------------------------------------------------------------- #
             if args.do_anomal_sample:
                 with torch.no_grad():
@@ -151,6 +155,8 @@ def main(args):
                 c_attn_score = normal_activator.generate_conjugated_attn_score()
                 normal_activator.collect_attention_scores(c_attn_score, anomal_position_vector)
                 normal_activator.collect_anomal_map_loss(c_attn_score, anomal_position_vector)
+                if args.test_noise_predicting_task_loss:
+                    normal_activator.collect_noise_prediction_loss(noise_pred, noise, anomal_position_vector)
             # --------------------------------------------------------------------------------------------------------- #
             if args.do_background_masked_sample:
                 with torch.no_grad():
@@ -174,6 +180,8 @@ def main(args):
                 c_attn_score = normal_activator.generate_conjugated_attn_score()
                 normal_activator.collect_attention_scores(c_attn_score, anomal_position_vector)
                 normal_activator.collect_anomal_map_loss(c_attn_score, anomal_position_vector)
+                if args.test_noise_predicting_task_loss:
+                    normal_activator.collect_noise_prediction_loss(noise_pred, noise, anomal_position_vector)
             # ----------------------------------------------------------------------------------------------------------
             # [5] backprop
             dist_loss, normal_dist_mean, normal_dist_max = normal_activator.generate_mahalanobis_distance_loss()
@@ -198,6 +206,11 @@ def main(args):
                 map_loss = normal_activator.generate_anomal_map_loss()
                 loss += map_loss
                 loss_dict['map_loss'] = map_loss.item()
+                
+            if args.test_noise_predicting_task_loss:
+                noise_pred_loss = normal_activator.generate_noise_prediction_loss()
+                loss += noise_pred_loss
+                loss_dict['noise_pred_loss'] = noise_pred_loss.item()
 
             loss = loss.to(weight_dtype)
             current_loss = loss.detach().item()
@@ -338,7 +351,7 @@ if __name__ == "__main__":
     parser.add_argument("--original_normalized_score", action='store_true')
     parser.add_argument("--gen_batchwise_attn", action='store_true')
     parser.add_argument("--normal_mahal_test", action='store_true')
-    
+    parser.add_argument("--test_noise_predicting_task_loss", action='store_true')    
     # [3]
     args = parser.parse_args()
     unet_passing_argument(args)
