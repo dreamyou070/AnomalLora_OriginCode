@@ -18,6 +18,38 @@ from safetensors.torch import load_file
 from attention_store.normal_activator import NormalActivator
 from attention_store.normal_activator import passing_normalize_argument
 
+
+def inference(latent):
+    # [1] text
+    input_ids, attention_mask = get_input_ids(tokenizer, args.prompt)
+    encoder_hidden_states = text_encoder(input_ids.to(text_encoder.device))["last_hidden_state"]
+    # [2] unet
+    unet(latent, 0, encoder_hidden_states, trg_layer_list=args.trg_layer_list,
+         noise_type=position_embedder)
+    query_dict, attn_dict = controller.query_dict, controller.step_store
+    controller.reset()
+    if args.single_layer:
+        for trg_layer in args.trg_layer_list:
+            attn_score = attn_dict[trg_layer][0]  # head, pix_num, 2
+    else:
+        for trg_layer in args.trg_layer_list:
+            normal_activator.resize_attn_scores(attn_dict[trg_layer][0])
+        attn_score = normal_activator.generate_conjugated_attn_score()
+    cls_map = attn_score[:, :, 0].squeeze().mean(dim=0)  # [res*res]
+    trigger_map = attn_score[:, :, 1].squeeze().mean(dim=0)
+    pix_num = trigger_map.shape[0]
+    res = int(pix_num ** 0.5)
+    cls_map = cls_map.unsqueeze(0).view(res, res)
+    cls_map_pil = Image.fromarray((255 * cls_map).cpu().detach().numpy().astype(np.uint8)).resize((org_h, org_w))
+    normal_map = torch.where(trigger_map > thred, 1, trigger_map).squeeze()
+    normal_map = normal_map.unsqueeze(0).view(res, res)
+    normal_map_pil = Image.fromarray(
+        normal_map.cpu().detach().numpy().astype(np.uint8) * 255).resize((org_h, org_w))
+    anomal_np = ((1 - normal_map) * 255).cpu().detach().numpy().astype(np.uint8)
+    anomaly_map_pil = Image.fromarray(anomal_np).resize((org_h, org_w))
+
+    return cls_map_pil, normal_map_pil, anomaly_map_pil
+
 def main(args):
 
     print(f'\n step 1. accelerator')
@@ -63,7 +95,7 @@ def main(args):
         lora_name, ext = os.path.splitext(model)
         lora_epoch = int(lora_name.split('-')[-1])
 
-        # [1] position embedding layer
+        # [1] loead pe
         parent = os.path.split(args.network_folder)[0]
         pe_base_dir = os.path.join(parent, f'position_embedder')
         pretrained_pe_dir = os.path.join(pe_base_dir, f'position_embedder_{lora_epoch}.safetensors')
@@ -71,7 +103,7 @@ def main(args):
         position_embedder.load_state_dict(position_embedder_state_dict)
         position_embedder.to(accelerator.device, dtype=weight_dtype)
 
-        # [2] recon base folder
+        # [2] load network
         anomal_detecting_state_dict = load_file(network_model_dir)
         for k in anomal_detecting_state_dict.keys():
             raw_state_dict[k] = anomal_detecting_state_dict[k]
@@ -91,16 +123,21 @@ def main(args):
         for thred in args.threds :
             thred_folder = os.path.join(lora_base_folder, f'thred_{thred}')
             os.makedirs(thred_folder, exist_ok=True)
+
             check_base_folder = os.path.join(thred_folder, f'my_check')
             os.makedirs(check_base_folder, exist_ok=True)
             answer_base_folder = os.path.join(thred_folder, f'scoring/{args.obj_name}/test')
             os.makedirs(answer_base_folder, exist_ok=True)
 
             test_img_folder = args.data_path
+            parent, test_folder = os.path.split(test_img_folder)
+            train_img_folder = os.path.join(parent, 'train')
             anomal_folders = os.listdir(test_img_folder)
             for anomal_folder in anomal_folders:
+
                 answer_anomal_folder = os.path.join(answer_base_folder, anomal_folder)
                 os.makedirs(answer_anomal_folder, exist_ok=True)
+
                 save_base_folder = os.path.join(check_base_folder, anomal_folder)
                 os.makedirs(save_base_folder, exist_ok=True)
 
@@ -122,51 +159,42 @@ def main(args):
                         with torch.no_grad():
                             img = load_image(rgb_img_dir, 512, 512)
                             vae_latent = image2latent(img, vae, weight_dtype)
-                            input_ids, attention_mask = get_input_ids(tokenizer, args.prompt)
-                            encoder_hidden_states = text_encoder(input_ids.to(text_encoder.device))["last_hidden_state"]
-                            unet(vae_latent, 0, encoder_hidden_states,
-                                 trg_layer_list=args.trg_layer_list, noise_type=position_embedder)
-                            query_dict, attn_dict = controller.query_dict, controller.step_store
-                            controller.reset()
-                            if args.single_layer :
-                                for trg_layer in args.trg_layer_list:
-                                    attn_score = attn_dict[trg_layer][0]  # head, pix_num, 2
-                            else :
-                                for trg_layer in args.trg_layer_list:
-                                    normal_activator.resize_attn_scores(attn_dict[trg_layer][0])
-                                attn_score = normal_activator.generate_conjugated_attn_score()
-
-                            cls_map = attn_score[:, :, 0].squeeze().mean(dim=0)  # [res*res]
-                            trigger_map = attn_score[:, :, 1].squeeze().mean(dim=0)
-                            pix_num = trigger_map.shape[0]
-                            res = int(pix_num ** 0.5)
-
-                            cls_map = cls_map.unsqueeze(0).view(res, res)
-                            cls_map_pil = Image.fromarray(
-                                (255 * cls_map).cpu().detach().numpy().astype(np.uint8)).resize((org_h, org_w))
-                            cls_map_pil.save(os.path.join(save_base_folder, f'{name}_cls_map.png'))
-
-                            normal_map = torch.where(trigger_map > thred, 1, trigger_map).squeeze()
-                            normal_map = normal_map.unsqueeze(0).view(res, res)
-                            normal_map_pil = Image.fromarray(
-                                normal_map.cpu().detach().numpy().astype(np.uint8) * 255).resize((org_h, org_w))
-                            normal_map_pil.save(
-                                os.path.join(save_base_folder, f'{name}_normal_score_map.png'))
-
-                            anomal_np = ((1 - normal_map) * 255).cpu().detach().numpy().astype(np.uint8)
-                            anomaly_map_pil = Image.fromarray(anomal_np).resize((org_h, org_w))
-                            anomaly_map_pil.save(
-                                os.path.join(save_base_folder, f'{name}_anomaly_score_map.png'))
+                            cls_map_pil, normal_map_pil, anomaly_map_pil = inference(vae_latent)
+                            cls_map_pil.save(os.path.join(save_base_folder, f'{name}_cls.png'))
+                            normal_map_pil.save(os.path.join(save_base_folder, f'{name}_normal.png'))
+                            anomaly_map_pil.save( os.path.join(save_base_folder, f'{name}_anomal.png'))
                             anomaly_map_pil.save(os.path.join(answer_anomal_folder, f'{name}.tiff'))
-
                         gt_img_save_dir = os.path.join(save_base_folder, f'{name}_gt.png')
                         Image.open(gt_img_dir).resize((org_h, org_w)).save(gt_img_save_dir)
                         controller.reset()
                         normal_activator.reset()
 
+
+            normal_folder = os.listdir(train_img_folder)
+            for normal_folder in normal_folder:
+                save_base_folder = os.path.join(check_base_folder, f'train_{normal_folder}')
+                os.makedirs(save_base_folder, exist_ok=True)
+                normal_folder_dir = os.path.join(train_img_folder, normal_folder)
+                rgb_folder = os.path.join(normal_folder_dir, 'rgb')
+                rgb_imgs = os.listdir(rgb_folder)
+                for rgb_img in rgb_imgs:
+                    name, ext = os.path.splitext(rgb_img)
+                    rgb_img_dir = os.path.join(rgb_folder, rgb_img)
+                    org_h, org_w = Image.open(rgb_img_dir).size
+                    img_dir = os.path.join(save_base_folder, f'{name}_org{ext}')
+                    Image.open(rgb_img_dir).resize((org_h, org_w)).save(img_dir)
+                    if accelerator.is_main_process:
+                        with torch.no_grad():
+                            img = load_image(rgb_img_dir, 512, 512)
+                            vae_latent = image2latent(img, vae, weight_dtype)
+                            cls_map_pil, normal_map_pil, anomaly_map_pil = inference(vae_latent)
+                            cls_map_pil.save(os.path.join(save_base_folder, f'{name}_cls.png'))
+                            normal_map_pil.save(os.path.join(save_base_folder, f'{name}_normal.png'))
+                            anomaly_map_pil.save(os.path.join(save_base_folder, f'{name}_anomaly.png'))
+                        controller.reset()
+                        normal_activator.reset()
         for k in raw_state_dict_orig.keys():
             raw_state_dict[k] = raw_state_dict_orig[k]
-
         network.load_state_dict(raw_state_dict)
 
 if __name__ == '__main__':
