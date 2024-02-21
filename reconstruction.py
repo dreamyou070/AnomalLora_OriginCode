@@ -126,18 +126,15 @@ def main(args):
                             encoder_hidden_states = text_encoder(input_ids.to(text_encoder.device))["last_hidden_state"]
                             unet(vae_latent, 0, encoder_hidden_states,
                                  trg_layer_list=args.trg_layer_list, noise_type=position_embedder)
+                            query_dict, attn_dict = controller.query_dict, controller.step_store
+                            controller.reset()
                             if args.single_layer :
-                                query_dict, attn_dict = controller.query_dict, controller.step_store
-                                controller.reset()
                                 for trg_layer in args.trg_layer_list:
                                     attn_score = attn_dict[trg_layer][0]  # head, pix_num, 2
                             else :
-                                b_query_dict, b_key_dict = controller.batchshaped_query_dict, controller.batchshaped_key_dict
-                                controller.reset()
                                 for trg_layer in args.trg_layer_list:
-                                    normal_activator.collect_qk_features(b_query_dict[trg_layer][0].squeeze(0),
-                                                                         b_key_dict[trg_layer][0].squeeze(0))
-                                attn_score = normal_activator.generate_conjugated_attention()
+                                    normal_activator.resize_attn_scores(attn_dict[trg_layer][0])
+                                attn_score = normal_activator.generate_conjugated_attn_score()
                             cls_map = attn_score[:, :, 0].squeeze().mean(dim=0)  # [res*res]
                             trigger_map = attn_score[:, :, 1].squeeze().mean(dim=0)
                             pix_num = trigger_map.shape[0]
