@@ -4,7 +4,7 @@ from accelerate.utils import set_seed
 import torch
 import os
 from attention_store import AttentionStore
-from attention_store.normal_activator import NormalActivator
+from attention_store.normal_activator import NormalActivator, passing_normalize_argument
 from model.diffusion_model import transform_models_if_DDP
 from model.unet import unet_passing_argument
 from utils import get_epoch_ckpt_name, save_model, prepare_dtype, arg_as_list
@@ -16,7 +16,6 @@ from utils.model_utils import pe_model_save
 from utils.utils_loss import FocalLoss
 from data.prepare_dataset import call_dataset
 from model import call_model_package
-
 
 def main(args):
 
@@ -336,11 +335,9 @@ if __name__ == "__main__":
     parser.add_argument("--use_focal_loss", action='store_true')
     parser.add_argument("--use_noise_scheduler", action='store_true')
     parser.add_argument("--do_normalized_score", action='store_true')
-
     # [3]
     args = parser.parse_args()
     unet_passing_argument(args)
     passing_argument(args)
-    from attention_store.normal_activator import passing_normalize_argument
     passing_normalize_argument(args)
     main(args)

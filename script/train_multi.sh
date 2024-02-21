@@ -2,20 +2,21 @@
 
 port_number=50002
 pretrained_model_name_or_path="../../../pretrained_stable_diffusion/stable-diffusion-v1-5/v1-5-pruned.safetensors"
-obj_name='bagel'
-trigger_word='bagel'
+obj_name='carrot'
+trigger_word='carrot'
 bench_mark='MVTec3D-AD'
 sub_folder="sub_3_background_masked_sample_anomal_sample"
-folder_name="attn_loss_normalized_score_map_loss_multi_code"
+folder_name="attn_loss_normalized_map_loss_multi_code"
 output_dir="../../result/${bench_mark}/${obj_name}/${sub_folder}/${folder_name}"
 
 
-accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_config \
+accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_5_config \
  --main_process_port $port_number ../train_multi.py \
  --log_with wandb \
  --output_dir ${output_dir} \
  --pretrained_model_name_or_path "${pretrained_model_name_or_path}" \
  --data_path "../../../MyData/anomaly_detection/${bench_mark}" --beta_scale_factor 0.8 \
+ --anomal_source_path "../../../MyData/anomal_source" \
  --anomal_only_on_object \
  --bgrm_test \
  --trigger_word "${trigger_word}" --obj_name "${obj_name}" \

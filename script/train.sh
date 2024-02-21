@@ -9,8 +9,6 @@ sub_folder="train_code_check_with_anomal_src"
 folder_name="train_code_check_with_anomal_src"
 output_dir="../../result/${bench_mark}/${obj_name}/${sub_folder}/${folder_name}"
 
-
-
 accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_5_config \
  --main_process_port $port_number ../train.py \
  --log_with wandb \
@@ -20,7 +18,8 @@ accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_5_config \
  --anomal_source_path "../../../MyData/anomal_source" \
  --anomal_only_on_object \
  --bgrm_test \
- --trigger_word "${trigger_word}" --obj_name "${obj_name}" \
+ --trigger_word "${trigger_word}" \
+ --obj_name "${obj_name}" \
  --train_unet --train_text_encoder --d_dim 320 --latent_res 64 \
  --position_embedding_layer 'down_blocks_0_attentions_0_transformer_blocks_0_attn1' \
  --trg_layer_list "['up_blocks_3_attentions_2_transformer_blocks_0_attn2']" \

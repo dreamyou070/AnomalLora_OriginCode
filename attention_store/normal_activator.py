@@ -4,17 +4,16 @@ import torch.nn as nn
 def passing_normalize_argument(args) :
     global argument
     argument = args
+
 class NormalActivator(nn.Module):
 
     def __init__(self, loss_focal, loss_l2, use_focal_loss):
         super(NormalActivator, self).__init__()
 
         self.do_normalized_score = argument.do_normalized_score
-
         # [1]
         self.anomal_feat_list = []
         self.normal_feat_list = []
-
         # [2]
         self.attention_loss = {}
         self.attention_loss['normal_cls_loss'] = []
@@ -23,13 +22,11 @@ class NormalActivator(nn.Module):
         self.attention_loss['anormal_trigger_loss'] = []
         self.trigger_score = []
         self.cls_score = []
-
         # [3]
         self.loss_focal = loss_focal
         self.loss_l2 = loss_l2
         self.anomal_map_loss = []
         self.use_focal_loss = use_focal_loss
-
         # [4]
         self.normal_matching_query_loss = []
         self.resized_queries = []
@@ -53,8 +50,10 @@ class NormalActivator(nn.Module):
 
         def normalize_score(score):
             score = torch.softmax(score, dim=-1)
+            """ Change Code """
             max_value = (torch.max(score, dim=-1)[0]).unsqueeze(-1)
             normalized_trigger_map = score / max_value
+            score = normalized_trigger_map
             return score
 
         # [1] preprocessing
@@ -207,16 +206,13 @@ class NormalActivator(nn.Module):
         # [1]
         self.anomal_feat_list = []
         self.normal_feat_list = []
-
         # [2]
         self.attention_loss = {'normal_cls_loss': [], 'normal_trigger_loss': [],
                                'anormal_cls_loss': [], 'anormal_trigger_loss': []}
         self.trigger_score = []
         self.cls_score = []
-
         # [3]
         self.anomal_map_loss = []
-
         # [4]
         self.normal_matching_query_loss = []
         self.resized_queries = []
