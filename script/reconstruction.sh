@@ -3,8 +3,8 @@
 port_number=51111
 obj_name='carrot'
 caption='carrot'
-sub_folder="train_code_check"
-folder_name="train_code_check"
+sub_folder="with_origin"
+folder_name="with_origin"
 bench_mark="MVTec3D-AD"
 position_embedding_layer="down_blocks_0_attentions_0_transformer_blocks_0_attn1"
 
