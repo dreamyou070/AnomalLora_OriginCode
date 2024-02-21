@@ -1,9 +1,9 @@
 # !/bin/bash
 
-port_number=59853
+port_number=59854
 pretrained_model_name_or_path="../../../pretrained_stable_diffusion/stable-diffusion-v1-5/v1-5-pruned.safetensors"
-obj_name='cookie'
-trigger_word='cookie'
+obj_name='dowel'
+trigger_word='dowel'
 bench_mark='MVTec3D-AD'
 
 sub_folder="sub_3_background_masked_sample_anomal_sample_up_16_32_64"
