@@ -9,6 +9,10 @@ from torchvision import transforms
 import cv2
 import imgaug.augmenters as iaa
 
+def passing_mvtec_argument(args):
+    global argument
+    argument = args
+
 class MVTecDRAEMTestDataset(Dataset):
 
     def __init__(self, root_dir, resize_shape=None):
@@ -61,7 +65,8 @@ class MVTecDRAEMTestDataset(Dataset):
 
         return sample
 
-anomal_p = 0.04
+
+anomal_p = argument.anomal_p
 
 class MVTecDRAEMTrainDataset(Dataset):
 
@@ -190,7 +195,6 @@ class MVTecDRAEMTrainDataset(Dataset):
                     total_object_pixel = np.sum(object_position)
                     perlin_thr = perlin_thr * object_position
                 binary_2D_mask = (np.where(perlin_thr == 0, 0, 1)).astype(np.float32)  # [512,512,3]
-                print(f'[anomal] np.sum(binary_2D_mask) = {np.sum(binary_2D_mask)}')
                 if np.sum(binary_2D_mask) > anomal_p * total_object_pixel :
                     break
             blur_3D_mask = np.expand_dims(perlin_thr, axis=2)  # [512,512,3]
@@ -227,7 +231,7 @@ class MVTecDRAEMTrainDataset(Dataset):
                     total_object_pixel = np.sum(object_position)
                     blur_2D_mask = (result_thr * object_position).astype(np.float32)
                 binary_2D_mask = (np.where(blur_2D_mask == 0, 0, 1)).astype(np.float32)  # [512,512,3]
-                print(f'[gaussian] np.sum(binary_2D_mask) = {np.sum(binary_2D_mask)} | anomal_p * total_object_pixel = {anomal_p * total_object_pixel}
+                #print(f'[gaussian] np.sum(binary_2D_mask) = {np.sum(binary_2D_mask)} | anomal_p * total_object_pixel = {anomal_p * total_object_pixel}
                 if np.sum(binary_2D_mask) > anomal_p * total_object_pixel :
                     break
             blur_3D_mask = np.expand_dims(blur_2D_mask, axis=2)  # [512,512,3]
@@ -305,7 +309,6 @@ class MVTecDRAEMTrainDataset(Dataset):
                 if self.anomal_only_on_object:
                     object_img_aug = aug(image=self.load_image(object_mask_dir, self.resize_shape[0], self.resize_shape[1], type='L') )
                     object_position = np.where((np.array(object_img_aug)) == 0, 0, 1)             # [512,512]
-                    print(f'object position num = {np.sum(object_position)}')
                     # [4.1] anomal img
                     anomaly_source_img = self.load_image(self.anomaly_source_paths[anomal_src_idx], self.resize_shape[0], self.resize_shape[1])
                     anomal_img, anomal_mask_torch = self.augment_image(img,anomaly_source_img, beta_scale_factor=self.beta_scale_factor,
