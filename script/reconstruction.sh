@@ -4,7 +4,7 @@ port_number=51141
 obj_name='carrot'
 caption='carrot'
 sub_folder="sub_3_background_masked_sample_anomal_sample_up_64_16_down_32"
-folder_name="attn_loss_normalized_map_loss"
+folder_name="attn_loss_normalized_map_loss_dist_loss"
 bench_mark="MVTec3D-AD"
 position_embedding_layer="down_blocks_0_attentions_0_transformer_blocks_0_attn1"
 
