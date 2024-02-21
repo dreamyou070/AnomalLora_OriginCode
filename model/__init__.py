@@ -40,6 +40,7 @@ def call_model_package(args, weight_dtype, accelerator):
         position_embedder_path = os.path.join(base_folder, f"position_embedder/{pe_name}")
         position_embedder_state_dict = load_file(position_embedder_path)
         position_embedder.load_state_dict(position_embedder_state_dict)
+        print(f'Position Embedding Loading Weights from {position_embedder_path}')
     position_embedder.to(weight_dtype)
     return text_encoder, vae, unet, network, position_embedder
 
