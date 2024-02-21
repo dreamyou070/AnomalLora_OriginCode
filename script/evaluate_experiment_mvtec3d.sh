@@ -5,7 +5,7 @@ bench_mark="MVTec3D-AD"
 dataset_dir="../../../MyData/anomaly_detection/${bench_mark}"
 
 sub_folder="sub_3_background_masked_sample_anomal_sample"
-folder_name="attn_loss_original_normalized_score_map_loss_noise_predicting_task_loss"
+folder_name="attn_loss_original_normalized_score_map_loss_normalizing_mahal_feat"
 
 output_dir="metrics"
 
