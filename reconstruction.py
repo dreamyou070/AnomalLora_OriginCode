@@ -203,6 +203,8 @@ def main(args):
                             anomaly_map_pil.save(os.path.join(save_base_folder, f'{name}_anomaly.png'))
                         controller.reset()
                         normal_activator.reset()
+
+        print(f'Model To Original')
         for k in raw_state_dict_orig.keys():
             raw_state_dict[k] = raw_state_dict_orig[k]
         network.load_state_dict(raw_state_dict)

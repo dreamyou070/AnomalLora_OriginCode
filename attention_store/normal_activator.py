@@ -237,7 +237,7 @@ class NormalActivator(nn.Module):
         return concat_query
 
     def generate_conjugated_attn_score(self,):
-        concat_attn_score = torch.cat(self.resized_attn_scores, dim=2)     # 8, 4096, sen_len ***
+        concat_attn_score = torch.cat(self.resized_attn_scores, dim=0)     # 8, 4096, sen_len ***
         self.resized_attn_scores = []
         return concat_attn_score[:,:,:2]
 
