@@ -33,7 +33,7 @@ def main(args):
                 gt_defect_dir = os.path.join(ground_truth_dir, f'{defect}')
 
                 imgs = os.listdir(gt_defect_dir)
-                
+
                 for img in imgs:
 
                     # [1] new folder
