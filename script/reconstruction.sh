@@ -1,8 +1,8 @@
 # !/bin/bash
 
-port_number=50032
-obj_name='carrot'
-caption='carrot'
+port_number=51101
+obj_name='bagel'
+caption='bagel'
 sub_folder="sub_3_background_masked_sample_anomal_sample_up_16_32_64"
 folder_name="attn_loss_original_normalized_score_map_loss"
 bench_mark="MVTec3D-AD"
@@ -18,4 +18,4 @@ accelerate launch --config_file ../../../gpu_config/gpu_0_config \
                                     'up_blocks_2_attentions_2_transformer_blocks_0_attn2',
                                     'up_blocks_1_attentions_2_transformer_blocks_0_attn2',]" \
  --d_dim 320 --use_position_embedder --position_embedding_layer ${position_embedding_layer} \
- --threds [0.95]
+ --threds [0.5]
