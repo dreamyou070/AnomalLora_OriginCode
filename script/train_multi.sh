@@ -1,9 +1,9 @@
 # !/bin/bash
 
-port_number=50500
+port_number=50600
 pretrained_model_name_or_path="../../../pretrained_stable_diffusion/stable-diffusion-v1-5/v1-5-pruned.safetensors"
-obj_name='dowel'
-trigger_word='dowel'
+obj_name='foam'
+trigger_word='foam'
 bench_mark='MVTec3D-AD'
 
 
