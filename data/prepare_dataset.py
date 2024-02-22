@@ -1,7 +1,6 @@
 import os
 from model.tokenizer import load_tokenizer
 from data.mvtec import MVTecDRAEMTrainDataset
-from data.mvtec2 import MVTecDRAEMTrainDataset as MVTecDRAEMTrainDataset2
 import torch
 
 def call_dataset(args) :
@@ -17,11 +16,7 @@ def call_dataset(args) :
     if args.use_small_anomal:
         args.anomal_source_path = os.path.join(args.data_path, f"anomal_source_{args.obj_name}")
 
-    if args.dataset_ex :
-        data_class = MVTecDRAEMTrainDataset2
-    else :
-        data_class = MVTecDRAEMTrainDataset
-
+    data_class = MVTecDRAEMTrainDataset
     dataset = data_class(root_dir=root_dir,
                                      anomaly_source_path=args.anomal_source_path,
                                      resize_shape=[512, 512],
