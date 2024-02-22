@@ -18,5 +18,5 @@ accelerate launch --config_file ../../../gpu_config/gpu_0_config \
                                     'up_blocks_2_attentions_2_transformer_blocks_0_attn2',
                                     'up_blocks_1_attentions_2_transformer_blocks_0_attn2']" \
  --d_dim 320 --use_position_embedder --position_embedding_layer ${position_embedding_layer} \
- --threds [0.5]
+ --threds [0.55,0.6,0.65,0.7,0.75,0.8]
 
