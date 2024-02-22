@@ -1,10 +1,10 @@
 # !/bin/bash
 
-port_number=50031
+port_number=50032
 obj_name='carrot'
 caption='carrot'
 sub_folder="sub_3_background_masked_sample_anomal_sample_up_16_32_64"
-folder_name="attn_loss_original_normalized_score_map_loss"
+folder_name="attn_loss_original_normalized_score_map_loss_noise_predicting_task_loss"
 bench_mark="MVTec3D-AD"
 position_embedding_layer="down_blocks_0_attentions_0_transformer_blocks_0_attn1"
 
@@ -19,4 +19,3 @@ accelerate launch --config_file ../../../gpu_config/gpu_0_config \
                                     'up_blocks_1_attentions_2_transformer_blocks_0_attn2',]" \
  --d_dim 320 --use_position_embedder --position_embedding_layer ${position_embedding_layer} \
  --threds [0.5]
-
