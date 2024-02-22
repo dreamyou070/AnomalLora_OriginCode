@@ -1,7 +1,7 @@
 #! /bin/bash
 
 bench_mark="MVTec3D-AD"
-class_name="bagel"
+class_name="cable_gland"
 sub_folder="sub_3_background_masked_sample_anomal_sample_up_16_32_64"
 folder_name="attn_loss_original_normalized_score_map_loss"
 
