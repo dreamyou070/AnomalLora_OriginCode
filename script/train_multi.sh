@@ -1,9 +1,9 @@
 # !/bin/bash
 
-port_number=50008
+port_number=50018
 pretrained_model_name_or_path="../../../pretrained_stable_diffusion/stable-diffusion-v1-5/v1-5-pruned.safetensors"
-obj_name='peach'
-trigger_word='peach'
+obj_name='potato'
+trigger_word='potato'
 bench_mark='MVTec3D-AD'
 
 
@@ -11,7 +11,7 @@ sub_folder="sub_3_background_masked_sample_anomal_sample"
 folder_name="attn_loss_original_normalized_score_map_loss_dist_loss_normalized"
 output_dir="../../result/${bench_mark}/${obj_name}/${sub_folder}/${folder_name}"
 
-accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_config \
+accelerate launch --config_file ../../../gpu_config/gpu_0_1_config \
  --main_process_port $port_number ../train_multi.py \
  --log_with wandb \
  --output_dir ${output_dir} \
