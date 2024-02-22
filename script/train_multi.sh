@@ -1,14 +1,14 @@
 # !/bin/bash
 
-port_number=50009
+port_number=50010
 pretrained_model_name_or_path="../../../pretrained_stable_diffusion/stable-diffusion-v1-5/v1-5-pruned.safetensors"
-obj_name='rope'
-trigger_word='rope'
+obj_name='tire'
+trigger_word='tire'
 bench_mark='MVTec3D-AD'
 
 
 sub_folder="sub_3_background_masked_sample_anomal_sample"
-folder_name="attn_loss_original_normalized_score_map_loss_dist_loss_normalized"
+folder_name="attn_loss_original_normalized_score_map_loss_noise_predicting_task_loss"
 output_dir="../../result/${bench_mark}/${obj_name}/${sub_folder}/${folder_name}"
 
 accelerate launch --config_file ../../../gpu_config/gpu_0_1_config \
