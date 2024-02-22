@@ -1,6 +1,6 @@
 # !/bin/bash
 
-port_number=50006
+port_number=50007
 pretrained_model_name_or_path="../../../pretrained_stable_diffusion/stable-diffusion-v1-5/v1-5-pruned.safetensors"
 obj_name='foam'
 trigger_word='foam'
@@ -19,7 +19,7 @@ accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_config \
  --data_path "../../../MyData/anomaly_detection/${bench_mark}" --beta_scale_factor 0.8 \
  --anomal_source_path "../../../MyData/anomal_source" \
  --anomal_only_on_object \
- --anomal_p 0.04 \
+ --anomal_p 0.02 \
  --bgrm_test \
  --trigger_word "${trigger_word}" --obj_name "${obj_name}" \
  --train_unet --train_text_encoder --d_dim 320 --latent_res 64 \
