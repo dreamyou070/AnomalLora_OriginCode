@@ -1,9 +1,9 @@
 # !/bin/bash
 
-port_number=50172
+port_number=50182
 pretrained_model_name_or_path="../../../pretrained_stable_diffusion/stable-diffusion-v1-5/v1-5-pruned.safetensors"
-obj_name='peach'
-trigger_word='peach'
+obj_name='potato'
+trigger_word='potato'
 bench_mark='MVTec3D-AD'
 # --do_dist_loss --mahalanobis_only_object --mahalanobis_normalize \
 
