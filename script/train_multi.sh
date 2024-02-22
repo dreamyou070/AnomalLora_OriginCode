@@ -1,9 +1,9 @@
 # !/bin/bash
 
-port_number=50800
+port_number=50202
 pretrained_model_name_or_path="../../../pretrained_stable_diffusion/stable-diffusion-v1-5/v1-5-pruned.safetensors"
-obj_name='peach'
-trigger_word='peach'
+obj_name='cable_gland'
+trigger_word='cable'
 bench_mark='MVTec3D-AD'
 
 
