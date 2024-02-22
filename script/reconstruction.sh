@@ -1,8 +1,8 @@
 # !/bin/bash
 
-port_number=51701
-obj_name='peach'
-caption='peach'
+port_number=51801
+obj_name='potato'
+caption='potato'
 sub_folder="sub_3_background_masked_sample_anomal_sample_up_16_32_64"
 folder_name="attn_loss_original_normalized_score_map_loss"
 bench_mark="MVTec3D-AD"
