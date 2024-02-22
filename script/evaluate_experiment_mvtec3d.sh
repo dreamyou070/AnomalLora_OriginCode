@@ -1,6 +1,6 @@
 #! /bin/bash
 
-class_name="cable_gland"
+class_name="bagel"
 bench_mark="MVTec3D-AD"
 dataset_dir="../../../MyData/anomaly_detection/${bench_mark}"
 
