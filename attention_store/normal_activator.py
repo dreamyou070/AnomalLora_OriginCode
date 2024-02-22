@@ -43,7 +43,8 @@ class NormalActivator(nn.Module):
             anormal_flag = anormal_position[pix_idx]
             if normal_flag == 1:
                 if do_collect_normal:
-                    self.nomal_feat_list.append(feat.unsqueeze(0))
+                    self.normal_feat_list.append(feat.unsqueeze(0))
+
             elif anormal_flag == 1 :
                 self.anormal_feat_list.append(feat.unsqueeze(0))
                     
