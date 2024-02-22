@@ -4,7 +4,7 @@ port_number=51202
 obj_name='cable_gland'
 caption='cable'
 sub_folder="sub_3_background_masked_sample_anomal_sample_up_16_32_64"
-folder_name="attn_loss_original_normalized_score_map_loss_noise_predicting_task_loss"
+folder_name="attn_loss_original_normalized_score_map_loss_dist_loss_on_object_normalize_task_loss"
 bench_mark="MVTec3D-AD"
 position_embedding_layer="down_blocks_0_attentions_0_transformer_blocks_0_attn1"
 
