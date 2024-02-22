@@ -17,9 +17,9 @@ class NormalActivator(nn.Module):
         # [2]
         self.attention_loss = {}
         self.attention_loss['normal_cls_loss'] = []
-        self.attention_loss['anormal_cls_loss'] = []
+        self.attention_loss['anomal_cls_loss'] = []
         self.attention_loss['normal_trigger_loss'] = []
-        self.attention_loss['anormal_trigger_loss'] = []
+        self.attention_loss['anomal_trigger_loss'] = []
         self.trigger_score = []
         self.cls_score = []
         # [3]
@@ -34,19 +34,20 @@ class NormalActivator(nn.Module):
         self.resized_attn_scores = []
         self.noise_prediction_loss = []
 
-    def collect_queries(self, origin_query, normal_position, anormal_position, do_collect_normal):
+    def collect_queries(self, origin_query, normal_position, anomal_position, do_collect_normal):
 
         pix_num = origin_query.shape[0]
         for pix_idx in range(pix_num):
             feat = origin_query[pix_idx].squeeze(0)
             normal_flag = normal_position[pix_idx]
-            anormal_flag = anormal_position[pix_idx]
+            anomal_flag = anomal_position[pix_idx]
             if normal_flag == 1:
                 if do_collect_normal:
                     self.normal_feat_list.append(feat.unsqueeze(0))
 
-            elif anormal_flag == 1 :
-                self.anormal_feat_list.append(feat.unsqueeze(0))
+            elif anomal_flag == 1 :
+                self.anomal_feat_list.append(feat.unsqueeze(0))
+
                     
     
     def collect_queries_normal(selfself, origin_query, normal_position_vector, do_collect_normal):
@@ -109,8 +110,8 @@ class NormalActivator(nn.Module):
 
         anomal_pixel_num = anomal_position_vector.sum()
         if anomal_pixel_num > 0:
-            self.attention_loss['anormal_cls_loss'].append(anomal_cls_loss.mean())
-            self.attention_loss['anormal_trigger_loss'].append(anomal_trigger_loss.mean())
+            self.attention_loss['anomal_cls_loss'].append(anomal_cls_loss.mean())
+            self.attention_loss['anomal_trigger_loss'].append(anomal_trigger_loss.mean())
 
     def collect_anomal_map_loss(self, attn_score, anomal_position_vector):
 
@@ -166,10 +167,10 @@ class NormalActivator(nn.Module):
         normal_dist_mean = torch.tensor(normal_mahalanobis_dists).mean()
 
         if len(self.anomal_feat_list) > 0:
-            anormal_feats = torch.cat(self.anomal_feat_list, dim=0)
-            anormal_mahalanobis_dists = [mahal(feat, mu, cov) for feat in anormal_feats]
-            anormal_dist_mean = torch.tensor(anormal_mahalanobis_dists).mean()
-            total_dist = normal_dist_mean + anormal_dist_mean
+            anomal_feats = torch.cat(self.anomal_feat_list, dim=0)
+            anomal_mahalanobis_dists = [mahal(feat, mu, cov) for feat in anomal_feats]
+            anomal_dist_mean = torch.tensor(anomal_mahalanobis_dists).mean()
+            total_dist = normal_dist_mean + anomal_dist_mean
             normal_dist_loss = (normal_dist_mean / total_dist).requires_grad_()
         else:
             normal_dist_loss = normal_dist_max.requires_grad_()
@@ -186,15 +187,15 @@ class NormalActivator(nn.Module):
             normal_cls_loss = torch.stack(self.attention_loss['normal_cls_loss'], dim=0).mean(dim=0)
             normal_trigger_loss = torch.stack(self.attention_loss['normal_trigger_loss'], dim=0).mean(dim=0)
 
-        anormal_cls_loss = 0.0
-        anormal_trigger_loss = 0.0
-        if len(self.attention_loss['anormal_cls_loss']) != 0:
-            anormal_cls_loss = torch.stack(self.attention_loss['anormal_cls_loss'], dim=0).mean(dim=0)
-            anormal_trigger_loss = torch.stack(self.attention_loss['anormal_trigger_loss'], dim=0).mean(dim=0)
+        anomal_cls_loss = 0.0
+        anomal_trigger_loss = 0.0
+        if len(self.attention_loss['anomal_cls_loss']) != 0:
+            anomal_cls_loss = torch.stack(self.attention_loss['anomal_cls_loss'], dim=0).mean(dim=0)
+            anomal_trigger_loss = torch.stack(self.attention_loss['anomal_trigger_loss'], dim=0).mean(dim=0)
 
         self.attention_loss = {'normal_cls_loss': [], 'normal_trigger_loss': [],
-                               'anormal_cls_loss': [], 'anormal_trigger_loss': []}
-        return normal_cls_loss, normal_trigger_loss, anormal_cls_loss, anormal_trigger_loss
+                               'anomal_cls_loss': [], 'anomal_trigger_loss': []}
+        return normal_cls_loss, normal_trigger_loss, anomal_cls_loss, anomal_trigger_loss
 
     def generate_anomal_map_loss(self):
         map_loss = torch.stack(self.anomal_map_loss, dim=0)
@@ -247,7 +248,7 @@ class NormalActivator(nn.Module):
         self.normal_feat_list = []
         # [2]
         self.attention_loss = {'normal_cls_loss': [], 'normal_trigger_loss': [],
-                               'anormal_cls_loss': [], 'anormal_trigger_loss': []}
+                               'anomal_cls_loss': [], 'anomal_trigger_loss': []}
         self.trigger_score = []
         self.cls_score = []
         # [3]

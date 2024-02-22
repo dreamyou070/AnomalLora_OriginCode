@@ -289,7 +289,7 @@ class MVTecDRAEMTrainDataset(Dataset):
             gt_mask_np = np.where((np.array(gt_img, np.uint8) / 255) < 0.6, 0, 1) # anomal one, normal zero
             gt_mask = torch.tensor(gt_mask_np)  # shape = [64,64], 0 = background, 1 = object
 
-            object_mask = gt_mask # anormal one
+            object_mask = gt_mask # anomal one
             anomal_mask_torch = gt_mask.unsqueeze(0) # anomal one
             back_anomal_mask_torch = gt_mask.unsqueeze(0)
 

@@ -128,12 +128,12 @@ def main(args):
                 if args.mahalanobis_only_object :
                     normal_activator.collect_queries(c_query,
                                                      normal_position = object_normal_position_vector,
-                                                     anormal_position = anomal_position_vector,
+                                                     anomal_position = anomal_position_vector,
                                                      do_collect_normal=True)
                 else :
                     normal_activator.collect_queries(c_query,
                                                      normal_position = (1-anomal_position_vector),
-                                                     anormal_position = anomal_position_vector,
+                                                     anomal_position = anomal_position_vector,
                                                      do_collect_normal = True)
                 
                 c_attn_score = normal_activator.generate_conjugated_attn_score()
@@ -161,12 +161,12 @@ def main(args):
                 if args.mahalanobis_only_object:
                     normal_activator.collect_queries(c_query,
                                                      normal_position=object_normal_position_vector,
-                                                     anormal_position=anomal_position_vector,
+                                                     anomal_position=anomal_position_vector,
                                                      do_collect_normal=True)
                 else:
                     normal_activator.collect_queries(c_query,
                                                      normal_position=(1 - anomal_position_vector),
-                                                     anormal_position=anomal_position_vector,
+                                                     anomal_position=anomal_position_vector,
                                                      do_collect_normal=True)
                 c_attn_score = normal_activator.generate_conjugated_attn_score()
                 normal_activator.collect_attention_scores(c_attn_score, anomal_position_vector)
@@ -193,12 +193,12 @@ def main(args):
                 if args.mahalanobis_only_object :
                     normal_activator.collect_queries(c_query,
                                                      normal_position = object_normal_position_vector,
-                                                     anormal_position = anomal_position_vector,
+                                                     anomal_position = anomal_position_vector,
                                                      do_collect_normal=True)
                 else :
                     normal_activator.collect_queries(c_query,
                                                      normal_position = (1-anomal_position_vector),
-                                                     anormal_position = anomal_position_vector,
+                                                     anomal_position = anomal_position_vector,
                                                      do_collect_normal = True)
 
                 c_attn_score = normal_activator.generate_conjugated_attn_score()
@@ -213,16 +213,16 @@ def main(args):
                 loss += dist_loss
                 loss_dict['dist_loss'] = dist_loss.item()
             if args.do_attn_loss:
-                normal_cls_loss, normal_trigger_loss, anormal_cls_loss, anormal_trigger_loss = normal_activator.generate_attention_loss()
-                if type(anormal_cls_loss) == float:
+                normal_cls_loss, normal_trigger_loss, anomal_cls_loss, anomal_trigger_loss = normal_activator.generate_attention_loss()
+                if type(anomal_cls_loss) == float:
                     attn_loss = args.normal_weight * normal_trigger_loss.mean()
                 else:
-                    attn_loss = args.normal_weight * normal_cls_loss.mean() + args.anormal_weight * anormal_cls_loss.mean()
+                    attn_loss = args.normal_weight * normal_cls_loss.mean() + args.anomal_weight * anomal_cls_loss.mean()
                 if args.do_cls_train:
-                    if type(anormal_trigger_loss) == float:
+                    if type(anomal_trigger_loss) == float:
                         attn_loss = args.normal_weight * normal_cls_loss.mean()
                     else:
-                        attn_loss += args.normal_weight * normal_cls_loss.mean() + args.anormal_weight * anormal_cls_loss.mean()
+                        attn_loss += args.normal_weight * normal_cls_loss.mean() + args.anomal_weight * anomal_cls_loss.mean()
                 loss += attn_loss
                 loss_dict['attn_loss'] = attn_loss.item()
 
@@ -371,7 +371,7 @@ if __name__ == "__main__":
     parser.add_argument("--do_attn_loss", action='store_true')
     parser.add_argument("--do_cls_train", action='store_true')
     parser.add_argument("--attn_loss_weight", type=float, default=1.0)
-    parser.add_argument("--anormal_weight", type=float, default=1.0)
+    parser.add_argument("--anomal_weight", type=float, default=1.0)
     parser.add_argument('--normal_weight', type=float, default=1.0)
     parser.add_argument("--trg_layer_list", type=arg_as_list, default=[])
     parser.add_argument("--original_normalized_score", action='store_true')
