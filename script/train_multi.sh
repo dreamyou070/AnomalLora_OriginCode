@@ -1,9 +1,9 @@
 # !/bin/bash
 
-port_number=50300
+port_number=50100
 pretrained_model_name_or_path="../../../pretrained_stable_diffusion/stable-diffusion-v1-5/v1-5-pruned.safetensors"
-obj_name='cookie'
-trigger_word='cookie'
+obj_name='bagel'
+trigger_word='bagel'
 bench_mark='MVTec3D-AD'
 
 
@@ -25,7 +25,9 @@ accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_config \
  --train_unet --train_text_encoder --d_dim 320 --latent_res 64 \
  --network_dim 64 --network_alpha 4 \
  --position_embedding_layer 'down_blocks_0_attentions_0_transformer_blocks_0_attn1' \
- --trg_layer_list "['up_blocks_3_attentions_2_transformer_blocks_0_attn2',]" \
+ --trg_layer_list "['up_blocks_3_attentions_2_transformer_blocks_0_attn2',
+                    'up_blocks_2_attentions_2_transformer_blocks_0_attn2',
+                    'up_blocks_1_attentions_2_transformer_blocks_0_attn2']" \
  --start_epoch 0 --max_train_epochs 30 \
  --do_anomal_sample --do_background_masked_sample \
  --do_attn_loss --do_normalized_score --original_normalized_score \
