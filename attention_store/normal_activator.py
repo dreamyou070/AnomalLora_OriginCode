@@ -34,17 +34,18 @@ class NormalActivator(nn.Module):
         self.resized_attn_scores = []
         self.noise_prediction_loss = []
 
-    def collect_queries(self, origin_query, anomal_position_vector, do_collect_normal):
+    def collect_queries(self, origin_query, normal_position, anormal_position, do_collect_normal):
 
         pix_num = origin_query.shape[0]
         for pix_idx in range(pix_num):
             feat = origin_query[pix_idx].squeeze(0)
-            anomal_flag = anomal_position_vector[pix_idx]
-            if anomal_flag == 1:
-                self.anomal_feat_list.append(feat.unsqueeze(0))
-            else:
+            normal_flag = normal_position[pix_idx]
+            anormal_flag = anormal_position[pix_idx]
+            if normal_flag == 1:
                 if do_collect_normal:
-                    self.normal_feat_list.append(feat.unsqueeze(0))
+                    self.nomal_feat_list.append(feat.unsqueeze(0))
+            elif anormal_flag == 1 :
+                self.anormal_feat_list.append(feat.unsqueeze(0))
                     
     
     def collect_queries_normal(selfself, origin_query, normal_position_vector, do_collect_normal):
@@ -152,13 +153,10 @@ class NormalActivator(nn.Module):
             return torch.sqrt(m)
 
 
-
         normal_feats = torch.cat(self.normal_feat_list, dim=0)
-        if argument.feature_normalize_on_mahal_dist :
+        if argument.mahalanobis_normalize :
             """ add noramlizing """
-            normalized_query = torch.nn.functional.normalize(normal_feats, p=2, dim=1, eps=1e-12, out=None)
-
-
+            normal_feats = torch.nn.functional.normalize(normal_feats, p=2, dim=1, eps=1e-12, out=None)
 
         mu = torch.mean(normal_feats, dim=0)
         cov = torch.cov(normal_feats.transpose(0, 1))

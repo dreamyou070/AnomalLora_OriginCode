@@ -16,6 +16,8 @@ from utils.model_utils import pe_model_save
 from utils.utils_loss import FocalLoss
 from data.prepare_dataset import call_dataset
 from model import call_model_package
+from attention_store.normal_activator import passing_normalize_argument
+from data.mvtec import passing_mvtec_argument
 
 
 def main(args):
@@ -123,10 +125,16 @@ def main(args):
                     normal_activator.resize_query_features(query_dict[trg_layer][0].squeeze(0))
                     normal_activator.resize_attn_scores(attn_dict[trg_layer][0])
                 c_query = normal_activator.generate_conjugated()
-                if args.normal_mahal_test:
-                    normal_activator.collect_queries(c_query, object_normal_position_vector, do_collect_normal=True)
+                if args.mahalanobis_only_object :
+                    normal_activator.collect_queries(c_query,
+                                                     normal_position = object_normal_position_vector,
+                                                     anormal_position = anomal_position_vector,
+                                                     do_collect_normal=True)
                 else :
-                    normal_activator.collect_queries(c_query, anomal_position_vector, do_collect_normal = True)
+                    normal_activator.collect_queries(c_query,
+                                                     normal_position = (1-anomal_position_vector),
+                                                     anormal_position = anomal_position_vector,
+                                                     do_collect_normal = True)
                 
                 c_attn_score = normal_activator.generate_conjugated_attn_score()
                 normal_activator.collect_attention_scores(c_attn_score, anomal_position_vector)
@@ -150,10 +158,16 @@ def main(args):
                     normal_activator.resize_query_features(query_dict[trg_layer][0].squeeze(0))
                     normal_activator.resize_attn_scores(attn_dict[trg_layer][0])
                 c_query = normal_activator.generate_conjugated()
-                if args.normal_mahal_test:
-                    normal_activator.collect_queries(c_query, object_normal_position_vector, do_collect_normal=True)
+                if args.mahalanobis_only_object:
+                    normal_activator.collect_queries(c_query,
+                                                     normal_position=object_normal_position_vector,
+                                                     anormal_position=anomal_position_vector,
+                                                     do_collect_normal=True)
                 else:
-                    normal_activator.collect_queries(c_query, anomal_position_vector, do_collect_normal=True)
+                    normal_activator.collect_queries(c_query,
+                                                     normal_position=(1 - anomal_position_vector),
+                                                     anormal_position=anomal_position_vector,
+                                                     do_collect_normal=True)
                 c_attn_score = normal_activator.generate_conjugated_attn_score()
                 normal_activator.collect_attention_scores(c_attn_score, anomal_position_vector)
                 normal_activator.collect_anomal_map_loss(c_attn_score, anomal_position_vector)
@@ -176,10 +190,17 @@ def main(args):
                     normal_activator.resize_query_features(query_dict[trg_layer][0].squeeze(0))
                     normal_activator.resize_attn_scores(attn_dict[trg_layer][0])
                 c_query = normal_activator.generate_conjugated()
-                if args.normal_mahal_test:
-                    normal_activator.collect_queries(c_query, object_normal_position_vector, do_collect_normal=True)
-                else:
-                    normal_activator.collect_queries(c_query, anomal_position_vector, do_collect_normal=True)
+                if args.mahalanobis_only_object :
+                    normal_activator.collect_queries(c_query,
+                                                     normal_position = object_normal_position_vector,
+                                                     anormal_position = anomal_position_vector,
+                                                     do_collect_normal=True)
+                else :
+                    normal_activator.collect_queries(c_query,
+                                                     normal_position = (1-anomal_position_vector),
+                                                     anormal_position = anomal_position_vector,
+                                                     do_collect_normal = True)
+
                 c_attn_score = normal_activator.generate_conjugated_attn_score()
                 normal_activator.collect_attention_scores(c_attn_score, anomal_position_vector)
                 normal_activator.collect_anomal_map_loss(c_attn_score, anomal_position_vector)
@@ -275,6 +296,7 @@ if __name__ == "__main__":
     parser.add_argument("--use_small_anomal", action='store_true')
     parser.add_argument("--beta_scale_factor", type=float, default=0.8)
     parser.add_argument("--bgrm_test", action='store_true')
+    parser.add_argument("--anomal_p", type=float, default=0.04)
     # step 3. preparing accelerator
     parser.add_argument("--mixed_precision", type=str, default="no", choices=["no", "fp16", "bf16"], )
     parser.add_argument("--save_precision", type=str, default=None, choices=[None, "float", "fp16", "bf16"], )
@@ -332,37 +354,36 @@ if __name__ == "__main__":
     parser.add_argument("--start_epoch", type=int, default=0)
     parser.add_argument("--max_train_epochs", type=int, default=None, )
     parser.add_argument("--gradient_checkpointing", action="store_true", help="enable gradient checkpointing")
-    # [1]
+    parser.add_argument("--use_noise_scheduler", action='store_true')
+    parser.add_argument("--dataset_ex", action='store_true')
+    parser.add_argument("--gen_batchwise_attn", action='store_true')
+    # [0]
     parser.add_argument("--do_object_detection", action='store_true')
     parser.add_argument("--do_normal_sample", action='store_true')
     parser.add_argument("--do_anomal_sample", action='store_true')
     parser.add_argument("--do_background_masked_sample", action='store_true')
-    # [2]
+    # [1]
     parser.add_argument("--do_dist_loss", action='store_true')
+    parser.add_argument("--mahalanobis_only_object", action='store_true')
+    parser.add_argument("--mahalanobis_normalize", action='store_true')
     parser.add_argument("--dist_loss_weight", type=float, default=1.0)
+    # [2]
     parser.add_argument("--do_attn_loss", action='store_true')
     parser.add_argument("--do_cls_train", action='store_true')
     parser.add_argument("--attn_loss_weight", type=float, default=1.0)
     parser.add_argument("--anormal_weight", type=float, default=1.0)
     parser.add_argument('--normal_weight', type=float, default=1.0)
     parser.add_argument("--trg_layer_list", type=arg_as_list, default=[])
+    parser.add_argument("--original_normalized_score", action='store_true')
+    parser.add_argument("--do_normalized_score", action='store_true')
+    # [3]
     parser.add_argument("--do_map_loss", action='store_true')
     parser.add_argument("--use_focal_loss", action='store_true')
-    parser.add_argument("--use_noise_scheduler", action='store_true')
-    parser.add_argument("--do_normalized_score", action='store_true')
-    parser.add_argument("--dataset_ex", action='store_true')
-    parser.add_argument("--original_normalized_score", action='store_true')
-    parser.add_argument("--gen_batchwise_attn", action='store_true')
-    parser.add_argument("--normal_mahal_test", action='store_true')
+    # [4]
     parser.add_argument("--test_noise_predicting_task_loss", action='store_true')
-    parser.add_argument("--feature_normalize_on_mahal_dist", action='store_true')
-    parser.add_argument("--anomal_p",type=float, default=0.04)
-    # [3]
     args = parser.parse_args()
     unet_passing_argument(args)
     passing_argument(args)
-    from attention_store.normal_activator import passing_normalize_argument
-    from data.mvtec import passing_mvtec_argument
     passing_normalize_argument(args)
     passing_mvtec_argument(args)
     main(args)

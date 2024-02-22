@@ -8,7 +8,7 @@ bench_mark='MVTec3D-AD'
 
 
 sub_folder="sub_3_background_masked_sample_anomal_sample_up_16_32_64"
-folder_name="attn_loss_original_normalized_score_map_loss"
+folder_name="attn_loss_original_normalized_score_map_loss_dist_loss_on_object_normalize_task_loss"
 output_dir="../../result/${bench_mark}/${obj_name}/${sub_folder}/${folder_name}"
 
 accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_config \
@@ -30,5 +30,7 @@ accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_config \
                     'up_blocks_1_attentions_2_transformer_blocks_0_attn2']" \
  --start_epoch 0 --max_train_epochs 30 \
  --do_anomal_sample --do_background_masked_sample \
+ --do_dist_loss --mahalanobis_only_object --mahalanobis_normalize \
  --do_attn_loss --do_normalized_score --original_normalized_score \
- --do_map_loss
+ --do_map_loss \
+ --test_noise_predicting_task_loss
