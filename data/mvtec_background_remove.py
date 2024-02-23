@@ -42,7 +42,7 @@ def main(args):
                 # [2] remove background
                 sub_dir = os.path.join(sub_folder, image)
                 remove_background(img_dir, sub_dir)
-                Image.open(sub_dir).convert("RGB").save(os.path.join(train_rgb_dir, image)
+                Image.open(sub_dir).convert("RGB").save(os.path.join(train_rgb_dir, image))
 
                 # [3] remove original image
                 os.remove(img_dir)
