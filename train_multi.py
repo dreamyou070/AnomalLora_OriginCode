@@ -377,7 +377,6 @@ if __name__ == "__main__":
     parser.add_argument('--train_unet', action='store_true')
     parser.add_argument('--train_text_encoder', action='store_true')
     # step 8. training
-    parser.add_argument('--learning_rate', type=float, default=1e-5)
     parser.add_argument('--min_timestep', type=int, default=0)
     parser.add_argument('--max_timestep', type=int, default=500)
     
