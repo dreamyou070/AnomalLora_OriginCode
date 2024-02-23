@@ -121,11 +121,11 @@ def main(args):
                 with torch.no_grad():
                     latents = vae.encode(batch["image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
                 if args.use_noise_scheduler :
-                    noise, latents, timesteps = get_noise_noisy_latents_and_timesteps(args.noise_scheduler,
-                                                                                            latents,
-                                                                                            noise=None,
-                                                                                            min_timestep = args.min_timestep,
-                                                                                            max_timestep = args.max_timestep)
+                    noise, latents, timesteps = get_noise_noisy_latents_and_timesteps(noise_scheduler,
+                                                                                      latents,
+                                                                                      noise=None,
+                                                                                      min_timestep = args.min_timestep,
+                                                                                      max_timestep = args.max_timestep)
                 else :
                     noise = torch.randn_like(latents, device=latents.device)
                 anomal_position_vector = torch.zeros_like(batch['object_mask'].squeeze().flatten())
@@ -161,11 +161,11 @@ def main(args):
                 with torch.no_grad():
                     latents = vae.encode(batch["anomal_image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
                 if args.use_noise_scheduler :
-                    noise, latents, timesteps = get_noise_noisy_latents_and_timesteps(args.noise_scheduler,
-                                                                                            latents,
-                                                                                            noise=None,
-                                                                                            min_timestep = args.min_timestep,
-                                                                                            max_timestep = args.max_timestep)
+                    noise, latents, timesteps = get_noise_noisy_latents_and_timesteps(noise_scheduler,
+                                                                                      latents,
+                                                                                      noise=None,
+                                                                                      min_timestep=args.min_timestep,
+                                                                                      max_timestep=args.max_timestep)
                 else :
                     noise = torch.randn_like(latents, device=latents.device)
                 anomal_position_vector = batch["anomal_mask"].squeeze().flatten()
@@ -199,11 +199,11 @@ def main(args):
                 with torch.no_grad():
                     latents = vae.encode(batch["bg_anomal_image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
                 if args.use_noise_scheduler :
-                    noise, latents, timesteps = get_noise_noisy_latents_and_timesteps(args.noise_scheduler,
-                                                                                            latents,
-                                                                                            noise=None,
-                                                                                            min_timestep = args.min_timestep,
-                                                                                            max_timestep = args.max_timestep)
+                    noise, latents, timesteps = get_noise_noisy_latents_and_timesteps(noise_scheduler,
+                                                                                      latents,
+                                                                                      noise=None,
+                                                                                      min_timestep=args.min_timestep,
+                                                                                      max_timestep=args.max_timestep)
                 else :
                     noise = torch.randn_like(latents, device=latents.device)
                 anomal_position_vector = batch["bg_anomal_mask"].squeeze().flatten()
