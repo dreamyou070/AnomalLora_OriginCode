@@ -1,7 +1,7 @@
 #! /bin/bash
 
 bench_mark="MVTec3D-AD"
-class_name="carrot"
+class_name="bagel"
 sub_folder="sub_3_background_masked_sample_anomal_sample_up_16_32_64"
 folder_name="attn_loss_original_normalized_score_map_loss_dist_loss_on_object_normalize_task_loss"
 #folder_name="attn_loss_original_normalized_score_map_loss"
