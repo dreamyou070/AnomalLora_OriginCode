@@ -171,8 +171,8 @@ def main(args):
                             img = load_image(rgb_img_dir, 512, 512)
                             latent = image2latent(img, vae, weight_dtype)
                             if args.use_noise_scheduler :
-                                noise, latents, timesteps = get_noise_noisy_latents_and_timesteps(noise_scheduler,
-                                                                                                  latents,
+                                noise, latent, timesteps = get_noise_noisy_latents_and_timesteps(noise_scheduler,
+                                                                                                  latent,
                                                                                                   noise=None,
                                                                                                   min_timestep=args.min_timestep,
                                                                                                   max_timestep=args.max_timestep)
@@ -210,8 +210,8 @@ def main(args):
                             img = load_image(rgb_img_dir, 512, 512)
                             latent = image2latent(img, vae, weight_dtype)
                             if args.use_noise_scheduler:
-                                noise, latents, timesteps = get_noise_noisy_latents_and_timesteps(noise_scheduler,
-                                                                                                  latents,
+                                noise, latent, timesteps = get_noise_noisy_latents_and_timesteps(noise_scheduler,
+                                                                                                  latent,
                                                                                                   noise=None,
                                                                                                   min_timestep=args.min_timestep,
                                                                                                   max_timestep=args.max_timestep)
