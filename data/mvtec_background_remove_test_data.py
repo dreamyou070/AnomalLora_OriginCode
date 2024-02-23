@@ -39,7 +39,7 @@ def main(args):
                     for img in imgs:
                         name, ext = os.path.splitext(img)
                         gt_name = f'{name}_mask{ext}'
-    
+
                         # [1] new folder
                         rgb_dir = os.path.join(defect_dir, 'rgb')
                         os.makedirs(rgb_dir, exist_ok=True)
