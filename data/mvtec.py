@@ -280,7 +280,7 @@ class MVTecDRAEMTrainDataset(Dataset):
             parent, _ = os.path.split(parent)
             background_dir = os.path.join(parent, f"background/{name}")
 
-
+        anomal_name = 'no'
         if self.reference_check :
             gt_folder = os.path.join(class_folder, 'gt')
             gt_path = os.path.join(gt_folder, name)
@@ -295,6 +295,7 @@ class MVTecDRAEMTrainDataset(Dataset):
 
             anomal_img = img
             back_anomal_img = img
+
 
         else :
             # [3] object mask
@@ -340,6 +341,7 @@ class MVTecDRAEMTrainDataset(Dataset):
                     back_anomal_img, back_anomal_mask_torch = self.gaussian_augment_image(img, aug(image=background_img),
                                                                                           object_position=None)
             else :
+                anomal_name = 'no'
                 anomal_img = img
                 anomal_mask_torch = object_mask # [64,64]
                 back_anomal_img = img
@@ -358,4 +360,3 @@ class MVTecDRAEMTrainDataset(Dataset):
                 'caption': self.caption,
                 'image_name' : name,
                 'anomal_name' : anomal_name,}
-    
