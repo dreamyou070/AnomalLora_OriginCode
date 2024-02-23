@@ -9,7 +9,7 @@ sub_folder="sub_3_up_16_0_2_32_64"
 folder_name="back_noise_use_gaussian_400_timestep"
 output_dir="../../result/${bench_mark}/${obj_name}/${sub_folder}/${folder_name}"
 #  \
-accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_config \
+accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_config \
  --main_process_port $port_number ../train_multi.py \
  --log_with wandb \
  --output_dir ${output_dir} \
