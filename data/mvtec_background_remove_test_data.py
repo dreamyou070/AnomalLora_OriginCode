@@ -47,19 +47,21 @@ def main(args):
                     os.makedirs(gt_folder, exist_ok=True)
 
                     # [1] save original image
-                    img_dir = os.path.join(gt_defect_dir, img)
-                    Image.open(img_dir).save(os.path.join(origin_folder, img))
+                    origin_rgb_dir = os.path.join(defect_dir, img)
+                    new_rgb_dir = os.path.join(origin_folder, img)
+                    Image.open(origin_rgb_dir).save(os.path.join(origin_folder, img))
 
                     # [2] remove background
                     sub_dir = os.path.join(sub_folder, image)
-                    remove_background(img_dir, sub_dir)
-                    background_removed_img = Image.open(sub_dir).convert("RGB")
-                    background_removed_img.save(img_dir)
+                    remove_background(origin_rgb_dir, sub_dir)
+                    Image.open(sub_dir).convert("RGB").save(origin_rgb_dir)
 
                     # [3] copy to rgb folder
-                    original_gt_dir = os.path.join(gt_defect_dir, img)
-                    new_gt_dir = os.path.join(gt_folderm, img)
-                    Image.open(original_gt_dir).convert("L").save(new_gt_dir)
+                    if 'good' not in defect :
+                        Image.open(os.path.join(gt_defect_dir, img)).convert("L").save(os.path.join(gt_folder, img))
+                    else :
+                        pseudo_gt = np.array(Image.open(origin_rgb_dir))*0
+                        Image.fromarray(pseudo_gt.astype(np.uint8)).convert("L").save(os.path.join(gt_folder, img))
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
