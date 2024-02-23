@@ -332,6 +332,7 @@ class MVTecDRAEMTrainDataset(Dataset):
                                                                                               aug(image=background_img),
                                                                                               object_position = object_position)
                     else :
+                        print('background with perlin shape noise')
                         back_anomal_img, back_anomal_mask_torch = self.augment_image(img, aug(image=background_img),
                                                                                      beta_scale_factor=self.beta_scale_factor,
                                                                                      object_position=object_position)
