@@ -3,7 +3,7 @@ port_number=59402
 pretrained_model_name_or_path="../../../pretrained_stable_diffusion/stable-diffusion-v1-5/v1-5-pruned.safetensors"
 obj_name='cookie'
 trigger_word='cookie'
-bench_mark='MVTec'
+bench_mark='MVTec3D-AD'
 # --do_dist_loss --mahalanobis_only_object --mahalanobis_normalize \
 sub_folder="sub_3_background_masked_sample_anomal_sample_up_16_0_2_32_64"
 folder_name="attn_loss_original_normalized_score_map_loss_dist_loss_on_object_normalize_task_loss_back_noise_perlin_shape"
