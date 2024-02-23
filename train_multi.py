@@ -18,7 +18,7 @@ from data.prepare_dataset import call_dataset
 from model import call_model_package
 from attention_store.normal_activator import passing_normalize_argument
 from data.mvtec import passing_mvtec_argument
-import diffusers
+from diffusers import DDPMScheduler
 
 def main(args):
 
