@@ -17,7 +17,8 @@ from model.pe import PositionalEmbedding
 from safetensors.torch import load_file
 from attention_store.normal_activator import NormalActivator
 from attention_store.normal_activator import passing_normalize_argument
-
+from diffusers import DDPMScheduler
+from utils.model_utils import prepare_scheduler_for_custom_training, get_noise_noisy_latents_and_timesteps
 
 def inference(latent,
               tokenizer, text_encoder, unet, controller, normal_activator, position_embedder,
@@ -122,6 +123,14 @@ def main(args):
         # [4] collector
         controller = AttentionStore()
         register_attention_control(unet, controller)
+
+        noise_scheduler = DDPMScheduler(beta_start=0.00085,
+                                        beta_end=0.012,
+                                        beta_schedule="scaled_linear",
+                                        num_train_timesteps=1000,
+                                        clip_sample=False)
+        prepare_scheduler_for_custom_training(noise_scheduler, accelerator.device)
+
         for thred in args.threds :
             thred_folder = os.path.join(lora_base_folder, f'thred_{thred}')
             os.makedirs(thred_folder, exist_ok=True)
@@ -160,8 +169,15 @@ def main(args):
                     if accelerator.is_main_process:
                         with torch.no_grad():
                             img = load_image(rgb_img_dir, 512, 512)
-                            vae_latent = image2latent(img, vae, weight_dtype)
-                            cls_map_pil, normal_map_pil, anomaly_map_pil = inference(vae_latent,
+                            latent = image2latent(img, vae, weight_dtype)
+                            if args.use_noise_scheduler :
+                                noise, latents, timesteps = get_noise_noisy_latents_and_timesteps(noise_scheduler,
+                                                                                                  latents,
+                                                                                                  noise=None,
+                                                                                                  min_timestep=args.min_timestep,
+                                                                                                  max_timestep=args.max_timestep)
+
+                            cls_map_pil, normal_map_pil, anomaly_map_pil = inference(latent,
                                                                                      tokenizer, text_encoder, unet,
                                                                                      controller, normal_activator,
                                                                                      position_embedder,
@@ -192,8 +208,15 @@ def main(args):
                     if accelerator.is_main_process:
                         with torch.no_grad():
                             img = load_image(rgb_img_dir, 512, 512)
-                            vae_latent = image2latent(img, vae, weight_dtype)
-                            cls_map_pil, normal_map_pil, anomaly_map_pil = inference(vae_latent,
+                            latent = image2latent(img, vae, weight_dtype)
+                            if args.use_noise_scheduler:
+                                noise, latents, timesteps = get_noise_noisy_latents_and_timesteps(noise_scheduler,
+                                                                                                  latents,
+                                                                                                  noise=None,
+                                                                                                  min_timestep=args.min_timestep,
+                                                                                                  max_timestep=args.max_timestep)
+
+                            cls_map_pil, normal_map_pil, anomaly_map_pil = inference(latent,
                                                                                      tokenizer, text_encoder, unet,
                                                                                      controller, normal_activator,
                                                                                      position_embedder,
@@ -231,6 +254,9 @@ if __name__ == '__main__':
     parser.add_argument("--guidance_scale", type=float, default=8.5)
     parser.add_argument("--latent_res", type=int, default=64)
     parser.add_argument("--single_layer", action='store_true')
+    parser.add_argument("--use_noise_scheduler", action='store_true')
+    parser.add_argument('--min_timestep', type=int, default=0)
+    parser.add_argument('--max_timestep', type=int, default=500)
     # step 8. test
     import ast
     def arg_as_list(arg):

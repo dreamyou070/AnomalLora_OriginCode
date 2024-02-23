@@ -377,6 +377,7 @@ if __name__ == "__main__":
     parser.add_argument('--train_unet', action='store_true')
     parser.add_argument('--train_text_encoder', action='store_true')
     # step 8. training
+    parser.add_argument("--use_noise_scheduler", action='store_true')
     parser.add_argument('--min_timestep', type=int, default=0)
     parser.add_argument('--max_timestep', type=int, default=500)
     
@@ -385,7 +386,6 @@ if __name__ == "__main__":
     parser.add_argument("--start_epoch", type=int, default=0)
     parser.add_argument("--max_train_epochs", type=int, default=None, )
     parser.add_argument("--gradient_checkpointing", action="store_true", help="enable gradient checkpointing")
-    parser.add_argument("--use_noise_scheduler", action='store_true')
     parser.add_argument("--dataset_ex", action='store_true')
     parser.add_argument("--gen_batchwise_attn", action='store_true')
     # [0]
