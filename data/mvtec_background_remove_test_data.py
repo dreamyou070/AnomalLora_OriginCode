@@ -35,6 +35,9 @@ def main(args):
                 imgs = os.listdir(gt_defect_dir)
 
                 for img in imgs:
+                    name, ext = os.path.splitext(img)
+                    pure_name = name.split('_')[0]
+                    image_name = pure_name + ext
 
                     # [1] new folder
                     rgb_dir = os.path.join(defect_dir, 'rgb')
@@ -47,26 +50,26 @@ def main(args):
                     os.makedirs(gt_folder, exist_ok=True)
 
                     # [1] save original image
-                    origin_rgb_dir = os.path.join(defect_dir, img)
-                    new_rgb_dir = os.path.join(origin_folder, img)
-                    Image.open(origin_rgb_dir).save(os.path.join(origin_folder, img))
+                    origin_rgb_dir = os.path.join(defect_dir, image_name)
+                    new_rgb_dir = os.path.join(origin_folder, image_name)
+                    Image.open(origin_rgb_dir).save(os.path.join(origin_folder, image_name))
 
                     # [2] remove background
-                    sub_dir = os.path.join(sub_folder, image)
+                    sub_dir = os.path.join(sub_folder, image_name)
                     remove_background(origin_rgb_dir, sub_dir)
                     Image.open(sub_dir).convert("RGB").save(origin_rgb_dir)
 
                     # [3] copy to rgb folder
                     if 'good' not in defect :
-                        Image.open(os.path.join(gt_defect_dir, img)).convert("L").save(os.path.join(gt_folder, img))
+                        Image.open(os.path.join(gt_defect_dir, img)).convert("L").save(os.path.join(gt_folder, image_name))
                     else :
                         pseudo_gt = np.array(Image.open(origin_rgb_dir))*0
-                        Image.fromarray(pseudo_gt.astype(np.uint8)).convert("L").save(os.path.join(gt_folder, img))
+                        Image.fromarray(pseudo_gt.astype(np.uint8)).convert("L").save(os.path.join(gt_folder, image_name))
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--base_folder', type=str,
                         default=r'/home/dreamyou070/MyData/anomaly_detection/MVTec')
-    parser.add_argument('--trg_cat', type=str, default='cable')
+    parser.add_argument('--trg_cat', type=str, default='bottle')
     args = parser.parse_args()
     main(args)
