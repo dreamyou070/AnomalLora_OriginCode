@@ -48,9 +48,7 @@ def main(args):
 
                     # [1] save original image
                     img_dir = os.path.join(gt_defect_dir, img)
-                    pil_img = Image.open(img_dir)
-                    origin_img_dir = os.path.join(origin_folder, image)
-                    pil_img.save(origin_img_dir)
+                    Image.open(img_dir).save(os.path.join(origin_folder, img))
 
                     # [2] remove background
                     sub_dir = os.path.join(sub_folder, image)
@@ -59,14 +57,14 @@ def main(args):
                     background_removed_img.save(img_dir)
 
                     # [3] copy to rgb folder
-                    original_gt_dir = os.path.join(gt_defect_dir, image)
-                    new_gt_dir = os.path.join(gt_folderm, image)
+                    original_gt_dir = os.path.join(gt_defect_dir, img)
+                    new_gt_dir = os.path.join(gt_folderm, img)
                     Image.open(original_gt_dir).convert("L").save(new_gt_dir)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--base_folder', type=str,
                         default=r'/home/dreamyou070/MyData/anomaly_detection/MVTec')
-    parser.add_argument('--trg_cat', type=str, default='bottle')
+    parser.add_argument('--trg_cat', type=str, default='cable')
     args = parser.parse_args()
     main(args)

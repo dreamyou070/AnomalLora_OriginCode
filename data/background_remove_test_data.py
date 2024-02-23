@@ -14,16 +14,17 @@ def remove_background(input_path, output_path):
 
 
 def main(args):
-    print(f'step 2. prepare images')
+
+    print(f'step 1. prepare images')
     base_folder = args.base_folder
     cats = os.listdir(base_folder)
 
     for cat in cats:
+
         if cat == args.trg_cat:
 
             cat_dir = os.path.join(base_folder, f'{cat}')
             test_dir = os.path.join(cat_dir, 'test')
-
             defetcs = os.listdir(test_dir)
 
             for defect in defetcs:
@@ -35,15 +36,17 @@ def main(args):
                 sub_folder = os.path.join(defect_dir, 'rgb_remove_background')
                 os.makedirs(sub_folder, exist_ok=True)
 
+
                 images = os.listdir(rgb_dir)
 
                 for image in images:
+
                     img_dir = os.path.join(rgb_dir, image)
                     pil_img = Image.open(img_dir)
 
                     # [1] save original image
-                    origin_img_dir = os.path.join(origin_folder, image)
-                    pil_img.save(origin_img_dir)
+                    pil_img.save(os.path.join(origin_folder, image))
+
                     # [2] remove background
                     sub_dir = os.path.join(sub_folder, image)
                     remove_background(img_dir, sub_dir)
