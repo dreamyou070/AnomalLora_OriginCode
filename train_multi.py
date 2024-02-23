@@ -18,7 +18,7 @@ from data.prepare_dataset import call_dataset
 from model import call_model_package
 from attention_store.normal_activator import passing_normalize_argument
 from data.mvtec import passing_mvtec_argument
-
+import diffusers
 
 def main(args):
 
@@ -96,7 +96,13 @@ def main(args):
         with open(logging_file, 'a') as f:
             f.write(logging_info + '\n')
 
-
+    noise_scheduler = DDPMScheduler(beta_start=0.00085,
+                                    beta_end=0.012,
+                                    beta_schedule="scaled_linear",
+                                    num_train_timesteps=1000,
+                                    clip_sample=False)
+    prepare_scheduler_for_custom_training(noise_scheduler, accelerator.device)
+    
     for epoch in range(args.start_epoch, args.max_train_epochs):
         epoch_loss_total = 0
         accelerator.print(f"\nepoch {epoch + 1}/{args.start_epoch + args.max_train_epochs}")
@@ -114,11 +120,19 @@ def main(args):
             if args.do_normal_sample:
                 with torch.no_grad():
                     latents = vae.encode(batch["image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
-                noise = torch.randn_like(latents, device=latents.device)
+                if args.use_noise_scheduler :
+                    noise, latents, timesteps = get_noise_noisy_latents_and_timesteps(args.noise_scheduler,
+                                                                                            latents,
+                                                                                            noise=None,
+                                                                                            min_timestep = args.min_timestep,
+                                                                                            max_timestep = args.max_timestep)
+                else :
+                    noise = torch.randn_like(latents, device=latents.device)
                 anomal_position_vector = torch.zeros_like(batch['object_mask'].squeeze().flatten())
                 object_normal_position_vector = torch.where((object_position_vector == 1) & (anomal_position_vector == 0), 1, 0)
                 with torch.set_grad_enabled(True):
-                    noise_pred = unet(latents, 0, encoder_hidden_states, trg_layer_list=args.trg_layer_list, noise_type=position_embedder).sample
+                    noise_pred = unet(latents, 0, encoder_hidden_states, trg_layer_list=args.trg_layer_list,
+                                      noise_type=position_embedder).sample
                 query_dict, attn_dict = controller.query_dict, controller.step_store
                 controller.reset()
                 for trg_layer in args.trg_layer_list:
@@ -146,7 +160,14 @@ def main(args):
             if args.do_anomal_sample:
                 with torch.no_grad():
                     latents = vae.encode(batch["anomal_image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
-                noise = torch.randn_like(latents, device=latents.device)
+                if args.use_noise_scheduler :
+                    noise, latents, timesteps = get_noise_noisy_latents_and_timesteps(args.noise_scheduler,
+                                                                                            latents,
+                                                                                            noise=None,
+                                                                                            min_timestep = args.min_timestep,
+                                                                                            max_timestep = args.max_timestep)
+                else :
+                    noise = torch.randn_like(latents, device=latents.device)
                 anomal_position_vector = batch["anomal_mask"].squeeze().flatten()
                 object_normal_position_vector = torch.where((object_position_vector == 1) & (anomal_position_vector == 0),1,0)
                 with torch.set_grad_enabled(True):
@@ -177,7 +198,14 @@ def main(args):
             if args.do_background_masked_sample:
                 with torch.no_grad():
                     latents = vae.encode(batch["bg_anomal_image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
-                noise = torch.randn_like(latents, device=latents.device)
+                if args.use_noise_scheduler :
+                    noise, latents, timesteps = get_noise_noisy_latents_and_timesteps(args.noise_scheduler,
+                                                                                            latents,
+                                                                                            noise=None,
+                                                                                            min_timestep = args.min_timestep,
+                                                                                            max_timestep = args.max_timestep)
+                else :
+                    noise = torch.randn_like(latents, device=latents.device)
                 anomal_position_vector = batch["bg_anomal_mask"].squeeze().flatten()
                 object_normal_position_vector = torch.where(
                     (object_position_vector == 1) & (anomal_position_vector == 0), 1, 0)
@@ -349,6 +377,10 @@ if __name__ == "__main__":
     parser.add_argument('--train_unet', action='store_true')
     parser.add_argument('--train_text_encoder', action='store_true')
     # step 8. training
+    parser.add_argument('--learning_rate', type=float, default=1e-5)
+    parser.add_argument('--min_timestep', type=int, default=0)
+    parser.add_argument('--max_timestep', type=int, default=500)
+    
     parser.add_argument("--save_model_as", type=str, default="safetensors",
               choices=[None, "ckpt", "pt", "safetensors"], help="format to save the model (default is .safetensors)",)
     parser.add_argument("--start_epoch", type=int, default=0)
