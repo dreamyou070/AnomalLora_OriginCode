@@ -1,8 +1,8 @@
 # !/bin/bash
 
-port_number=51501
-obj_name='dowel'
-caption='dowel'
+port_number=51601
+obj_name='foam'
+caption='foam'
 sub_folder="sub_3_background_masked_sample_anomal_sample_up_16_32_64"
 folder_name="attn_loss_original_normalized_score_map_loss"
 bench_mark="MVTec3D-AD"
