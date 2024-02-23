@@ -1,17 +1,18 @@
 # !/bin/bash
 
-port_number=50182
+port_number=50144
 pretrained_model_name_or_path="../../../pretrained_stable_diffusion/stable-diffusion-v1-5/v1-5-pruned.safetensors"
-obj_name='potato'
-trigger_word='potato'
+obj_name='cookie'
+trigger_word='cookie'
 bench_mark='MVTec3D-AD'
 # --do_dist_loss --mahalanobis_only_object --mahalanobis_normalize \
 
-sub_folder="sub_3_background_masked_sample_anomal_sample_up_16_32_64"
+#sub_folder="sub_3_background_masked_sample_anomal_sample_up_16_32_64"
+sub_folder="sub_4_background_masked_sample_anomal_sample_normal_sample_up_16_32_64"
 folder_name="attn_loss_original_normalized_score_map_loss_dist_loss_on_object_normalize_task_loss"
 output_dir="../../result/${bench_mark}/${obj_name}/${sub_folder}/${folder_name}"
 
-accelerate launch --config_file ../../../gpu_config/gpu_0_1_config \
+accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_config \
  --main_process_port $port_number ../train_multi.py \
  --log_with wandb \
  --output_dir ${output_dir} \
@@ -29,7 +30,7 @@ accelerate launch --config_file ../../../gpu_config/gpu_0_1_config \
                     'up_blocks_2_attentions_2_transformer_blocks_0_attn2',
                     'up_blocks_1_attentions_2_transformer_blocks_0_attn2']" \
  --start_epoch 0 --max_train_epochs 30 \
- --do_anomal_sample --do_background_masked_sample \
+ --do_anomal_sample --do_background_masked_sample --do_normal_sample \
  --do_dist_loss --mahalanobis_only_object --mahalanobis_normalize \
  --do_attn_loss --do_normalized_score --original_normalized_score \
  --do_map_loss \
