@@ -1,6 +1,6 @@
 # !/bin/bash
 
-port_number=50133
+port_number=50101
 obj_name='cookie'
 caption='cookie'
 sub_folder="sub_3_up_16_0_2_32_64"
@@ -19,5 +19,4 @@ accelerate launch --config_file ../../../gpu_config/gpu_0_config \
                                     'up_blocks_1_attentions_2_transformer_blocks_0_attn2',
                                     'up_blocks_1_attentions_0_transformer_blocks_0_attn2',]" \
  --d_dim 320 --use_position_embedder --position_embedding_layer ${position_embedding_layer} \
- --threds [0.5] \
- --use_noise_scheduler --min_timestep 399 --max_timestep 400
+ --threds [0.5]
