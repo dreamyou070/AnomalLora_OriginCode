@@ -4,7 +4,7 @@ port_number=50133
 obj_name='cookie'
 caption='cookie'
 sub_folder="sub_3_up_16_0_2_32_64"
-folder_name="back_noise_use_perlin_400_timestep"
+folder_name="back_noise_use_gaussian_400_timestep"
 bench_mark="MVTec3D-AD"
 position_embedding_layer="down_blocks_0_attentions_0_transformer_blocks_0_attn1"
 # [0.7,0.75,0.8,0.85,0.9,0.95,0.98]
