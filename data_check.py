@@ -5,6 +5,8 @@ from model.tokenizer import load_tokenizer
 import numpy as np
 import os
 from PIL import Image
+from data import passing_mvtec_argument
+
 
 def main(args):
 
@@ -27,7 +29,12 @@ def main(args):
                                      perlin_max_scale=args.perlin_max_scale,
                                      kernel_size=args.kernel_size,
                                      beta_scale_factor=args.beta_scale_factor,
-                                     use_sharpen_aug=args.use_sharpen_aug,)
+                                     bgrm_test=True,
+                                     reference_check=False,
+                                     do_anomal_sample=True)
+
+
+
 
     train_dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=True)
     beta_scale_factor = args.beta_scale_factor
@@ -91,7 +98,7 @@ if __name__ == "__main__":
     # step 2. dataset
     parser.add_argument('--data_path', type=str, default=r'../../../MyData/anomaly_detection/MVTec3D-AD')
     parser.add_argument("--use_sharpen_aug", action='store_true')
-    parser.add_argument('--obj_name', type=str, default='carrot')
+    parser.add_argument('--obj_name', type=str, default='cookie')
     parser.add_argument('--anomaly_source_path', type=str)
     parser.add_argument('--trigger_word', type=str)
     parser.add_argument('--perlin_max_scale', type=int, default=8)
@@ -99,6 +106,8 @@ if __name__ == "__main__":
     parser.add_argument("--anomal_only_on_object", action='store_true')
     parser.add_argument("--latent_res", type=int, default=64)
     parser.add_argument("--beta_scale_factor", type=float, default=0.8)
+    parser.add_argument("--anomal_p", type=float, default=0.03)
     # step 3. preparing accelerator')
     args = parser.parse_args()
+    passing_mvtec_argument(args)
     main(args)
