@@ -109,6 +109,7 @@ if __name__ == "__main__":
     parser.add_argument("--latent_res", type=int, default=64)
     parser.add_argument("--beta_scale_factor", type=float, default=0.8)
     parser.add_argument("--anomal_p", type=float, default=0.03)
+    parser.add_argument("--back_noise_use_gaussian", action='store_true')
     # step 3. preparing accelerator')
     args = parser.parse_args()
     passing_mvtec_argument(args)

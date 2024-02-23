@@ -14,6 +14,7 @@ def passing_mvtec_argument(args):
     global anomal_p
     argument = args
     anomal_p = args.anomal_p
+    back_noise_use_gaussian = args.back_noise_use_gaussian
 
 class MVTecDRAEMTestDataset(Dataset):
 
@@ -220,7 +221,7 @@ class MVTecDRAEMTrainDataset(Dataset):
     def gaussian_augment_image(self, image, back_img, object_position):
         while True :
             while True:
-                end_num = self.resize_shape[0]
+                end_num = self.resize_shape[0] # 512
                 x = np.arange(0, end_num, 1, float)
                 y = np.arange(0, end_num, 1, float)[:, np.newaxis]
                 x_0 = torch.randint(int(end_num / 4), int(3 * end_num / 4), (1,)).item()
@@ -233,7 +234,6 @@ class MVTecDRAEMTrainDataset(Dataset):
                     total_object_pixel = np.sum(object_position)
                     blur_2D_mask = (result_thr * object_position).astype(np.float32)
                 binary_2D_mask = (np.where(blur_2D_mask == 0, 0, 1)).astype(np.float32)  # [512,512,3]
-                #print(f'[gaussian] np.sum(binary_2D_mask) = {np.sum(binary_2D_mask)} | anomal_p * total_object_pixel = {anomal_p * total_object_pixel}
                 if np.sum(binary_2D_mask) > anomal_p * total_object_pixel :
                     break
             blur_3D_mask = np.expand_dims(blur_2D_mask, axis=2)  # [512,512,3]
@@ -325,9 +325,15 @@ class MVTecDRAEMTrainDataset(Dataset):
                         background_img = (img * 0).astype(img.dtype)
                     else :
                         background_img = self.load_image(background_dir, self.resize_shape[0], self.resize_shape[1],type='RGB')
-                    back_anomal_img, back_anomal_mask_torch = self.gaussian_augment_image(img,
-                                                                                          aug(image=background_img),
-                                                                                          object_position = object_position)
+
+                    if argument.back_noise_use_gaussian :
+                        back_anomal_img, back_anomal_mask_torch = self.gaussian_augment_image(img,
+                                                                                              aug(image=background_img),
+                                                                                              object_position = object_position)
+                    else :
+                        back_anomal_img, back_anomal_mask_torch = self.gaussian_augment_image(img,
+                                                                                              aug(image=background_img),
+                                                                                              object_position=object_position)
 
                 else :
                     anomaly_source_img = self.load_image(self.anomaly_source_paths[anomal_src_idx], self.resize_shape[0],
