@@ -1,7 +1,7 @@
 #! /bin/bash
 
 bench_mark="MVTec3D-AD"
-class_name="bagel"
+class_name="peacch"
 dataset_dir="../../../MyData/anomaly_detection/${bench_mark}"
 
 sub_folder="sub_3_background_masked_sample_anomal_sample_up_16_32_64"
