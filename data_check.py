@@ -13,7 +13,7 @@ def main(args):
     root_dir = f'/home/dreamyou070/MyData/anomaly_detection/MVTec3D-AD/{obj_name}/train_1'
     num_images = len(os.listdir(root_dir))
     print(f'num_images: {num_images}')
-    args.anomaly_source_path = f'/home/dreamyou070/MyData/anomaly_detection/MVTec3D-AD/anomal_source_{obj_name}'
+    args.anomaly_source_path = f'/home/dreamyou070/MyData/anomal_source'
     tokenizer = load_tokenizer(args)
     dataset = MVTecDRAEMTrainDataset(root_dir=root_dir,
                                      anomaly_source_path=args.anomaly_source_path,
