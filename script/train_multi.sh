@@ -1,11 +1,11 @@
 # !/bin/bash
-port_number=51620
+port_number=51600
 pretrained_model_name_or_path="../../../pretrained_stable_diffusion/stable-diffusion-v1-5/v1-5-pruned.safetensors"
 obj_name='cookie'
 trigger_word='cookie'
 bench_mark='MVTec3D-AD'
 
-sub_folder="sub_3_up_16_2_64_0"
+sub_folder="sub_3_up_32_0_64_0"
 folder_name="back_noise_use_perlin_zero_timestep"
 output_dir="../../result/${bench_mark}/${obj_name}/${sub_folder}/${folder_name}"
 #--use_noise_scheduler --min_timestep 399 --max_timestep 400 \
@@ -26,7 +26,7 @@ accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_config \
  --network_dim 64 --network_alpha 4 \
  --position_embedding_layer 'down_blocks_0_attentions_0_transformer_blocks_0_attn1' \
  --trg_layer_list "['up_blocks_3_attentions_0_transformer_blocks_0_attn2',
-                    'up_blocks_1_attentions_2_transformer_blocks_0_attn2',]" \
+                    'up_blocks_2_attentions_0_transformer_blocks_0_attn2',]" \
  --start_epoch 0 --max_train_epochs 30 \
  --do_anomal_sample --do_background_masked_sample \
  --do_dist_loss --mahalanobis_only_object --mahalanobis_normalize \
