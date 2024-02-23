@@ -27,7 +27,7 @@ def main(args):
 
 
             origin_folder = os.path.join(train_good_dir, 'rgb')
-            os.makedirs(train_rgb_dir, exist_ok=True)
+            os.makedirs(origin_folder, exist_ok=True)
             mask_dir = os.path.join(train_good_dir, 'object_mask')
             os.makedirs(mask_dir, exist_ok=True)
 
