@@ -381,6 +381,7 @@ if __name__ == "__main__":
     parser.add_argument("--use_focal_loss", action='store_true')
     # [4]
     parser.add_argument("--test_noise_predicting_task_loss", action='store_true')
+    parser.add_argument("--back_noise_use_gaussian", action='store_true')
     args = parser.parse_args()
     unet_passing_argument(args)
     passing_argument(args)
