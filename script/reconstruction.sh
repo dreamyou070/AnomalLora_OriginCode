@@ -3,8 +3,8 @@
 port_number=50101
 obj_name='cookie'
 caption='cookie'
-sub_folder="sub_3_background_masked_sample_anomal_sample_up_16_0_2_32_64"
-folder_name="attn_loss_original_normalized_score_map_loss_dist_loss_on_object_normalize_task_loss_back_noise_perlin_shape"
+sub_folder="sub_3_up_16_0_2_32_64"
+folder_name="back_noise_use_gaussian_zero_timestep"
 bench_mark="MVTec3D-AD"
 position_embedding_layer="down_blocks_0_attentions_0_transformer_blocks_0_attn1"
 # [0.7,0.75,0.8,0.85,0.9,0.95,0.98]
@@ -16,6 +16,7 @@ accelerate launch --config_file ../../../gpu_config/gpu_0_config \
  --obj_name "${obj_name}" --prompt "${caption}" \
  --latent_res 64 --trg_layer_list "['up_blocks_3_attentions_2_transformer_blocks_0_attn2',
                                     'up_blocks_2_attentions_2_transformer_blocks_0_attn2',
-                                    'up_blocks_1_attentions_2_transformer_blocks_0_attn2',]" \
+                                    'up_blocks_1_attentions_2_transformer_blocks_0_attn2',
+                                    'up_blocks_1_attentions_0_transformer_blocks_0_attn2',]" \
  --d_dim 320 --use_position_embedder --position_embedding_layer ${position_embedding_layer} \
  --threds [0.5]
