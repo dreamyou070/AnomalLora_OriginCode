@@ -5,7 +5,7 @@ class_name="cookie"
 dataset_dir="../../../MyData/anomaly_detection/${bench_mark}"
 
 sub_folder="sub_3_up_16_0_2_32_64"
-folder_name="back_noise_use_gaussian_zero_timestep"
+folder_name="back_noise_use_gaussian_400_timestep"
 output_dir="metrics"
 
 
