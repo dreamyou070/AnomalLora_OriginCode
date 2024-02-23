@@ -32,5 +32,4 @@ accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_config \
  --do_anomal_sample --do_background_masked_sample \
  --do_dist_loss --mahalanobis_only_object --mahalanobis_normalize \
  --do_attn_loss --do_normalized_score --original_normalized_score \
- --do_map_loss \
- --test_noise_predicting_task_loss
+ --do_map_loss
