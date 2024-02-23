@@ -5,8 +5,9 @@ class_name="cookie"
 dataset_dir="../../../MyData/anomaly_detection/${bench_mark}"
 
 sub_folder="sub_3_up_16_0_2_32_64"
-folder_name="back_noise_use_perlin_400_timestep"
+folder_name="back_noise_use_gaussian_zero_timestep"
 output_dir="metrics"
+
 
 
 python ../evaluation/evaluation_code_MVTec3D-AD/evaluate_experiment.py \
