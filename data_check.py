@@ -10,7 +10,7 @@ def main(args):
 
     print(f'\n step 2. dataset')
     obj_name = args.obj_name
-    root_dir = f'/home/dreamyou070/MyData/anomaly_detection/MVTec3D-AD/{obj_name}/train_1/good/rgb'
+    root_dir = f'/home/dreamyou070/MyData/anomaly_detection/MVTec3D-AD/{obj_name}/train_1/good'
     num_images = len(os.listdir(root_dir))
     print(f'num_images: {num_images}')
     args.anomaly_source_path = f'/home/dreamyou070/MyData/anomaly_detection/MVTec3D-AD/anomal_source_{obj_name}'
