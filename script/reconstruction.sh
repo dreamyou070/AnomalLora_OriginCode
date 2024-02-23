@@ -1,6 +1,6 @@
 # !/bin/bash
 
-port_number=50101
+port_number=50103
 obj_name='bagel'
 caption='bagel'
 sub_folder="sub_3_background_masked_sample_anomal_sample_up_16_32_64"
