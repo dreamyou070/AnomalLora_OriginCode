@@ -1,7 +1,7 @@
 #! /bin/bash
 
 bench_mark="MVTec3D-AD"
-class_name="bagel"
+class_name="cookie"
 sub_folder="sub_3_up_16_0_2_32_64"
 folder_name="back_noise_use_gaussian_zero_timestep"
 
