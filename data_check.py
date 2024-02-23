@@ -67,12 +67,13 @@ def main(args):
         merged_src = sample['bg_anomal_image'].squeeze()
         np_merged_src = np.array(((merged_src + 1) / 2) * 255).astype(np.uint8).transpose(1, 2, 0)
         pil_merged_src = Image.fromarray(np_merged_src)
-        pil_merged_src.save(os.path.join(check_base_dir, f'{image_name}_backgrounded.png'))
+        pil_merged_src.save(os.path.join(check_base_dir, f'{save_name}_backgrounded.png'))
+
         anomaly_mask = sample['bg_anomal_mask']
         np_anomaly_mask = anomaly_mask.squeeze().numpy()
         pil_anomaly_mask = (np_anomaly_mask * 255).astype(np.uint8)
         pil_anomaly_mask = Image.fromarray(pil_anomaly_mask)
-        pil_anomaly_mask.save(os.path.join(check_base_dir, f'{image_name}_backgrounded_mask.png'))
+        pil_anomaly_mask.save(os.path.join(check_base_dir, f'{save_name}_backgrounded_mask.png'))
 
         """   
         

@@ -125,7 +125,7 @@ class MVTecDRAEMTrainDataset(Dataset):
                                iaa.Affine(rotate=(180, 180)),
                                iaa.Affine(rotate=(90, 90)),
                                iaa.Affine(rotate=(270, 270))]
-        num_repeat = len(self.rot_augmenters)
+        num_repeat = len(self.rot_augmenters) # 4
         self.image_paths = [image_path for image_path in image_paths for i in range(num_repeat)]
 
         print(f' img num = {len(self.image_paths)}')
