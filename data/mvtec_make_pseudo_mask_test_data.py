@@ -46,7 +46,7 @@ def main(args):
 
                     # [1] save original image
                     origin_rgb_dir = os.path.join(defect_dir, img)
-                    Image.open(origin_rgb_dir).save(os.path.join(origin_folder, img))
+                    Image.open(origin_rgb_dir).save(os.path.join(rgb_dir, img))
 
                     # [3] copy to rgb folder
                     if 'good' not in defect :
