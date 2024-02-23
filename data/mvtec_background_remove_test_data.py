@@ -29,42 +29,42 @@ def main(args):
 
             for defect in defetcs:
 
-                defect_dir = os.path.join(test_dir, f'{defect}')
-                gt_defect_dir = os.path.join(ground_truth_dir, f'{defect}')
+                if defect == 'good':
 
-                imgs = os.listdir(gt_defect_dir)
+                    defect_dir = os.path.join(test_dir, f'{defect}')
+                    gt_defect_dir = os.path.join(ground_truth_dir, f'{defect}')
 
-                for img in imgs:
-                    name, ext = os.path.splitext(img)
-                    pure_name = name.split('_')[0]
-                    image_name = pure_name + ext
+                    imgs = os.listdir(defect_dir)
 
-                    # [1] new folder
-                    rgb_dir = os.path.join(defect_dir, 'rgb')
-                    os.makedirs(rgb_dir, exist_ok=True)
-                    origin_folder = os.path.join(defect_dir, 'rgb_origin')
-                    os.makedirs(origin_folder, exist_ok=True)
-                    sub_folder = os.path.join(defect_dir, 'rgb_remove_background')
-                    os.makedirs(sub_folder, exist_ok=True)
-                    gt_folder = os.path.join(defect_dir, 'gt')
-                    os.makedirs(gt_folder, exist_ok=True)
+                    for img in imgs:
+                        name, ext = os.path.splitext(img)
+                        gt_name = f'{name}_mask{ext}'
+    
+                        # [1] new folder
+                        rgb_dir = os.path.join(defect_dir, 'rgb')
+                        os.makedirs(rgb_dir, exist_ok=True)
+                        origin_folder = os.path.join(defect_dir, 'rgb_origin')
+                        os.makedirs(origin_folder, exist_ok=True)
+                        sub_folder = os.path.join(defect_dir, 'rgb_remove_background')
+                        os.makedirs(sub_folder, exist_ok=True)
+                        gt_folder = os.path.join(defect_dir, 'gt')
+                        os.makedirs(gt_folder, exist_ok=True)
 
-                    # [1] save original image
-                    origin_rgb_dir = os.path.join(defect_dir, image_name)
-                    new_rgb_dir = os.path.join(origin_folder, image_name)
-                    Image.open(origin_rgb_dir).save(os.path.join(origin_folder, image_name))
+                        # [1] save original image
+                        origin_rgb_dir = os.path.join(defect_dir, img)
+                        Image.open(origin_rgb_dir).save(os.path.join(origin_folder, img))
 
-                    # [2] remove background
-                    sub_dir = os.path.join(sub_folder, image_name)
-                    remove_background(origin_rgb_dir, sub_dir)
-                    Image.open(sub_dir).convert("RGB").save(origin_rgb_dir)
+                        # [2] remove background
+                        sub_dir = os.path.join(sub_folder, image_name)
+                        remove_background(origin_rgb_dir, sub_dir)
+                        Image.open(sub_dir).convert("RGB").save(os.path.join(rgb_dir, img))
 
-                    # [3] copy to rgb folder
-                    if 'good' not in defect :
-                        Image.open(os.path.join(gt_defect_dir, img)).convert("L").save(os.path.join(gt_folder, image_name))
-                    else :
-                        pseudo_gt = np.array(Image.open(origin_rgb_dir))*0
-                        Image.fromarray(pseudo_gt.astype(np.uint8)).convert("L").save(os.path.join(gt_folder, image_name))
+                        # [3] copy to rgb folder
+                        if 'good' not in defect :
+                            Image.open(os.path.join(gt_defect_dir, gt_name)).convert("L").save(os.path.join(gt_folder, img))
+                        else :
+                            pseudo_gt = np.array(Image.open(origin_rgb_dir))*0
+                            Image.fromarray(pseudo_gt.astype(np.uint8)).convert("L").save(os.path.join(gt_folder, img))
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
