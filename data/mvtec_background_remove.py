@@ -34,7 +34,7 @@ def main(args):
             os.makedirs(sub_folder, exist_ok=True)
 
             for image in images:
-                img_dir = os.path.join(train_rgb_dir, image)
+                img_dir = os.path.join(train_good_dir, image)
 
                 # [1] save original image
                 Image.open(img_dir).save(os.path.join(origin_folder, image))
