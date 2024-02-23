@@ -358,3 +358,4 @@ class MVTecDRAEMTrainDataset(Dataset):
                 'caption': self.caption,
                 'image_name' : name,
                 'anomal_name' : anomal_name,}
+    
