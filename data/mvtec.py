@@ -319,7 +319,8 @@ class MVTecDRAEMTrainDataset(Dataset):
                     object_position = np.where((np.array(object_img_aug)) == 0, 0, 1)             # [512,512]
                     # [4.1] anomal img
                     anomaly_source_img = self.load_image(self.anomaly_source_paths[anomal_src_idx], self.resize_shape[0], self.resize_shape[1])
-                    anomal_img, anomal_mask_torch = self.augment_image(img,anomaly_source_img, beta_scale_factor=self.beta_scale_factor,
+                    anomal_img, anomal_mask_torch = self.augment_image(img,anomaly_source_img,
+                                                                       beta_scale_factor=self.beta_scale_factor,
                                                                        object_position=object_position) # [512,512,3], [512,512]
                     if self.bgrm_test:
                         background_img = (img * 0).astype(img.dtype)
@@ -331,9 +332,9 @@ class MVTecDRAEMTrainDataset(Dataset):
                                                                                               aug(image=background_img),
                                                                                               object_position = object_position)
                     else :
-                        back_anomal_img, back_anomal_mask_torch = self.gaussian_augment_image(img,
-                                                                                              aug(image=background_img),
-                                                                                              object_position=object_position)
+                        back_anomal_img, back_anomal_mask_torch = self.augment_image(img, aug(image=background_img),
+                                                                                     beta_scale_factor=self.beta_scale_factor,
+                                                                                     object_position=object_position)
 
                 else :
                     anomaly_source_img = self.load_image(self.anomaly_source_paths[anomal_src_idx], self.resize_shape[0],
