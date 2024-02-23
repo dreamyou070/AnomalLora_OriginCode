@@ -1,12 +1,10 @@
 import argparse
 import torch
-from sub.mvtec_sy import MVTecDRAEMTrainDataset
 from model.tokenizer import load_tokenizer
 import numpy as np
 import os
 from PIL import Image
-from data import passing_mvtec_argument
-
+from data.mvtec import passing_mvtec_argument, MVTecDRAEMTrainDataset
 
 def main(args):
 
