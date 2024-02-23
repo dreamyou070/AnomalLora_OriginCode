@@ -42,50 +42,53 @@ def main(args):
     for sample in train_dataloader :
 
         name = sample['image_name'][0]
-        image_name = sample['anomal_name'][0]
+        save_name = sample['anomal_name'][0]
 
 
         image = sample['image'].squeeze() # [3,512,512]
         np_img = np.array(((image + 1) / 2) * 255).astype(np.uint8).transpose(1, 2, 0)
         pil_image = Image.fromarray(np_img)
-        pil_image.save(os.path.join(check_base_dir, f'{image_name}.png'))
+        pil_image.save(os.path.join(check_base_dir, f'{save_name}.png'))
         object_mask = sample['object_mask']
         np_object_mask = object_mask.squeeze().numpy()
         pil_object_mask = Image.fromarray((np_object_mask * 255).astype(np.uint8))
-        pil_object_mask.save(os.path.join(check_base_dir, f'{image_name}_object_mask.png'))
+        pil_object_mask.save(os.path.join(check_base_dir, f'{save_name}_object_mask.png'))
 
-        merged_src = sample['augmented_image'].squeeze()
+        merged_src = sample['anomal_image'].squeeze()
         np_merged_src = np.array(((merged_src + 1) / 2) * 255).astype(np.uint8).transpose(1, 2, 0)
         pil_merged_src = Image.fromarray(np_merged_src)
-        pil_merged_src.save(os.path.join(check_base_dir, f'{image_name}_merged_src.png'))
-        anomaly_mask = sample['anomaly_mask']
+        pil_merged_src.save(os.path.join(check_base_dir, f'{save_name}_anomal_aug.png'))
+        anomaly_mask = sample['anomal_mask']
         np_anomaly_mask = anomaly_mask.squeeze().numpy()
         pil_anomaly_mask = (np_anomaly_mask * 255).astype(np.uint8)
         pil_anomaly_mask = Image.fromarray(pil_anomaly_mask)
-        pil_anomaly_mask.save(os.path.join(check_base_dir, f'{image_name}_anomaly_mask.png'))
+        pil_anomaly_mask.save(os.path.join(check_base_dir, f'{save_name}_anomal_aug_mask.png'))
 
-        masked_image = sample['masked_image'].squeeze()
-        np_masked_image = np.array(((masked_image + 1) / 2) * 255).astype(np.uint8).transpose(1, 2, 0)
-        pil_masked_image = Image.fromarray(np_masked_image)
-        pil_masked_image.save(os.path.join(check_base_dir, f'{image_name}_hole_image.png'))
-
-        masked_image_mask = sample['masked_image_mask']
-        np_masked_image_mask = masked_image_mask.squeeze().numpy()
-        pil_masked_image_mask = (np_masked_image_mask * 255).astype(np.uint8)
-        pil_masked_image_mask = Image.fromarray(pil_masked_image_mask)
-        pil_masked_image_mask.save(os.path.join(check_base_dir, f'{image_name}_masked_image_mask.png'))
+        merged_src = sample['bg_anomal_image'].squeeze()
+        np_merged_src = np.array(((merged_src + 1) / 2) * 255).astype(np.uint8).transpose(1, 2, 0)
+        pil_merged_src = Image.fromarray(np_merged_src)
+        pil_merged_src.save(os.path.join(check_base_dir, f'{image_name}_backgrounded.png'))
+        anomaly_mask = sample['bg_anomal_mask']
+        np_anomaly_mask = anomaly_mask.squeeze().numpy()
+        pil_anomaly_mask = (np_anomaly_mask * 255).astype(np.uint8)
+        pil_anomaly_mask = Image.fromarray(pil_anomaly_mask)
+        pil_anomaly_mask.save(os.path.join(check_base_dir, f'{image_name}_backgrounded_mask.png'))
 
         """   
         
-        self_aug_img = sample['self_augmented_image'].squeeze()
-        np_self_aug_img = np.array(((self_aug_img + 1) / 2) * 255).astype(np.uint8).transpose(1, 2, 0)
-        pil_self_aug_img = Image.fromarray(np_self_aug_img)
-        pil_self_aug_img.save(os.path.join(check_base_dir, f'{image_name}_self_aug_img.png'))
-        self_aug_img_mask = sample['self_augmented_mask']
-        np_self_aug_img_mask = self_aug_img_mask.squeeze().numpy()
-        pil_self_aug_img_mask = (np_self_aug_img_mask * 255).astype(np.uint8)
-        pil_self_aug_img_mask = Image.fromarray(pil_self_aug_img_mask)
-        pil_self_aug_img_mask.save(os.path.join(check_base_dir, f'{image_name}_self_aug_img_mask.png'))
+        return {'image': self.transform(img),               # original image
+                "object_mask": object_mask.unsqueeze(0),    # [1, 64, 64]
+                'anomal_image': self.transform(anomal_img),
+                "anomal_mask": anomal_mask_torch,
+                'bg_anomal_image': self.transform(back_anomal_img),          # masked image
+                'bg_anomal_mask': back_anomal_mask_torch,
+                'idx': idx,
+                'input_ids': input_ids.squeeze(0),
+                'caption': self.caption,
+                'image_name' : name,
+                'anomal_name' : anomal_name,}
+
+
         """
 
 if __name__ == "__main__":
