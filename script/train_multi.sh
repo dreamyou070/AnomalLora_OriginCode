@@ -1,12 +1,12 @@
 # !/bin/bash
-port_number=59401
+port_number=59402
 pretrained_model_name_or_path="../../../pretrained_stable_diffusion/stable-diffusion-v1-5/v1-5-pruned.safetensors"
 obj_name='cookie'
 trigger_word='cookie'
 bench_mark='MVTec3D-AD'
 # --do_dist_loss --mahalanobis_only_object --mahalanobis_normalize \
 sub_folder="sub_3_up_16_0_2_32_64"
-folder_name="back_noise_use_gaussian_zero_timestep"
+folder_name="back_noise_use_perlin_zero_timestep"
 output_dir="../../result/${bench_mark}/${obj_name}/${sub_folder}/${folder_name}"
 # --use_noise_scheduler --min_timestep 399 --max_timestep 400 \
 accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_config \
@@ -31,5 +31,4 @@ accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_config \
  --do_anomal_sample --do_background_masked_sample \
  --do_dist_loss --mahalanobis_only_object --mahalanobis_normalize \
  --do_attn_loss --do_normalized_score --original_normalized_score \
- --do_map_loss \
- --back_noise_use_gaussian
+ --do_map_loss
