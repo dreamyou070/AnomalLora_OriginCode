@@ -23,32 +23,34 @@ def main(args):
 
             cat_dir = os.path.join(base_folder, f'{cat}')
             train_good_dir = os.path.join(cat_dir, 'train/good')
+            images = os.listdir(train_good_dir)
+
 
             train_rgb_dir = os.path.join(train_good_dir, 'rgb')
+            os.makedirs(train_rgb_dir, exist_ok=True)
             origin_folder = os.path.join(train_good_dir, 'rgb_origin')
             os.makedirs(origin_folder, exist_ok=True)
             sub_folder = os.path.join(train_good_dir, 'rgb_remove_background')
             os.makedirs(sub_folder, exist_ok=True)
 
-            images = os.listdir(train_rgb_dir)
             for image in images:
                 img_dir = os.path.join(train_rgb_dir, image)
-                pil_img = Image.open(img_dir)
 
                 # [1] save original image
-                origin_img_dir = os.path.join(origin_folder, image)
-                pil_img.save(origin_img_dir)
+                Image.open(img_dir).save(os.path.join(origin_folder, image))
+
                 # [2] remove background
                 sub_dir = os.path.join(sub_folder, image)
                 remove_background(img_dir, sub_dir)
-                background_removed_img = Image.open(sub_dir).convert("RGB")
-                background_removed_img.save(img_dir)
+                Image.open(sub_dir).convert("RGB").save(os.path.join(train_rgb_dir, image)
 
+                # [3] remove original image
+                os.remove(img_dir)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--base_folder', type=str,
                         default=r'/home/dreamyou070/MyData/anomaly_detection/MVTec')
-    parser.add_argument('--trg_cat', type=str, default='bottle')
+    parser.add_argument('--trg_cat', type=str, default='cable')
     args = parser.parse_args()
     main(args)
