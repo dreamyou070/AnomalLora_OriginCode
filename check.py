@@ -54,7 +54,7 @@ def main(args):
     trainable_params = network.prepare_optimizer_params(args.text_encoder_lr,
                                                         args.unet_lr, args.learning_rate)
     trainable_params.append({"params": position_embedder.parameters(), "lr": args.learning_rate})
-    if args.text_time_embedding:
+    if args.use_text_time_embedding:
         trainable_params.append({"params": text_time_embedding.parameters(),
                                  "lr": args.learning_rate})
     optimizer_name, optimizer_args, optimizer = get_optimizer(args, trainable_params)
