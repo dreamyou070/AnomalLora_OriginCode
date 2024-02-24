@@ -7,12 +7,12 @@ bench_mark='MVTec3D-AD'
 
 layer_folder="layer_3"
 sub_folder="sub_3_up_16_32_64"
-folder_name="back_noise_use_gaussian_timestep_200_to_600"
+folder_name="back_noise_use_gaussian_timestep_400_to_600"
 output_dir="../../result/${bench_mark}/${obj_name}/${layer_folder}/${sub_folder}/${folder_name}"
 #--use_noise_scheduler --min_timestep 399 --max_timestep 400 \
 #--back_noise_use_gaussian \
 
-accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_5_config \
+accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_config \
  --main_process_port $port_number ../train_multi.py \
  --log_with wandb \
  --output_dir ${output_dir} \
@@ -35,4 +35,4 @@ accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_5_config \
  --do_dist_loss --mahalanobis_only_object --mahalanobis_normalize \
  --do_attn_loss --do_normalized_score --original_normalized_score \
  --do_map_loss \
- --use_noise_scheduler --min_timestep 200 --max_timestep 600
+ --use_noise_scheduler --min_timestep 400 --max_timestep 600
