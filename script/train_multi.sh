@@ -7,7 +7,7 @@ bench_mark='MVTec3D-AD'
 
 layer_folder="layer_3"
 sub_folder="up_16_32_64"
-folder_name="zero_timestep_sigma_max_60_min_sigma_25_max_perlin_scale_6_test_noise_predicting_task_loss"
+folder_name="zero_timestep_sigma_max_60_min_sigma_25_max_perlin_scale_6_test_noise_predicting_task_loss_do_cls_train"
 output_dir="../../result/${bench_mark}/${obj_name}/${layer_folder}/${sub_folder}/${folder_name}"
 # --use_noise_scheduler --min_timestep 399 --max_timestep 400 \
 # --use_text_time_embedding
@@ -33,7 +33,7 @@ accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_5_config \
                     'up_blocks_1_attentions_2_transformer_blocks_0_attn2',]" \
  --start_epoch 0 --max_train_epochs 30 \
  --do_anomal_sample --do_background_masked_sample \
- --do_attn_loss --cls_train \
+ --do_attn_loss --do_cls_train \
  --do_map_loss \
  --test_noise_predicting_task_loss \
  --back_noise_use_gaussian --max_sigma 100 --min_sigma 30 --max_perlin_scale 4 \
