@@ -225,6 +225,8 @@ def main(args):
             # [5] backprop
             dist_loss, normal_dist_mean, normal_dist_max = normal_activator.generate_mahalanobis_distance_loss()
             if args.do_dist_loss:
+                if args.dist_loss_with_max :
+                    dist_loss = normal_dist_max
                 loss += dist_loss
                 loss_dict['dist_loss'] = dist_loss.item()
             if args.do_attn_loss:
@@ -410,7 +412,8 @@ if __name__ == "__main__":
     parser.add_argument("--test_noise_predicting_task_loss", action='store_true')
     parser.add_argument("--back_noise_use_gaussian", action='store_true')
     parser.add_argument("--use_text_time_embedding", action='store_true')
-
+    parser.add_argument("--max_sigma", type=int, default=60)
+    parser.add_argument("--dist_loss_with_max", action='store_true')
     args = parser.parse_args()
     unet_passing_argument(args)
     passing_argument(args)

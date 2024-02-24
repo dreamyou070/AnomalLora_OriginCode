@@ -7,7 +7,7 @@ bench_mark='MVTec3D-AD'
 
 layer_folder="layer_3"
 sub_folder="sub_3_up_16_32_64"
-folder_name="back_noise_use_gaussian_timestep_zero_to_400_with_text_timeembedding"
+folder_name="back_noise_use_gaussian_timestep_zero_to_400_with_text_timeembedding_dist_loss_with_max"
 output_dir="../../result/${bench_mark}/${obj_name}/${layer_folder}/${sub_folder}/${folder_name}"
 #--use_noise_scheduler --min_timestep 399 --max_timestep 400 \
 #
@@ -34,6 +34,6 @@ accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_5_config \
  --do_dist_loss --mahalanobis_only_object --mahalanobis_normalize \
  --do_attn_loss \
  --do_map_loss \
- --back_noise_use_gaussian \
- --use_noise_scheduler --min_timestep 0 --max_timestep 400 \
- --use_text_time_embedding
+ --back_noise_use_gaussian --max_sigma 100 \
+ --use_noise_scheduler --min_timestep 0 --max_timestep 500 \
+ --use_text_time_embedding --dist_loss_with_max

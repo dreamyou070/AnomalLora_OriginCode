@@ -10,7 +10,6 @@ class NormalActivator(nn.Module):
     def __init__(self, loss_focal, loss_l2, use_focal_loss):
         super(NormalActivator, self).__init__()
 
-        self.do_normalized_score = argument.do_normalized_score
         # [1]
         self.anomal_feat_list = []
         self.normal_feat_list = []
@@ -48,9 +47,8 @@ class NormalActivator(nn.Module):
             elif anomal_flag == 1 :
                 self.anomal_feat_list.append(feat.unsqueeze(0))
 
-                    
-    
-    def collect_queries_normal(selfself, origin_query, normal_position_vector, do_collect_normal):
+
+    def collect_queries_normal(self, origin_query, normal_position_vector, do_collect_normal):
         # check foreground normal collecting code
         pix_num = origin_query.shape[0]
         for pix_idx in range(pix_num):
@@ -159,6 +157,7 @@ class NormalActivator(nn.Module):
             anomal_dist_mean = torch.tensor(anomal_mahalanobis_dists).mean()
             total_dist = normal_dist_mean + anomal_dist_mean
             normal_dist_loss = (normal_dist_mean / total_dist).requires_grad_()
+            normal_dist_max = normal_dist_max.requires_grad_()
         else:
             normal_dist_loss = normal_dist_max.requires_grad_()
         self.normal_feat_list = []
