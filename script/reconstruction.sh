@@ -5,7 +5,7 @@ obj_name='cookie'
 caption='cookie'
 layer_folder="layer_3"
 sub_folder="sub_3_up_16_32_64"
-folder_name="back_noise_use_perlin_timestep_zero_to_400"
+folder_name="back_noise_use_gaussian_timestep_zero_to_400"
 bench_mark="MVTec3D-AD"
 position_embedding_layer="down_blocks_0_attentions_0_transformer_blocks_0_attn1"
 
@@ -20,4 +20,4 @@ accelerate launch --config_file ../../../gpu_config/gpu_0_config \
                                     'up_blocks_2_attentions_2_transformer_blocks_0_attn2',
                                     'up_blocks_1_attentions_2_transformer_blocks_0_attn2',]" \
  --d_dim 320 --use_position_embedder --position_embedding_layer ${position_embedding_layer} \
- --threds [0.5]
+ --threds [0.7,0.8,0.9,0.95,0.98]
