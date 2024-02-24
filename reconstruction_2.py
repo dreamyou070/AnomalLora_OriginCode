@@ -48,7 +48,7 @@ def inference(latent,
     encoder_hidden_states = text_encoder(input_ids.to(text_encoder.device))["last_hidden_state"]
     # [2] unet
     attn_score_1 = timewise_attention(latent, 0, 1)
-    attn_score_2 = timewise_attention(latent, 99, 100)
+    attn_score_2 = timewise_attention(latent, 499, 500)
 
     # (1) zero timestep
     attn_score = attn_score_2
@@ -151,7 +151,7 @@ def main(args):
 
         # [3] folder
         parent, _ = os.path.split(args.network_folder)
-        recon_base_folder = os.path.join(parent, 'reconstruction_timestep_100')
+        recon_base_folder = os.path.join(parent, 'reconstruction_timestep_500')
         os.makedirs(recon_base_folder, exist_ok=True)
         lora_base_folder = os.path.join(recon_base_folder, f'lora_epoch_{lora_epoch}')
         os.makedirs(lora_base_folder, exist_ok=True)
