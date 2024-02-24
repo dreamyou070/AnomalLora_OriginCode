@@ -1,13 +1,12 @@
 #! /bin/bash
 
 bench_mark="MVTec3D-AD"
-class_name="cookie"
+class_name="dowel"
 dataset_dir="../../../MyData/anomaly_detection/${bench_mark}"
 layer_folder="layer_3"
-sub_folder="sub_3_up_16_32_64"
-folder_name="back_noise_use_gaussian_timestep_zero_to_500_with_text_timeembedding_dist_loss_with_max"
+sub_folder="background_masked_sample_anomal_sample_up_16_32_64"
+folder_name="attn_loss_original_normalized_score_map_loss_dist_loss_on_object_normalize_task_loss"
 output_dir="metrics"
-
 
 
 python ../evaluation/evaluation_code_MVTec3D-AD/evaluate_experiment.py \
