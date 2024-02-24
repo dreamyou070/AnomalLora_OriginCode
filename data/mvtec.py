@@ -189,9 +189,7 @@ class MVTecDRAEMTrainDataset(Dataset):
 
         # [2] perlin noise
         while True :
-
             while True :
-
                 # big perlin scale means smaller noise
                 min_perlin_scale = 0
                 perlin_scalex = 2 ** (torch.randint(min_perlin_scale, max_perlin_scale, (1,)).numpy()[0])
@@ -214,18 +212,10 @@ class MVTecDRAEMTrainDataset(Dataset):
             while True :
                 beta = torch.rand(1).numpy()[0] * beta_scale_factor
                 if max_beta_scale > beta > min_beta_scale :
-                    #print(f'beta = {beta}')
                     break
-
-            # if beta is bigger, more original image
-            # if beta is smaller, more anomaly image
-            # if beta_scale_factor is 1
-
             A = beta * image + (1 - beta) * anomaly_source_img.astype(np.float32) # merged
             augmented_image = (image * (1 - blur_3D_mask) + A * blur_3D_mask).astype(np.float32)
-
             anomal_img = np.array(Image.fromarray(augmented_image.astype(np.uint8)), np.uint8)
-
             binary_2d_pil = Image.fromarray((binary_2D_mask * 255).astype(np.uint8)).convert('L').resize((64, 64))
             anomal_mask_torch = torch.where((torch.tensor(np.array(binary_2d_pil)) / 255) > 0.5, 1, 0)
             if anomal_mask_torch.sum() > 0:
