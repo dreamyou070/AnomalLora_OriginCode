@@ -12,7 +12,7 @@ from utils.attention_control import passing_argument, register_attention_control
 from utils.accelerator_utils import prepare_accelerator
 from utils.optimizer_utils import get_optimizer, get_scheduler_fix
 from utils.model_utils import prepare_scheduler_for_custom_training, get_noise_noisy_latents_and_timesteps
-from utils.model_utils import pe_model_save
+from utils.model_utils import pe_model_save, te_model_save
 from utils.utils_loss import FocalLoss
 from data.prepare_dataset import call_dataset
 from model import call_model_package
@@ -292,7 +292,8 @@ def main(args):
                 time_embedder_base_save_dir = os.path.join(args.output_dir, 'text_time_embedder')
                 os.makedirs(time_embedder_base_save_dir, exist_ok=True)
                 t_save_dir = os.path.join(time_embedder_base_save_dir, f'time_embedder_{epoch + 1}.safetensors')
-                te_model_save(accelerator.unwrap_model(time_embedder), save_dtype, t_save_dir)
+                te_model_save(accelerator.unwrap_model(time_embedder),
+                              save_dtype, t_save_dir)
 
     accelerator.end_training()
 

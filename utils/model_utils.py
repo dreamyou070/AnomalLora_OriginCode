@@ -83,3 +83,15 @@ def pe_model_save(model, save_dtype, save_dir):
     else:
         torch.save(state_dict, save_dir)
 
+def te_model_save(model, save_dtype, save_dir):
+    state_dict = model.state_dict()
+    for key in list(state_dict.keys()):
+        v = state_dict[key]
+        v = v.detach().clone().to("cpu").to(save_dtype)
+        state_dict[key] = v
+    _, file = os.path.split(save_dir)
+    if os.path.splitext(file)[1] == ".safetensors":
+        from safetensors.torch import save_file
+        save_file(state_dict, save_dir)
+    else:
+        torch.save(state_dict, save_dir)
