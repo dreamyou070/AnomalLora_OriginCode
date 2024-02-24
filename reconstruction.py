@@ -111,7 +111,7 @@ def main(args):
         network.load_state_dict(raw_state_dict)
         network.to(accelerator.device, dtype=weight_dtype)
 
-        # [3] folder
+        # [3] files
         parent, _ = os.path.split(args.network_folder)
         recon_base_folder = os.path.join(parent, 'reconstruction')
         os.makedirs(recon_base_folder, exist_ok=True)
