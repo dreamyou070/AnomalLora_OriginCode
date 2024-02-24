@@ -1,15 +1,15 @@
 # !/bin/bash
 
 port_number=50007
-obj_name='peach'
-caption='peach'
+obj_name='cookie'
+caption='cookie'
 layer_folder="layer_3"
-sub_folder="background_masked_sample_anomal_sample_up_16_32_64"
+sub_folder="up_16_32_64"
 folder_name="attn_loss_original_normalized_score_map_loss_dist_loss_on_object_normalize_task_loss"
 bench_mark="MVTec3D-AD"
 position_embedding_layer="down_blocks_0_attentions_0_transformer_blocks_0_attn1"
 
-# [7,0.75,0.8,0.85,0.9,0.95,0.98
+# [
 accelerate launch --config_file ../../../gpu_config/gpu_0_config \
  --main_process_port $port_number ../reconstruction.py \
  --pretrained_model_name_or_path ../../../pretrained_stable_diffusion/stable-diffusion-v1-5/v1-5-pruned.safetensors \
@@ -20,4 +20,4 @@ accelerate launch --config_file ../../../gpu_config/gpu_0_config \
                                     'up_blocks_2_attentions_0_transformer_blocks_0_attn2',
                                     'up_blocks_1_attentions_0_transformer_blocks_0_attn2',]" \
  --d_dim 320 --use_position_embedder --position_embedding_layer ${position_embedding_layer} \
- --threds [0.5]
+ --threds [0.7,0.75,0.8,0.85,0.9,0.95,0.98]

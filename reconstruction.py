@@ -17,8 +17,6 @@ from model.pe import PositionalEmbedding
 from safetensors.torch import load_file
 from attention_store.normal_activator import NormalActivator
 from attention_store.normal_activator import passing_normalize_argument
-from diffusers import DDPMScheduler
-from utils.model_utils import prepare_scheduler_for_custom_training, get_noise_noisy_latents_and_timesteps
 
 def inference(latent,
               tokenizer, text_encoder, unet, controller, normal_activator, position_embedder,
@@ -124,13 +122,6 @@ def main(args):
         controller = AttentionStore()
         register_attention_control(unet, controller)
 
-        noise_scheduler = DDPMScheduler(beta_start=0.00085,
-                                        beta_end=0.012,
-                                        beta_schedule="scaled_linear",
-                                        num_train_timesteps=1000,
-                                        clip_sample=False)
-        prepare_scheduler_for_custom_training(noise_scheduler, accelerator.device)
-
         for thred in args.threds :
             thred_folder = os.path.join(lora_base_folder, f'thred_{thred}')
             os.makedirs(thred_folder, exist_ok=True)
@@ -169,15 +160,8 @@ def main(args):
                     if accelerator.is_main_process:
                         with torch.no_grad():
                             img = load_image(rgb_img_dir, 512, 512)
-                            latent = image2latent(img, vae, weight_dtype)
-                            if args.use_noise_scheduler :
-                                noise, latent, timesteps = get_noise_noisy_latents_and_timesteps(noise_scheduler,
-                                                                                                  latent,
-                                                                                                  noise=None,
-                                                                                                  min_timestep=args.min_timestep,
-                                                                                                  max_timestep=args.max_timestep)
-
-                            cls_map_pil, normal_map_pil, anomaly_map_pil = inference(latent,
+                            vae_latent = image2latent(img, vae, weight_dtype)
+                            cls_map_pil, normal_map_pil, anomaly_map_pil = inference(vae_latent,
                                                                                      tokenizer, text_encoder, unet,
                                                                                      controller, normal_activator,
                                                                                      position_embedder,
@@ -208,15 +192,8 @@ def main(args):
                     if accelerator.is_main_process:
                         with torch.no_grad():
                             img = load_image(rgb_img_dir, 512, 512)
-                            latent = image2latent(img, vae, weight_dtype)
-                            if args.use_noise_scheduler:
-                                noise, latent, timesteps = get_noise_noisy_latents_and_timesteps(noise_scheduler,
-                                                                                                  latent,
-                                                                                                  noise=None,
-                                                                                                  min_timestep=args.min_timestep,
-                                                                                                  max_timestep=args.max_timestep)
-
-                            cls_map_pil, normal_map_pil, anomaly_map_pil = inference(latent,
+                            vae_latent = image2latent(img, vae, weight_dtype)
+                            cls_map_pil, normal_map_pil, anomaly_map_pil = inference(vae_latent,
                                                                                      tokenizer, text_encoder, unet,
                                                                                      controller, normal_activator,
                                                                                      position_embedder,
