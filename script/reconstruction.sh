@@ -1,11 +1,11 @@
 # !/bin/bash
 
-port_number=50010
-obj_name='cookie'
-caption='cookie'
+port_number=50011
+obj_name='dowel'
+caption='dowel'
 layer_folder="layer_3"
 sub_folder="sub_3_up_16_32_64"
-folder_name="zero_timestep_sigma_max_100_min_sigma_30_max_perlin_scale_4"
+folder_name="zero_timestep_sigma_max_60_min_sigma_25_max_perlin_scale_6"
 bench_mark="MVTec3D-AD"
 position_embedding_layer="down_blocks_0_attentions_0_transformer_blocks_0_attn1"
 
@@ -20,4 +20,4 @@ accelerate launch --config_file ../../../gpu_config/gpu_0_config \
                                     'up_blocks_2_attentions_2_transformer_blocks_0_attn2',
                                     'up_blocks_1_attentions_2_transformer_blocks_0_attn2',]" \
  --d_dim 320 --use_position_embedder --position_embedding_layer ${position_embedding_layer} \
- --threds [0.7,0.8,0.9,0.95,0.98]
+ --threds [0.6, 0.7,0.8,0.9,0.95,0.98]
