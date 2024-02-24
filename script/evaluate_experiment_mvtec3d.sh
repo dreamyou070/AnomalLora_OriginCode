@@ -5,7 +5,7 @@ class_name="cookie"
 dataset_dir="../../../MyData/anomaly_detection/${bench_mark}"
 layer_folder="layer_3"
 sub_folder="sub_3_up_16_32_64"
-folder_name="zero_timestep_sigma_max_100_min_sigma_30_max_perlin_scale_4"
+folder_name="zero_timestep_sigma_max_100_min_sigma_30_max_perlin_scale_4_max_beta_scale_0.95_min_beta_scale_0.6"
 output_dir="metrics"
 
 
