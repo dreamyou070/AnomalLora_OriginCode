@@ -26,7 +26,6 @@ def call_dataset(args) :
                                      anomal_only_on_object=args.anomal_only_on_object,
                                      anomal_training=True,
                                      latent_res=args.latent_res,
-                                     perlin_max_scale=args.perlin_max_scale,
                                      kernel_size=args.kernel_size,
                                      beta_scale_factor=args.beta_scale_factor,
                                      bgrm_test = args.bgrm_test,

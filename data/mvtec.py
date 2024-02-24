@@ -89,7 +89,6 @@ class MVTecDRAEMTrainDataset(Dataset):
                  anomal_only_on_object : bool = True,
                  anomal_training : bool = False,
                  latent_res : int = 64,
-                 perlin_max_scale : int = 8,
                  kernel_size : int = 5,
                  beta_scale_factor : float = 0.8,
                  bgrm_test : bool = True,
@@ -142,7 +141,6 @@ class MVTecDRAEMTrainDataset(Dataset):
         self.anomal_only_on_object = anomal_only_on_object
         self.anomal_training = anomal_training
         self.latent_res = latent_res
-        self.perlin_max_scale = perlin_max_scale
         self.kernel_size = kernel_size
         self.beta_scale_factor = beta_scale_factor
 
@@ -212,6 +210,7 @@ class MVTecDRAEMTrainDataset(Dataset):
 
             # if beta is bigger, more original image
             # if beta is smaller, more anomaly image
+            # if beta_scale_factor is 1
 
             A = beta * image + (1 - beta) * anomaly_source_img.astype(np.float32) # merged
             augmented_image = (image * (1 - blur_3D_mask) + A * blur_3D_mask).astype(np.float32)

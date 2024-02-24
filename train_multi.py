@@ -314,7 +314,6 @@ if __name__ == "__main__":
     parser.add_argument("--anomal_source_path", type=str)
     parser.add_argument('--batch_size', type=int, default=1)
     parser.add_argument('--trigger_word', type=str)
-    parser.add_argument('--perlin_max_scale', type=int, default=8)
     parser.add_argument('--kernel_size', type=int, default=5)
     parser.add_argument("--anomal_only_on_object", action='store_true')
     parser.add_argument("--reference_check", action='store_true')
@@ -413,10 +412,11 @@ if __name__ == "__main__":
     parser.add_argument("--test_noise_predicting_task_loss", action='store_true')
     parser.add_argument("--back_noise_use_gaussian", action='store_true')
     parser.add_argument("--use_text_time_embedding", action='store_true')
+    parser.add_argument("--dist_loss_with_max", action='store_true')
+
+    parser.add_argument("--max_perlin_scale", type=int, default=6)
     parser.add_argument("--max_sigma", type=int, default=60)
     parser.add_argument("--min_sigma", type=int, default=25)
-    parser.add_argument("--dist_loss_with_max", action='store_true')
-    parser.add_argument("--max_perlin_scale", type=int, default=6)
 
     args = parser.parse_args()
     unet_passing_argument(args)
