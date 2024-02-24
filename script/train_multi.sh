@@ -7,7 +7,7 @@ bench_mark='MVTec3D-AD'
 
 layer_folder="layer_3"
 sub_folder="sub_3_up_16_32_64"
-folder_name="back_noise_use_gaussian_timestep_zero_to_400_with_text_timeembedding_dist_loss_with_max"
+folder_name="back_noise_use_gaussian_timestep_zero_to_500_with_text_timeembedding_dist_loss_with_max"
 output_dir="../../result/${bench_mark}/${obj_name}/${layer_folder}/${sub_folder}/${folder_name}"
 #--use_noise_scheduler --min_timestep 399 --max_timestep 400 \
 #
