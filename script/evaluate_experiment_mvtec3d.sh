@@ -4,7 +4,7 @@ bench_mark="MVTec3D-AD"
 class_name="cookie"
 dataset_dir="../../../MyData/anomaly_detection/${bench_mark}"
 
-sub_folder="sub_3_up_16_0_64_2"
+sub_folder="sub_3_up_16_1_64_1"
 folder_name="back_noise_use_perlin_zero_timestep"
 output_dir="metrics"
 
