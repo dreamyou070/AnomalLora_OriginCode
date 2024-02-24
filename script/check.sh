@@ -35,4 +35,5 @@ accelerate launch --config_file ../../../gpu_config/gpu_0_config \
  --do_attn_loss --do_normalized_score --original_normalized_score \
  --do_map_loss \
  --back_noise_use_gaussian \
- --use_noise_scheduler --min_timestep 0 --max_timestep 400
+ --use_noise_scheduler --min_timestep 0 --max_timestep 400 \
+ --use_text_time_embedding

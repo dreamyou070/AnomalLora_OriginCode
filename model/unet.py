@@ -251,9 +251,12 @@ class SampleOutput:
 
 
 class TimestepEmbedding(nn.Module):
-    def __init__(self, in_channels: int, time_embed_dim: int, act_fn: str = "silu", out_dim: int = None):
+    def __init__(self,
+                 in_channels: int,
+                 time_embed_dim: int,
+                 act_fn: str = "silu",
+                 out_dim: int = None):
         super().__init__()
-
         self.linear_1 = nn.Linear(in_channels, time_embed_dim)
         self.act = None
         if act_fn == "silu":
@@ -1260,6 +1263,7 @@ class UNet2DConditionModel(nn.Module):
         self.prepare_config()
 
         # state_dictの書式が変わるのでmoduleの持ち方は変えられない
+        unet.time_embedding.
 
         # input
         self.conv_in = nn.Conv2d(IN_CHANNELS, BLOCK_OUT_CHANNELS[0], kernel_size=3, padding=(1, 1))
@@ -1269,7 +1273,7 @@ class UNet2DConditionModel(nn.Module):
                                    TIME_EMBED_FLIP_SIN_TO_COS,          #
                                    TIME_EMBED_FREQ_SHIFT)
 
-        self.time_embedding = TimestepEmbedding(TIMESTEP_INPUT_DIM,     #
+        self.time_embedding = TimestepEmbedding(TIMESTEP_INPUT_DIM,     # 320
                                                 TIME_EMBED_DIM)         # 1280 = 320 * 4
 
         self.down_blocks = nn.ModuleList([])
@@ -1403,7 +1407,8 @@ class UNet2DConditionModel(nn.Module):
         down_block_additional_residuals: Optional[Tuple[torch.Tensor]] = None,
         mid_block_additional_residual: Optional[torch.Tensor] = None,
         trg_layer_list=None,
-        noise_type='perline') -> Union[Dict, Tuple]:
+        noise_type='perline',
+            **kwargs) -> Union[Dict, Tuple]:
 
 
         default_overall_up_factor = 2**self.num_upsamplers
@@ -1417,21 +1422,20 @@ class UNet2DConditionModel(nn.Module):
         # [1] time embedding
 
 
-        timesteps = timestep
-        timesteps = self.handle_unusual_timesteps(sample, timesteps)  # 変な時だけ処理
-        t_emb = self.time_proj(timesteps)
+        timesteps = timestep                                          # int
+        timesteps = self.handle_unusual_timesteps(sample, timesteps)  #
+        t_emb = self.time_proj(timesteps)                             # [Batch, Dim=320]
         t_emb = t_emb.to(dtype=self.dtype)
-        emb = self.time_embedding(t_emb) # 1280 dim
-
-        print(f'in unet, timesteps : {timestep}')
-        print(f'timestep time proj : {t_emb.shape}')
-        print(f'after time embedding : {emb.shape}')
-
-        print(f'encoder_hidden_states : {encoder_hidden_states.shape}')
-
+        emb = self.time_embedding(t_emb)                              # [Batch, Dim=1280]
 
         # [2] noisy latent conv_in
         sample = self.conv_in(sample)     # 1, 320, 64, 64
+
+        # ------------------------------------------------------------------------------------------ #
+        if 'text_time_embedding' in kwargs:
+            text_time_embedding = kwargs['text_time_embedding']
+            text_emb = text_time_embedding(t_emb)
+            encoder_hidden_states = encoder_hidden_states + text_emb
 
         # [3] down
         down_block_res_samples = (sample,)

@@ -46,7 +46,7 @@ def main(args):
 
     print(f'\n step 4. model ')
     weight_dtype, save_dtype = prepare_dtype(args)
-    text_encoder, vae, unet, network, position_embedder = call_model_package(args, weight_dtype, accelerator)
+    text_encoder, vae, unet, network, position_embedder, text_time_embedding = call_model_package(args, weight_dtype, accelerator)
 
     print(f'\n step 5. optimizer')
     args.max_train_steps = len(train_dataloader) * args.max_train_epochs
@@ -128,14 +128,19 @@ def main(args):
                                                                                       max_timestep = args.max_timestep)
                 else :
                     noise = torch.randn_like(latents, device=latents.device)
+
                 anomal_position_vector = torch.zeros_like(batch['object_mask'].squeeze().flatten())
                 object_normal_position_vector = torch.where((object_position_vector == 1) & (anomal_position_vector == 0), 1, 0)
                 with torch.set_grad_enabled(True):
+                    model_kwargs = {}
+                    if args.use_text_time_embedding:
+                        model_kwargs['text_time_embedding'] = text_time_embedding
                     noise_pred = unet(latents,
                                       0,
                                       encoder_hidden_states,
                                       trg_layer_list=args.trg_layer_list,
-                                      noise_type=position_embedder).sample
+                                      noise_type=position_embedder,
+                                      **kwargs ).sample
 
                 query_dict, attn_dict = controller.query_dict, controller.step_store
                 controller.reset()

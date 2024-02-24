@@ -46,7 +46,8 @@ def main(args):
 
     print(f'\n step 4. model ')
     weight_dtype, save_dtype = prepare_dtype(args)
-    text_encoder, vae, unet, network, position_embedder = call_model_package(args, weight_dtype, accelerator)
+    text_encoder, vae, unet, network, position_embedder, text_time_embedding = call_model_package(args, weight_dtype,
+                                                                                                  accelerator)
 
     print(f'\n step 5. optimizer')
     args.max_train_steps = len(train_dataloader) * args.max_train_epochs
@@ -117,6 +118,57 @@ def main(args):
                 encoder_hidden_states = text_encoder(batch["input_ids"].to(device))["last_hidden_state"]
             object_position_vector = batch['object_mask'].squeeze().flatten()
             # --------------------------------------------------------------------------------------------------------- #
+            if args.do_normal_sample:
+                with torch.no_grad():
+                    latents = vae.encode(
+                        batch["image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
+                if args.use_noise_scheduler:
+                    noise, latents, timesteps = get_noise_noisy_latents_and_timesteps(noise_scheduler,
+                                                                                      latents,
+                                                                                      noise=None,
+                                                                                      min_timestep=args.min_timestep,
+                                                                                      max_timestep=args.max_timestep)
+                else:
+                    noise = torch.randn_like(latents, device=latents.device)
+
+                anomal_position_vector = torch.zeros_like(batch['object_mask'].squeeze().flatten())
+                object_normal_position_vector = torch.where(
+                    (object_position_vector == 1) & (anomal_position_vector == 0), 1, 0)
+                with torch.set_grad_enabled(True):
+                    model_kwargs = {}
+                    if args.use_text_time_embedding:
+                        model_kwargs['text_time_embedding'] = text_time_embedding
+                    noise_pred = unet(latents,
+                                      0,
+                                      encoder_hidden_states,
+                                      trg_layer_list=args.trg_layer_list,
+                                      noise_type=position_embedder,
+                                      **kwargs).sample
+
+                query_dict, attn_dict = controller.query_dict, controller.step_store
+                controller.reset()
+                for trg_layer in args.trg_layer_list:
+                    normal_activator.resize_query_features(query_dict[trg_layer][0].squeeze(0))
+                    normal_activator.resize_attn_scores(attn_dict[trg_layer][0])
+                c_query = normal_activator.generate_conjugated()
+                if args.mahalanobis_only_object:
+                    normal_activator.collect_queries(c_query,
+                                                     normal_position=object_normal_position_vector,
+                                                     anomal_position=anomal_position_vector,
+                                                     do_collect_normal=True)
+                else:
+                    normal_activator.collect_queries(c_query,
+                                                     normal_position=(1 - anomal_position_vector),
+                                                     anomal_position=anomal_position_vector,
+                                                     do_collect_normal=True)
+
+                c_attn_score = normal_activator.generate_conjugated_attn_score()
+                normal_activator.collect_attention_scores(c_attn_score, anomal_position_vector)
+                normal_activator.collect_anomal_map_loss(c_attn_score, anomal_position_vector)
+                if args.test_noise_predicting_task_loss:
+                    normal_activator.collect_noise_prediction_loss(noise_pred, noise, anomal_position_vector)
+
+            # --------------------------------------------------------------------------------------------------------- #
             if args.do_anomal_sample:
                 with torch.no_grad():
                     latents = vae.encode(
@@ -135,8 +187,6 @@ def main(args):
                 with torch.set_grad_enabled(True):
                     noise_pred = unet(latents, 0, encoder_hidden_states, trg_layer_list=args.trg_layer_list,
                                       noise_type=position_embedder).sample
-
-                time.sleep(10000)
                 query_dict, attn_dict = controller.query_dict, controller.step_store
                 controller.reset()
                 for trg_layer in args.trg_layer_list:
@@ -381,6 +431,8 @@ if __name__ == "__main__":
     # [4]
     parser.add_argument("--test_noise_predicting_task_loss", action='store_true')
     parser.add_argument("--back_noise_use_gaussian", action='store_true')
+    parser.add_argument("--use_text_time_embedding", action='store_true')
+
     args = parser.parse_args()
     unet_passing_argument(args)
     passing_argument(args)
