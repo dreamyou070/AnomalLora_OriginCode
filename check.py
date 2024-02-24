@@ -104,7 +104,7 @@ def main(args):
     prepare_scheduler_for_custom_training(noise_scheduler, accelerator.device)
 
     alphas_cumprod = noise_scheduler.alphas_cumprod
-    alpha_zero = noise_scheduler[0]
+    alpha_zero = alphas_cumprod[0]
     print(f'alpha_zero : {alpha_zero}')
 
 

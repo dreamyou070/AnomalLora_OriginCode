@@ -838,7 +838,8 @@ class CrossAttnDownBlock2D(nn.Module):
             attn.set_use_sdpa(sdpa)
 
     def forward(self,
-                hidden_states, temb=None,
+                hidden_states,
+                temb=None,
                 encoder_hidden_states=None,
                 trg_layer_list=None,
                 noise_type=None,):
@@ -856,17 +857,22 @@ class CrossAttnDownBlock2D(nn.Module):
                         else:
                             return module(*inputs)
                     return custom_forward
+
+                # do module (do not do any timeembedding?)
                 hidden_states = torch.utils.checkpoint.checkpoint(create_custom_forward(resnet),
                                                                   hidden_states,
                                                                   temb)
                 hidden_states = torch.utils.checkpoint.checkpoint(create_custom_forward(attn, return_dict=False),
-                                                                  hidden_states, encoder_hidden_states)[0]
+                                                                  hidden_states,
+                                                                  encoder_hidden_states)[0]
             else:
-                hidden_states = resnet(hidden_states, temb)
-                hidden_states = attn(hidden_states, encoder_hidden_states=encoder_hidden_states,
-                                     trg_layer_list=trg_layer_list, noise_type=noise_type,
+                hidden_states = resnet(hidden_states,
+                                       temb)
+                hidden_states = attn(hidden_states,
+                                     encoder_hidden_states=encoder_hidden_states,
+                                     trg_layer_list=trg_layer_list,
+                                     noise_type=noise_type,
                                      timestep=temb).sample
-
             output_states += (hidden_states,)
 
         if self.downsamplers is not None:
@@ -1413,16 +1419,7 @@ class UNet2DConditionModel(nn.Module):
         # [2] noisy latent conv_in
         sample = self.conv_in(sample)     # 1, 320, 64, 64
 
-        if 'unet' in argument.position_embedding_layer :
-
-            # sample with positino embeddding
-            sample = noise_type(sample)
-
-
-
-
-        # 3. down
-        # encoder_hidden_states = [4,277,768]
+        # [3] down
         down_block_res_samples = (sample,)
         for i, downsample_block in enumerate(self.down_blocks) :
             if downsample_block.has_cross_attention:
@@ -1431,9 +1428,9 @@ class UNet2DConditionModel(nn.Module):
                                                        encoder_hidden_states=encoder_hidden_states,
                                                        trg_layer_list=trg_layer_list,
                                                        noise_type=noise_type)
-
             else:
-                sample, res_samples = downsample_block(hidden_states=sample, temb=emb)
+                sample, res_samples = downsample_block(hidden_states=sample,
+                                                       temb=emb)
             down_block_res_samples += res_samples
 
         # skip connectionにControlNetの出力を追加する
