@@ -1,11 +1,11 @@
 #! /bin/bash
 
 bench_mark="MVTec3D-AD"
-class_name="cookie"
+class_name="foam"
 dataset_dir="../../../MyData/anomaly_detection/${bench_mark}"
 layer_folder="layer_3"
 sub_folder="sub_3_up_16_32_64"
-folder_name="zero_timestep_sigma_max_100_min_sigma_30_max_perlin_scale_4"
+folder_name="zero_timestep_sigma_max_60_min_sigma_25_max_perlin_scale_6_beta_scale_factor_0.95_max_beta_scale_0.93_min_beta_scale_0.85"
 output_dir="metrics"
 
 
