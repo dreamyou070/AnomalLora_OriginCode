@@ -1,13 +1,13 @@
 # !/bin/bash
 port_number=50116
 pretrained_model_name_or_path="../../../pretrained_stable_diffusion/stable-diffusion-v1-5/v1-5-pruned.safetensors"
-obj_name='cookie'
-trigger_word='cookie'
-bench_mark='MVTec'
+obj_name='dowel'
+trigger_word='dowel'
+bench_mark='MVTec3D-AD'
 
 layer_folder="layer_3"
 sub_folder="up_16_32_64"
-folder_name="zero_timestep_sigma_max_100_min_sigma_30_max_perlin_scale_4_cls_train"
+folder_name="zero_timestep_sigma_max_60_min_sigma_25_max_perlin_scale_6_test_noise_predicting_task_loss"
 output_dir="../../result/${bench_mark}/${obj_name}/${layer_folder}/${sub_folder}/${folder_name}"
 # --use_noise_scheduler --min_timestep 399 --max_timestep 400 \
 # --use_text_time_embedding
@@ -35,6 +35,6 @@ accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_5_config \
  --do_anomal_sample --do_background_masked_sample \
  --do_attn_loss --cls_train \
  --do_map_loss \
+ --test_noise_predicting_task_loss \
  --back_noise_use_gaussian --max_sigma 100 --min_sigma 30 --max_perlin_scale 4 \
- --use_noise_scheduler --min_timestep 0 --max_timestep 1 \
  --max_beta_scale 1 --min_beta_scale 0

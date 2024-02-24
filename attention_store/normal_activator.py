@@ -127,7 +127,7 @@ class NormalActivator(nn.Module):
         b, c, h, w = noise_pred.shape
         anomal_position = anomal_position_vector.reshape(h, w).unsqueeze(0).unsqueeze(0)
         anomal_position = anomal_position.repeat(b, c, 1, 1)
-        trg_noise_pred = noise * anomal_position
+        trg_noise_pred = noise * anomal_position # only anomal is noise, normal is zero (not noise)
         noise_pred_loss = self.loss_l2(noise_pred.float(), trg_noise_pred.float())
         self.noise_prediction_loss.append(noise_pred_loss)
         
