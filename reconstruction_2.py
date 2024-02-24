@@ -217,11 +217,14 @@ def main(args):
                         with torch.no_grad():
                             img = load_image(rgb_img_dir, 512, 512)
                             vae_latent = image2latent(img, vae, weight_dtype)
+                            if args.use_text_time_embedding:
+                                model_kwargs['text_time_embedding'] = text_time_embedding
                             cls_map_pil, normal_map_pil, anomaly_map_pil = inference(vae_latent,
                                                                                      tokenizer, text_encoder, unet,
                                                                                      controller, normal_activator,
                                                                                      position_embedder,
-                                                                                     args, org_h, org_w, thred)
+                                                                                     args, org_h, org_w, thred,
+                                                                                     model_kwargs)
                             cls_map_pil.save(os.path.join(save_base_folder, f'{name}_cls.png'))
                             normal_map_pil.save(os.path.join(save_base_folder, f'{name}_normal.png'))
                             anomaly_map_pil.save(os.path.join(save_base_folder, f'{name}_anomaly.png'))

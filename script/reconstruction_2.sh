@@ -5,7 +5,7 @@ obj_name='cookie'
 caption='cookie'
 layer_folder="layer_3"
 sub_folder="sub_3_up_16_32_64"
-folder_name="sub_3_up_16_32_64/back_noise_use_gaussian_timestep_zero_to_500_with_text_timeembedding_dist_loss_with_max"
+folder_name="back_noise_use_gaussian_timestep_zero_to_500_with_text_timeembedding_dist_loss_with_max"
 bench_mark="MVTec3D-AD"
 position_embedding_layer="down_blocks_0_attentions_0_transformer_blocks_0_attn1"
 
