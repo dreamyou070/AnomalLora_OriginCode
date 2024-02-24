@@ -9,7 +9,7 @@ layer_folder="layer_3"
 sub_folder="sub_3_up_16_32_64"
 folder_name="back_noise_use_gaussian_timestep_zero_to_400"
 output_dir="../../result/${bench_mark}/${obj_name}/${layer_folder}/${sub_folder}/${folder_name}"
-network_weights="../../result/${bench_mark}/${obj_name}/${layer_folder}/${sub_folder}/${folder_name}/models/epoch-0000010.safetensors"
+network_weights="../../result/${bench_mark}/${obj_name}/${layer_folder}/${sub_folder}/${folder_name}/models/epoch-000010.safetensors"
 #--use_noise_scheduler --min_timestep 399 --max_timestep 400 \
 #
 

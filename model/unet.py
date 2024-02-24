@@ -1403,18 +1403,14 @@ class UNet2DConditionModel(nn.Module):
             forward_upsample_size = True
 
         # ------------------------------------------------------------------------------------------
-        # 1. batch number of time steps
+        # [1] time embedding
         timesteps = timestep
-        #if noise_type is not None:
-        #    sample = torch.cat([sample, sample], dim=0)
         timesteps = self.handle_unusual_timesteps(sample, timesteps)  # 変な時だけ処理
         t_emb = self.time_proj(timesteps)
         t_emb = t_emb.to(dtype=self.dtype)
         emb = self.time_embedding(t_emb) # 1280 dim
 
-        # 2. pre-process : sample(4,4,64,64)
-        #if noise_type is not None:
-        #    sample = sample.chunk(2, dim=0)[0]
+        # [2] noisy latent conv_in
         sample = self.conv_in(sample)     # 1, 320, 64, 64
 
         if 'unet' in argument.position_embedding_layer :

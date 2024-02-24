@@ -131,8 +131,12 @@ def main(args):
                 anomal_position_vector = torch.zeros_like(batch['object_mask'].squeeze().flatten())
                 object_normal_position_vector = torch.where((object_position_vector == 1) & (anomal_position_vector == 0), 1, 0)
                 with torch.set_grad_enabled(True):
-                    noise_pred = unet(latents, 0, encoder_hidden_states, trg_layer_list=args.trg_layer_list,
+                    noise_pred = unet(latents,
+                                      0,
+                                      encoder_hidden_states,
+                                      trg_layer_list=args.trg_layer_list,
                                       noise_type=position_embedder).sample
+
                 query_dict, attn_dict = controller.query_dict, controller.step_store
                 controller.reset()
                 for trg_layer in args.trg_layer_list:
