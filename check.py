@@ -115,7 +115,7 @@ def main(args):
     for epoch in range(args.start_epoch, args.max_train_epochs):
         epoch_loss_total = 0
         accelerator.print(f"\nepoch {epoch + 1}/{args.start_epoch + args.max_train_epochs}")
-
+        """
         for step, batch in enumerate(train_dataloader):
 
             device = accelerator.device
@@ -278,6 +278,7 @@ def main(args):
                 break
             # ----------------------------------------------------------------------------------------------------------- #
             # [6] epoch final
+        """
         accelerator.wait_for_everyone()
         if is_main_process:
             ckpt_name = get_epoch_ckpt_name(args, "." + args.save_model_as, epoch + 1)
@@ -292,8 +293,8 @@ def main(args):
                 time_embedder_base_save_dir = os.path.join(args.output_dir, 'text_time_embedder')
                 os.makedirs(time_embedder_base_save_dir, exist_ok=True)
                 t_save_dir = os.path.join(time_embedder_base_save_dir, f'time_embedder_{epoch + 1}.safetensors')
-                te_model_save(accelerator.unwrap_model(time_embedder),
-                              save_dtype, t_save_dir)
+                te_model_save(accelerator.unwrap_model(text_time_embedding),
+                              save_dtype,t_save_dir)
 
     accelerator.end_training()
 
