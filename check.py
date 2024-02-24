@@ -68,7 +68,7 @@ def main(args):
     normal_activator = NormalActivator(loss_focal, loss_l2, args.use_focal_loss)
 
     print(f'\n step 8. model to device')
-    if args.text_time_embedding:
+    if args.use_text_time_embedding:
         unet, text_encoder, network, optimizer, train_dataloader, lr_scheduler, position_embedder, text_time_embedding = accelerator.prepare(
             unet, text_encoder, network, optimizer, train_dataloader, lr_scheduler, position_embedder, text_time_embedding)
     else :
@@ -288,7 +288,7 @@ def main(args):
                 p_save_dir = os.path.join(position_embedder_base_save_dir,
                                           f'position_embedder_{epoch + 1}.safetensors')
                 pe_model_save(accelerator.unwrap_model(position_embedder), save_dtype, p_save_dir)
-            if args.text_time_embedding:
+            if args.use_text_time_embedding:
                 time_embedder_base_save_dir = os.path.join(args.output_dir, 'text_time_embedder')
                 os.makedirs(time_embedder_base_save_dir, exist_ok=True)
                 t_save_dir = os.path.join(time_embedder_base_save_dir, f'time_embedder_{epoch + 1}.safetensors')
