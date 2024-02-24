@@ -1,8 +1,8 @@
 # !/bin/bash
 
-port_number=50004
-obj_name='foam'
-caption='foam'
+port_number=50005
+obj_name='peach'
+caption='peach'
 layer_folder="layer_3"
 sub_folder="sub_3_up_16_32_64"
 folder_name="zero_timestep_sigma_max_60_min_sigma_25_max_perlin_scale_6_beta_scale_factor_0.95_max_beta_scale_0.93_min_beta_scale_0.85"
