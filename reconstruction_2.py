@@ -18,30 +18,41 @@ from safetensors.torch import load_file
 from attention_store.normal_activator import NormalActivator
 from attention_store.normal_activator import passing_normalize_argument
 from model.unet import TimestepEmbedding
+from diffusers import DDPMScheduler
+from utils.model_utils import prepare_scheduler_for_custom_training, get_noise_noisy_latents_and_timesteps
+
+
 
 def inference(latent,
               tokenizer, text_encoder, unet, controller, normal_activator, position_embedder,
               args, org_h, org_w, thred,
-              model_kwargs):
+              model_kwargs, noise_scheduler):
+
+    def timewise_attention(latent, min_timestep, max_timestep):
+        noise, latents, timesteps = get_noise_noisy_latents_and_timesteps(noise_scheduler,
+                                                                          latent,
+                                                                          noise=None,
+                                                                          min_timestep=min_timestep,
+                                                                          max_timestep=max_timestep)
+        unet(latents, timesteps, encoder_hidden_states, trg_layer_list=args.trg_layer_list,
+             noise_type=position_embedder, **model_kwargs)
+        query_dict, attn_dict = controller.query_dict, controller.step_store
+        controller.reset()
+        for trg_layer in args.trg_layer_list:
+            normal_activator.resize_attn_scores(attn_dict[trg_layer][0])
+        attn_score = normal_activator.generate_conjugated_attn_score()
+        return attn_score
+
     # [1] text
     input_ids, attention_mask = get_input_ids(tokenizer, args.prompt)
     encoder_hidden_states = text_encoder(input_ids.to(text_encoder.device))["last_hidden_state"]
     # [2] unet
-    unet(latent,
-         0,
-         encoder_hidden_states,
-         trg_layer_list=args.trg_layer_list,
-         noise_type=position_embedder,
-         **model_kwargs)
-    query_dict, attn_dict = controller.query_dict, controller.step_store
-    controller.reset()
-    if args.single_layer:
-        for trg_layer in args.trg_layer_list:
-            attn_score = attn_dict[trg_layer][0]  # head, pix_num, 2
-    else:
-        for trg_layer in args.trg_layer_list:
-            normal_activator.resize_attn_scores(attn_dict[trg_layer][0])
-        attn_score = normal_activator.generate_conjugated_attn_score()
+    attn_score_1 = timewise_attention(latent, 0, 1)
+    attn_score_2 = timewise_attention(latent, 199, 200)
+
+    # (1) zero timestep
+    attn_score = attn_score_2
+
     cls_map = attn_score[:, :, 0].squeeze().mean(dim=0)  # [res*res]
     trigger_map = attn_score[:, :, 1].squeeze().mean(dim=0)
     pix_num = trigger_map.shape[0]
@@ -89,6 +100,13 @@ def main(args):
     text_encoder.requires_grad_(False)
     text_encoder.to(accelerator.device, dtype=weight_dtype)
 
+    noise_scheduler = DDPMScheduler(beta_start=0.00085,
+                                    beta_end=0.012,
+                                    beta_schedule="scaled_linear",
+                                    num_train_timesteps=1000,
+                                    clip_sample=False)
+    prepare_scheduler_for_custom_training(noise_scheduler, accelerator.device)
+
     print(f'\n step 3. inference')
     models = os.listdir(args.network_folder)
     network = LoRANetwork(text_encoder=text_encoder,
@@ -133,7 +151,7 @@ def main(args):
 
         # [3] folder
         parent, _ = os.path.split(args.network_folder)
-        recon_base_folder = os.path.join(parent, 'reconstruction')
+        recon_base_folder = os.path.join(parent, 'reconstruction_timestep_200')
         os.makedirs(recon_base_folder, exist_ok=True)
         lora_base_folder = os.path.join(recon_base_folder, f'lora_epoch_{lora_epoch}')
         os.makedirs(lora_base_folder, exist_ok=True)
@@ -189,7 +207,7 @@ def main(args):
                                                                                      controller, normal_activator,
                                                                                      position_embedder,
                                                                                      args,org_h, org_w, thred,
-                                                                                     model_kwargs)
+                                                                                     model_kwargs, noise_scheduler)
 
 
                             cls_map_pil.save(os.path.join(save_base_folder, f'{name}_cls.png'))

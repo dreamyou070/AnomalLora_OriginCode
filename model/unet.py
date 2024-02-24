@@ -1431,9 +1431,7 @@ class UNet2DConditionModel(nn.Module):
         if 'text_time_embedding' in model_kwargs.keys():
             text_time_embedding = model_kwargs ['text_time_embedding']
             text_emb = text_time_embedding(t_emb)
-            print(f'text_emb: {text_emb.shape}')
             encoder_hidden_states = encoder_hidden_states + text_emb
-
         # [3] down
         down_block_res_samples = (sample,)
         for i, downsample_block in enumerate(self.down_blocks) :
