@@ -15,7 +15,10 @@ def get_noise_noisy_latents_and_timesteps(noise_scheduler,
         max_timestep = noise_scheduler.config.num_train_timesteps
     timesteps = torch.randint(min_timestep, max_timestep, (b_size,), device=latents.device)
     timesteps = timesteps.long()
+
+    # [2] make noise latent : z0  -> zt
     noisy_latents = noise_scheduler.add_noise(latents, noise, timesteps)
+
     return noise, noisy_latents, timesteps
 
 
