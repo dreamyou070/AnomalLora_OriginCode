@@ -1,11 +1,11 @@
 # !/bin/bash
 
-port_number=50202
+port_number=50002
 obj_name='cookie'
 caption='cookie'
 layer_folder="layer_3"
 sub_folder="sub_3_up_16_32_64"
-folder_name="back_noise_use_gaussian_timestep_zero_to_200"
+folder_name="back_noise_use_gaussian_timestep_zero_to_400"
 bench_mark="MVTec3D-AD"
 position_embedding_layer="down_blocks_0_attentions_0_transformer_blocks_0_attn1"
 
