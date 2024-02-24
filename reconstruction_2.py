@@ -32,7 +32,7 @@ def inference(latent,
          encoder_hidden_states,
          trg_layer_list=args.trg_layer_list,
          noise_type=position_embedder,
-         model_kwargs = model_kwargs)
+         **model_kwargs)
     query_dict, attn_dict = controller.query_dict, controller.step_store
     controller.reset()
     if args.single_layer:
