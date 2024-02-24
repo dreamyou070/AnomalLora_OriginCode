@@ -1,11 +1,11 @@
 #! /bin/bash
 
 bench_mark="MVTec3D-AD"
-class_name="dowel"
+class_name="cookie"
 dataset_dir="../../../MyData/anomaly_detection/${bench_mark}"
 layer_folder="layer_3"
 sub_folder="sub_3_up_16_32_64"
-folder_name="zero_timestep_sigma_max_60_min_sigma_25_max_perlin_scale_6"
+folder_name="zero_timestep_sigma_max_100_min_sigma_30_max_perlin_scale_4"
 output_dir="metrics"
 
 
