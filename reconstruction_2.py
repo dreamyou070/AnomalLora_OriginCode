@@ -47,11 +47,12 @@ def inference(latent,
     input_ids, attention_mask = get_input_ids(tokenizer, args.prompt)
     encoder_hidden_states = text_encoder(input_ids.to(text_encoder.device))["last_hidden_state"]
     # [2] unet
-    attn_score_ = timewise_attention(latent, 0, 1)
+    attn_score_1 = timewise_attention(latent, 0, 1) # head, len, 2
     attn_score_2 = timewise_attention(latent, 499, 500)
 
+
     # (1) zero timestep
-    attn_score = attn_score_2
+    attn_score = attn_score_1 + attn_score_2
 
     cls_map = attn_score[:, :, 0].squeeze().mean(dim=0)  # [res*res]
     trigger_map = attn_score[:, :, 1].squeeze().mean(dim=0)
@@ -152,7 +153,7 @@ def main(args):
         # [3] files
         parent, _ = os.path.split(args.network_folder)
 
-        recon_base_folder = os.path.join(parent, 'reconstruction_timestep_500')
+        recon_base_folder = os.path.join(parent, 'reconstruction_timestep_ensemble_0_500')
         os.makedirs(recon_base_folder, exist_ok=True)
         lora_base_folder = os.path.join(recon_base_folder, f'lora_epoch_{lora_epoch}')
         os.makedirs(lora_base_folder, exist_ok=True)
