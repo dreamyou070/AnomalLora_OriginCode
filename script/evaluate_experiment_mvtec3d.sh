@@ -4,8 +4,8 @@ bench_mark="MVTec3D-AD"
 class_name="cookie"
 dataset_dir="../../../MyData/anomaly_detection/${bench_mark}"
 layer_folder="layer_3"
-sub_folder="up_16_32_64"
-folder_name="attn_loss_original_normalized_score_map_loss_dist_loss_on_object_normalize_task_loss"
+sub_folder="sub_3_up_16_32_64"
+folder_name="back_noise_use_gaussian_timestep_zero_to_200"
 output_dir="metrics"
 
 
