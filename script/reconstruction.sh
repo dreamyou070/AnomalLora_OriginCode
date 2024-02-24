@@ -1,11 +1,11 @@
 # !/bin/bash
 
 port_number=50061
-obj_name='foam'
-caption='foam'
+obj_name='peach'
+caption='peach'
 layer_folder="layer_3"
 sub_folder="background_masked_sample_anomal_sample_up_16_32_64"
-folder_name="attn_loss_original_normalized_score_map_loss_dist_loss_normalized"
+folder_name="attn_loss_original_normalized_score_map_loss_dist_loss_on_object_normalize_task_loss"
 bench_mark="MVTec3D-AD"
 position_embedding_layer="down_blocks_0_attentions_0_transformer_blocks_0_attn1"
 

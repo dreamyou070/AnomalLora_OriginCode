@@ -214,7 +214,7 @@ class MVTecDRAEMTrainDataset(Dataset):
             while True :
                 beta = torch.rand(1).numpy()[0] * beta_scale_factor
                 if max_beta_scale > beta > min_beta_scale :
-                    print(f'beta = {beta}')
+                    #print(f'beta = {beta}')
                     break
 
             # if beta is bigger, more original image
