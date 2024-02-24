@@ -18,9 +18,11 @@ from safetensors.torch import load_file
 from attention_store.normal_activator import NormalActivator
 from attention_store.normal_activator import passing_normalize_argument
 from model.unet import TimestepEmbedding
+
 def inference(latent,
               tokenizer, text_encoder, unet, controller, normal_activator, position_embedder,
-              args, org_h, org_w, thred, model_kwargs):
+              args, org_h, org_w, thred,
+              model_kwargs):
     # [1] text
     input_ids, attention_mask = get_input_ids(tokenizer, args.prompt)
     encoder_hidden_states = text_encoder(input_ids.to(text_encoder.device))["last_hidden_state"]
