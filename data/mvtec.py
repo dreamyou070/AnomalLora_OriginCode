@@ -14,10 +14,14 @@ def passing_mvtec_argument(args):
     global anomal_p
     global back_noise_use_gaussian
     global max_sigma
+    global min_sigma
+    global max_perlin_scale
     argument = args
     anomal_p = args.anomal_p
     back_noise_use_gaussian = args.back_noise_use_gaussian
     max_sigma = args.max_sigma # before -> 60
+    min_sigma = args.min_sigma # before -> 25
+    max_perlin_scale = args.max_perlin_scale
 
 class MVTecDRAEMTestDataset(Dataset):
 
@@ -185,10 +189,10 @@ class MVTecDRAEMTrainDataset(Dataset):
 
             while True :
 
-                perlin_scale = 6
+                # big perlin scale means smaller noise
                 min_perlin_scale = 0
-                perlin_scalex = 2 ** (torch.randint(min_perlin_scale, perlin_scale, (1,)).numpy()[0])
-                perlin_scaley = 2 ** (torch.randint(min_perlin_scale, perlin_scale, (1,)).numpy()[0])
+                perlin_scalex = 2 ** (torch.randint(min_perlin_scale, max_perlin_scale, (1,)).numpy()[0])
+                perlin_scaley = 2 ** (torch.randint(min_perlin_scale, max_perlin_scale, (1,)).numpy()[0])
                 perlin_noise = rand_perlin_2d_np((self.resize_shape[0], self.resize_shape[1]), (perlin_scalex, perlin_scaley))
                 threshold = 0.5
                 #perlin_thr = np.where(perlin_noise > threshold, np.ones_like(perlin_noise), np.zeros_like(perlin_noise))
@@ -231,8 +235,7 @@ class MVTecDRAEMTrainDataset(Dataset):
                 y_0 = torch.randint(int(end_num / 4), int(3 * end_num / 4), (1,)).item()
                 # if sigmal big -> big circle
                 # if sigmal small -> small circle
-                sigma = torch.randint(25, max_sigma, (1,)).item()
-
+                sigma = torch.randint(min_sigma, max_sigma, (1,)).item()
 
                 result = np.exp(-4 * np.log(2) * ((x - x_0) ** 2 + (y - y_0) ** 2) / sigma ** 2)  # 0 ~ 1
                 result_thr = np.where(result < 0.5, 0, 1).astype(np.float32)
