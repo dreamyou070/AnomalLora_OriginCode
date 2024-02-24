@@ -1,6 +1,6 @@
 # !/bin/bash
 
-port_number=50004
+port_number=50500
 obj_name='cookie'
 caption='cookie'
 layer_folder="layer_3"
