@@ -3,7 +3,7 @@ from model.pe import PositionalEmbedding
 from model.diffusion_model import load_target_model
 import os
 from safetensors.torch import load_file
-from unet import TimestepEmbedding
+from model.unet import TimestepEmbedding
 
 
 def call_model_package(args, weight_dtype, accelerator):
