@@ -1,11 +1,11 @@
 # !/bin/bash
 
-port_number=50005
-obj_name='peach'
-caption='peach'
+port_number=50002
+obj_name='dowel'
+caption='dowel'
 layer_folder="layer_3"
 sub_folder="sub_3_up_16_32_64"
-folder_name="zero_timestep_sigma_max_60_min_sigma_25_max_perlin_scale_6_beta_scale_factor_0.95_max_beta_scale_0.93_min_beta_scale_0.85"
+folder_name="zero_timestep_sigma_max_60_min_sigma_25_max_perlin_scale_6"
 bench_mark="MVTec3D-AD"
 position_embedding_layer="down_blocks_0_attentions_0_transformer_blocks_0_attn1"
 
