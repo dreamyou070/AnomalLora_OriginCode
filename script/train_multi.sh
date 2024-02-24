@@ -5,7 +5,7 @@ obj_name='cookie'
 trigger_word='cookie'
 bench_mark='MVTec3D-AD'
 
-sub_folder="sub_3_up_16_2"
+sub_folder="sub_3_up_16_32_64"
 folder_name="back_noise_use_perlin_zero_timestep"
 output_dir="../../result/${bench_mark}/${obj_name}/${sub_folder}/${folder_name}"
 #--use_noise_scheduler --min_timestep 399 --max_timestep 400 \
