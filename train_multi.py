@@ -73,8 +73,9 @@ def main(args):
             unet, text_encoder, network, optimizer, train_dataloader, lr_scheduler, position_embedder,
             text_time_embedding)
     else:
-        unet, text_encoder, network, optimizer, train_dataloader, lr_scheduler = accelerator.prepare(
-            unet, text_encoder, network, optimizer, train_dataloader, lr_scheduler)
+        unet, text_encoder, network, optimizer, train_dataloader, lr_scheduler, position_embedder = accelerator.prepare(
+            unet, text_encoder, network, optimizer, train_dataloader, lr_scheduler, position_embedder,)
+
     text_encoders = transform_models_if_DDP([text_encoder])
     unet, network = transform_models_if_DDP([unet, network])
     if args.gradient_checkpointing:
