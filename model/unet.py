@@ -1428,7 +1428,6 @@ class UNet2DConditionModel(nn.Module):
         sample = self.conv_in(sample)     # 1, 320, 64, 64
 
         # ------------------------------------------------------------------------------------------ #
-        print(f'model_kwargs: {model_kwargs}')
         if 'text_time_embedding' in model_kwargs.keys():
             text_time_embedding = model_kwargs ['text_time_embedding']
             text_emb = text_time_embedding(t_emb)

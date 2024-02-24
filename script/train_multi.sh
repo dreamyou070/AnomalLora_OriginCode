@@ -1,5 +1,5 @@
 # !/bin/bash
-port_number=50355
+port_number=50356
 pretrained_model_name_or_path="../../../pretrained_stable_diffusion/stable-diffusion-v1-5/v1-5-pruned.safetensors"
 obj_name='cookie'
 trigger_word='cookie'
@@ -7,12 +7,12 @@ bench_mark='MVTec3D-AD'
 
 layer_folder="layer_3"
 sub_folder="sub_3_up_16_32_64"
-folder_name="back_noise_use_gaussian_timestep_zero_to_500_with_text_timeembedding_dist_loss_with_max"
+folder_name="text_time_embedding_test"
 output_dir="../../result/${bench_mark}/${obj_name}/${layer_folder}/${sub_folder}/${folder_name}"
 #--use_noise_scheduler --min_timestep 399 --max_timestep 400 \
 #
 
-accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_5_config \
+accelerate launch --config_file ../../../gpu_config/gpu_0_config \
  --main_process_port $port_number ../train_multi.py \
  --log_with wandb \
  --output_dir ${output_dir} \
