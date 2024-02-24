@@ -1263,8 +1263,6 @@ class UNet2DConditionModel(nn.Module):
         self.prepare_config()
 
         # state_dictの書式が変わるのでmoduleの持ち方は変えられない
-        unet.time_embedding.
-
         # input
         self.conv_in = nn.Conv2d(IN_CHANNELS, BLOCK_OUT_CHANNELS[0], kernel_size=3, padding=(1, 1))
 
