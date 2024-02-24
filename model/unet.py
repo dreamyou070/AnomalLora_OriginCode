@@ -1406,7 +1406,7 @@ class UNet2DConditionModel(nn.Module):
         mid_block_additional_residual: Optional[torch.Tensor] = None,
         trg_layer_list=None,
         noise_type='perline',
-            **kwargs) -> Union[Dict, Tuple]:
+        **model_kwargs) -> Union[Dict, Tuple]:
 
 
         default_overall_up_factor = 2**self.num_upsamplers
@@ -1418,8 +1418,6 @@ class UNet2DConditionModel(nn.Module):
 
         # ------------------------------------------------------------------------------------------
         # [1] time embedding
-
-
         timesteps = timestep                                          # int
         timesteps = self.handle_unusual_timesteps(sample, timesteps)  #
         t_emb = self.time_proj(timesteps)                             # [Batch, Dim=320]
@@ -1430,8 +1428,8 @@ class UNet2DConditionModel(nn.Module):
         sample = self.conv_in(sample)     # 1, 320, 64, 64
 
         # ------------------------------------------------------------------------------------------ #
-        if 'text_time_embedding' in kwargs:
-            text_time_embedding = kwargs['text_time_embedding']
+        if 'text_time_embedding' in model_kwargs:
+            text_time_embedding = model_kwargs ['text_time_embedding']
             text_emb = text_time_embedding(t_emb)
             encoder_hidden_states = encoder_hidden_states + text_emb
 

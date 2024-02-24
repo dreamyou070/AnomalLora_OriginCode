@@ -51,8 +51,12 @@ def main(args):
 
     print(f'\n step 5. optimizer')
     args.max_train_steps = len(train_dataloader) * args.max_train_epochs
-    trainable_params = network.prepare_optimizer_params(args.text_encoder_lr, args.unet_lr, args.learning_rate)
+    trainable_params = network.prepare_optimizer_params(args.text_encoder_lr,
+                                                        args.unet_lr, args.learning_rate)
     trainable_params.append({"params": position_embedder.parameters(), "lr": args.learning_rate})
+    if args.text_time_embedding:
+        trainable_params.append({"params": text_time_embedding.parameters(),
+                                 "lr": args.learning_rate})
     optimizer_name, optimizer_args, optimizer = get_optimizer(args, trainable_params)
 
     print(f'\n step 6. lr')
@@ -64,8 +68,12 @@ def main(args):
     normal_activator = NormalActivator(loss_focal, loss_l2, args.use_focal_loss)
 
     print(f'\n step 8. model to device')
-    unet, text_encoder, network, optimizer, train_dataloader, lr_scheduler, position_embedder = accelerator.prepare(
-        unet, text_encoder, network, optimizer, train_dataloader, lr_scheduler, position_embedder)
+    if args.text_time_embedding:
+        unet, text_encoder, network, optimizer, train_dataloader, lr_scheduler, position_embedder, text_time_embedding = accelerator.prepare(
+            unet, text_encoder, network, optimizer, train_dataloader, lr_scheduler, position_embedder, text_time_embedding)
+    else :
+        unet, text_encoder, network, optimizer, train_dataloader, lr_scheduler = accelerator.prepare(
+            unet, text_encoder, network, optimizer, train_dataloader, lr_scheduler)
     text_encoders = transform_models_if_DDP([text_encoder])
     unet, network = transform_models_if_DDP([unet, network])
     if args.gradient_checkpointing:
@@ -118,57 +126,6 @@ def main(args):
                 encoder_hidden_states = text_encoder(batch["input_ids"].to(device))["last_hidden_state"]
             object_position_vector = batch['object_mask'].squeeze().flatten()
             # --------------------------------------------------------------------------------------------------------- #
-            if args.do_normal_sample:
-                with torch.no_grad():
-                    latents = vae.encode(
-                        batch["image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
-                if args.use_noise_scheduler:
-                    noise, latents, timesteps = get_noise_noisy_latents_and_timesteps(noise_scheduler,
-                                                                                      latents,
-                                                                                      noise=None,
-                                                                                      min_timestep=args.min_timestep,
-                                                                                      max_timestep=args.max_timestep)
-                else:
-                    noise = torch.randn_like(latents, device=latents.device)
-
-                anomal_position_vector = torch.zeros_like(batch['object_mask'].squeeze().flatten())
-                object_normal_position_vector = torch.where(
-                    (object_position_vector == 1) & (anomal_position_vector == 0), 1, 0)
-                with torch.set_grad_enabled(True):
-                    model_kwargs = {}
-                    if args.use_text_time_embedding:
-                        model_kwargs['text_time_embedding'] = text_time_embedding
-                    noise_pred = unet(latents,
-                                      0,
-                                      encoder_hidden_states,
-                                      trg_layer_list=args.trg_layer_list,
-                                      noise_type=position_embedder,
-                                      **kwargs).sample
-
-                query_dict, attn_dict = controller.query_dict, controller.step_store
-                controller.reset()
-                for trg_layer in args.trg_layer_list:
-                    normal_activator.resize_query_features(query_dict[trg_layer][0].squeeze(0))
-                    normal_activator.resize_attn_scores(attn_dict[trg_layer][0])
-                c_query = normal_activator.generate_conjugated()
-                if args.mahalanobis_only_object:
-                    normal_activator.collect_queries(c_query,
-                                                     normal_position=object_normal_position_vector,
-                                                     anomal_position=anomal_position_vector,
-                                                     do_collect_normal=True)
-                else:
-                    normal_activator.collect_queries(c_query,
-                                                     normal_position=(1 - anomal_position_vector),
-                                                     anomal_position=anomal_position_vector,
-                                                     do_collect_normal=True)
-
-                c_attn_score = normal_activator.generate_conjugated_attn_score()
-                normal_activator.collect_attention_scores(c_attn_score, anomal_position_vector)
-                normal_activator.collect_anomal_map_loss(c_attn_score, anomal_position_vector)
-                if args.test_noise_predicting_task_loss:
-                    normal_activator.collect_noise_prediction_loss(noise_pred, noise, anomal_position_vector)
-
-            # --------------------------------------------------------------------------------------------------------- #
             if args.do_anomal_sample:
                 with torch.no_grad():
                     latents = vae.encode(
@@ -184,9 +141,16 @@ def main(args):
                 anomal_position_vector = batch["anomal_mask"].squeeze().flatten()
                 object_normal_position_vector = torch.where(
                     (object_position_vector == 1) & (anomal_position_vector == 0), 1, 0)
+                model_kwargs = {}
+                if args.use_text_time_embedding:
+                    model_kwargs['text_time_embedding'] = text_time_embedding
                 with torch.set_grad_enabled(True):
-                    noise_pred = unet(latents, 0, encoder_hidden_states, trg_layer_list=args.trg_layer_list,
-                                      noise_type=position_embedder).sample
+                    noise_pred = unet(latents,
+                                      0,
+                                      encoder_hidden_states,
+                                      trg_layer_list=args.trg_layer_list,
+                                      noise_type=position_embedder,
+                                      **model_kwargs).sample
                 query_dict, attn_dict = controller.query_dict, controller.step_store
                 controller.reset()
                 for trg_layer in args.trg_layer_list:
@@ -224,9 +188,16 @@ def main(args):
                 anomal_position_vector = batch["bg_anomal_mask"].squeeze().flatten()
                 object_normal_position_vector = torch.where(
                     (object_position_vector == 1) & (anomal_position_vector == 0), 1, 0)
+                model_kwargs = {}
+                if args.use_text_time_embedding:
+                    model_kwargs['text_time_embedding'] = text_time_embedding
                 with torch.set_grad_enabled(True):
-                    noise_pred = unet(latents, 0, encoder_hidden_states, trg_layer_list=args.trg_layer_list,
-                                      noise_type=position_embedder).sample
+                    noise_pred = unet(latents,
+                                      0,
+                                      encoder_hidden_states,
+                                      trg_layer_list=args.trg_layer_list,
+                                      noise_type=position_embedder,
+                                      **model_kwargs).sample
                 query_dict, attn_dict = controller.query_dict, controller.step_store
                 controller.reset()
                 for trg_layer in args.trg_layer_list:
@@ -317,6 +288,11 @@ def main(args):
                 p_save_dir = os.path.join(position_embedder_base_save_dir,
                                           f'position_embedder_{epoch + 1}.safetensors')
                 pe_model_save(accelerator.unwrap_model(position_embedder), save_dtype, p_save_dir)
+            if args.text_time_embedding:
+                time_embedder_base_save_dir = os.path.join(args.output_dir, 'text_time_embedder')
+                os.makedirs(time_embedder_base_save_dir, exist_ok=True)
+                t_save_dir = os.path.join(time_embedder_base_save_dir, f'time_embedder_{epoch + 1}.safetensors')
+                te_model_save(accelerator.unwrap_model(time_embedder), save_dtype, t_save_dir)
 
     accelerator.end_training()
 
