@@ -1,8 +1,8 @@
 # !/bin/bash
-port_number=50115
+port_number=50116
 pretrained_model_name_or_path="../../../pretrained_stable_diffusion/stable-diffusion-v1-5/v1-5-pruned.safetensors"
-obj_name='grid'
-trigger_word='grid'
+obj_name='hazelnut'
+trigger_word='hazelnut'
 bench_mark='MVTec'
 
 layer_folder="layer_3"
