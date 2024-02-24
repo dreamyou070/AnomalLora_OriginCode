@@ -1,6 +1,6 @@
 # !/bin/bash
 
-port_number=50003
+port_number=50004
 obj_name='cookie'
 caption='cookie'
 layer_folder="layer_3"
@@ -20,4 +20,4 @@ accelerate launch --config_file ../../../gpu_config/gpu_0_config \
                                     'up_blocks_2_attentions_2_transformer_blocks_0_attn2',
                                     'up_blocks_1_attentions_2_transformer_blocks_0_attn2',]" \
  --d_dim 320 --use_position_embedder --position_embedding_layer ${position_embedding_layer} \
- --threds [0.5] --use_text_time_embedding
+ --threds [0.8] --use_text_time_embedding
