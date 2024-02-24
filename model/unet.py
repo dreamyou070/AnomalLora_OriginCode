@@ -323,24 +323,26 @@ class ResnetBlock2D(nn.Module):
             self.conv_shortcut = torch.nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1, padding=0)
 
     def forward(self, input_tensor, temb):
-        hidden_states = input_tensor
 
+        # [1] only hidden state
+        hidden_states = input_tensor
         hidden_states = self.norm1(hidden_states)
         hidden_states = self.nonlinearity(hidden_states)
-
         hidden_states = self.conv1(hidden_states)
 
+        # [2] time embedding
         temb = self.time_emb_proj(self.nonlinearity(temb))[:, :, None, None]
+
+        # [3] add time embedding
         hidden_states = hidden_states + temb
 
+        # [4]
         hidden_states = self.norm2(hidden_states)
         hidden_states = self.nonlinearity(hidden_states)
-
         hidden_states = self.conv2(hidden_states)
 
         if self.conv_shortcut is not None:
             input_tensor = self.conv_shortcut(input_tensor)
-
         output_tensor = input_tensor + hidden_states
 
         return output_tensor
@@ -673,7 +675,8 @@ class BasicTransformerBlock(nn.Module):
         self.attn2.set_use_sdpa(sdpa)
 
     def forward(self,
-                hidden_states, context=None,
+                hidden_states,
+                context=None,
                 timestep=None,
                 trg_layer_list=None,
                 noise_type=None) :
@@ -746,16 +749,16 @@ class Transformer2DModel(nn.Module):
         for transformer in self.transformer_blocks:
             transformer.set_use_sdpa(sdpa)
 
-    def forward(self, hidden_states, encoder_hidden_states=None,
+    def forward(self,
+                hidden_states,
+                encoder_hidden_states=None,
                 timestep=None, return_dict: bool = True,
                 trg_layer_list=None,
                 noise_type=None):
         # 1. Input
         batch, _, height, weight = hidden_states.shape
         residual = hidden_states
-
         hidden_states = self.norm(hidden_states)
-
         if not self.use_linear_projection:
             hidden_states = self.proj_in(hidden_states)
             inner_dim = hidden_states.shape[1]
@@ -768,6 +771,7 @@ class Transformer2DModel(nn.Module):
 
         # 2. Blocks
         for block in self.transformer_blocks:
+            # BasicTransformerBlock
             hidden_states = block(hidden_states,
                                   context=encoder_hidden_states,
                                   timestep=timestep,
@@ -807,18 +811,16 @@ class CrossAttnDownBlock2D(nn.Module):
 
         for i in range(LAYERS_PER_BLOCK):
             in_channels = in_channels if i == 0 else out_channels
-
-            resnets.append(ResnetBlock2D(in_channels=in_channels, out_channels=out_channels))
-            attentions.append(
-                Transformer2DModel(
-                    attn_num_head_channels,
-                    out_channels // attn_num_head_channels,
-                    in_channels=out_channels,
-                    cross_attention_dim=cross_attention_dim,
-                    use_linear_projection=use_linear_projection,
-                    upcast_attention=upcast_attention,
-                )
-            )
+            # ResnetBlock2D
+            # Transformer2DModel
+            resnets.append(ResnetBlock2D(in_channels=in_channels,
+                                         out_channels=out_channels))
+            attentions.append(Transformer2DModel(attn_num_head_channels,
+                                                 out_channels // attn_num_head_channels,
+                                                 in_channels=out_channels,
+                                                 cross_attention_dim=cross_attention_dim,
+                                                 use_linear_projection=use_linear_projection,
+                                                 upcast_attention=upcast_attention,))
         self.attentions = nn.ModuleList(attentions)
         self.resnets = nn.ModuleList(resnets)
 
@@ -1263,9 +1265,12 @@ class UNet2DConditionModel(nn.Module):
         self.conv_in = nn.Conv2d(IN_CHANNELS, BLOCK_OUT_CHANNELS[0], kernel_size=3, padding=(1, 1))
 
         # time
-        self.time_proj = Timesteps(BLOCK_OUT_CHANNELS[0], TIME_EMBED_FLIP_SIN_TO_COS, TIME_EMBED_FREQ_SHIFT)
+        self.time_proj = Timesteps(BLOCK_OUT_CHANNELS[0],               # 320
+                                   TIME_EMBED_FLIP_SIN_TO_COS,          #
+                                   TIME_EMBED_FREQ_SHIFT)
 
-        self.time_embedding = TimestepEmbedding(TIMESTEP_INPUT_DIM, TIME_EMBED_DIM)
+        self.time_embedding = TimestepEmbedding(TIMESTEP_INPUT_DIM,     #
+                                                TIME_EMBED_DIM)         # 1280 = 320 * 4
 
         self.down_blocks = nn.ModuleList([])
         self.mid_block = None
@@ -1410,11 +1415,20 @@ class UNet2DConditionModel(nn.Module):
 
         # ------------------------------------------------------------------------------------------
         # [1] time embedding
+
+
         timesteps = timestep
         timesteps = self.handle_unusual_timesteps(sample, timesteps)  # 変な時だけ処理
         t_emb = self.time_proj(timesteps)
         t_emb = t_emb.to(dtype=self.dtype)
         emb = self.time_embedding(t_emb) # 1280 dim
+
+        print(f'in unet, timesteps : {timestep}')
+        print(f'timestep time proj : {t_emb.shape}')
+        print(f'after time embedding : {emb.shape}')
+
+        print(f'encoder_hidden_states : {encoder_hidden_states.shape}')
+
 
         # [2] noisy latent conv_in
         sample = self.conv_in(sample)     # 1, 320, 64, 64

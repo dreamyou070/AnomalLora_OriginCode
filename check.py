@@ -103,9 +103,172 @@ def main(args):
                                     clip_sample=False)
     prepare_scheduler_for_custom_training(noise_scheduler, accelerator.device)
 
-    alphas_cumprod = noise_scheduler.alphas_cumprod
-    alpha_zero = alphas_cumprod[0]
-    print(f'alpha_zero : {alpha_zero}')
+    for epoch in range(args.start_epoch, args.max_train_epochs):
+        epoch_loss_total = 0
+        accelerator.print(f"\nepoch {epoch + 1}/{args.start_epoch + args.max_train_epochs}")
+
+        for step, batch in enumerate(train_dataloader):
+
+            device = accelerator.device
+            loss = torch.tensor(0.0, dtype=weight_dtype, device=accelerator.device)
+            loss_dict = {}
+
+            with torch.set_grad_enabled(True):
+                encoder_hidden_states = text_encoder(batch["input_ids"].to(device))["last_hidden_state"]
+            object_position_vector = batch['object_mask'].squeeze().flatten()
+            # --------------------------------------------------------------------------------------------------------- #
+            if args.do_anomal_sample:
+                with torch.no_grad():
+                    latents = vae.encode(
+                        batch["anomal_image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
+                if args.use_noise_scheduler:
+                    noise, latents, timesteps = get_noise_noisy_latents_and_timesteps(noise_scheduler,
+                                                                                      latents,
+                                                                                      noise=None,
+                                                                                      min_timestep=args.min_timestep,
+                                                                                      max_timestep=args.max_timestep)
+                else:
+                    noise = torch.randn_like(latents, device=latents.device)
+                anomal_position_vector = batch["anomal_mask"].squeeze().flatten()
+                object_normal_position_vector = torch.where(
+                    (object_position_vector == 1) & (anomal_position_vector == 0), 1, 0)
+                with torch.set_grad_enabled(True):
+                    noise_pred = unet(latents, 0, encoder_hidden_states, trg_layer_list=args.trg_layer_list,
+                                      noise_type=position_embedder).sample
+
+                time.sleep(10000)
+                query_dict, attn_dict = controller.query_dict, controller.step_store
+                controller.reset()
+                for trg_layer in args.trg_layer_list:
+                    normal_activator.resize_query_features(query_dict[trg_layer][0].squeeze(0))
+                    normal_activator.resize_attn_scores(attn_dict[trg_layer][0])
+                c_query = normal_activator.generate_conjugated()
+                if args.mahalanobis_only_object:
+                    normal_activator.collect_queries(c_query,
+                                                     normal_position=object_normal_position_vector,
+                                                     anomal_position=anomal_position_vector,
+                                                     do_collect_normal=True)
+                else:
+                    normal_activator.collect_queries(c_query,
+                                                     normal_position=(1 - anomal_position_vector),
+                                                     anomal_position=anomal_position_vector,
+                                                     do_collect_normal=True)
+                c_attn_score = normal_activator.generate_conjugated_attn_score()
+                normal_activator.collect_attention_scores(c_attn_score, anomal_position_vector)
+                normal_activator.collect_anomal_map_loss(c_attn_score, anomal_position_vector)
+                if args.test_noise_predicting_task_loss:
+                    normal_activator.collect_noise_prediction_loss(noise_pred, noise, anomal_position_vector)
+            # --------------------------------------------------------------------------------------------------------- #
+            if args.do_background_masked_sample:
+                with torch.no_grad():
+                    latents = vae.encode(
+                        batch["bg_anomal_image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
+                if args.use_noise_scheduler:
+                    noise, latents, timesteps = get_noise_noisy_latents_and_timesteps(noise_scheduler,
+                                                                                      latents,
+                                                                                      noise=None,
+                                                                                      min_timestep=args.min_timestep,
+                                                                                      max_timestep=args.max_timestep)
+                else:
+                    noise = torch.randn_like(latents, device=latents.device)
+                anomal_position_vector = batch["bg_anomal_mask"].squeeze().flatten()
+                object_normal_position_vector = torch.where(
+                    (object_position_vector == 1) & (anomal_position_vector == 0), 1, 0)
+                with torch.set_grad_enabled(True):
+                    noise_pred = unet(latents, 0, encoder_hidden_states, trg_layer_list=args.trg_layer_list,
+                                      noise_type=position_embedder).sample
+                query_dict, attn_dict = controller.query_dict, controller.step_store
+                controller.reset()
+                for trg_layer in args.trg_layer_list:
+                    normal_activator.resize_query_features(query_dict[trg_layer][0].squeeze(0))
+                    normal_activator.resize_attn_scores(attn_dict[trg_layer][0])
+                c_query = normal_activator.generate_conjugated()
+                if args.mahalanobis_only_object:
+                    normal_activator.collect_queries(c_query,
+                                                     normal_position=object_normal_position_vector,
+                                                     anomal_position=anomal_position_vector,
+                                                     do_collect_normal=True)
+                else:
+                    normal_activator.collect_queries(c_query,
+                                                     normal_position=(1 - anomal_position_vector),
+                                                     anomal_position=anomal_position_vector,
+                                                     do_collect_normal=True)
+
+                c_attn_score = normal_activator.generate_conjugated_attn_score()
+                normal_activator.collect_attention_scores(c_attn_score, anomal_position_vector)
+                normal_activator.collect_anomal_map_loss(c_attn_score, anomal_position_vector)
+                if args.test_noise_predicting_task_loss:
+                    normal_activator.collect_noise_prediction_loss(noise_pred, noise, anomal_position_vector)
+            # ----------------------------------------------------------------------------------------------------------
+            # [5] backprop
+            dist_loss, normal_dist_mean, normal_dist_max = normal_activator.generate_mahalanobis_distance_loss()
+            if args.do_dist_loss:
+                loss += dist_loss
+                loss_dict['dist_loss'] = dist_loss.item()
+            if args.do_attn_loss:
+                normal_cls_loss, normal_trigger_loss, anomal_cls_loss, anomal_trigger_loss = normal_activator.generate_attention_loss()
+                if type(anomal_cls_loss) == float:
+                    attn_loss = args.normal_weight * normal_trigger_loss.mean()
+                else:
+                    attn_loss = args.normal_weight * normal_cls_loss.mean() + args.anomal_weight * anomal_cls_loss.mean()
+                if args.do_cls_train:
+                    if type(anomal_trigger_loss) == float:
+                        attn_loss = args.normal_weight * normal_cls_loss.mean()
+                    else:
+                        attn_loss += args.normal_weight * normal_cls_loss.mean() + args.anomal_weight * anomal_cls_loss.mean()
+                loss += attn_loss
+                loss_dict['attn_loss'] = attn_loss.item()
+
+            if args.do_map_loss:
+                map_loss = normal_activator.generate_anomal_map_loss()
+                loss += map_loss
+                loss_dict['map_loss'] = map_loss.item()
+
+            if args.test_noise_predicting_task_loss:
+                noise_pred_loss = normal_activator.generate_noise_prediction_loss()
+                loss += noise_pred_loss
+                loss_dict['noise_pred_loss'] = noise_pred_loss.item()
+
+            loss = loss.to(weight_dtype)
+            current_loss = loss.detach().item()
+            if epoch == args.start_epoch:
+                loss_list.append(current_loss)
+            else:
+                epoch_loss_total -= loss_list[step]
+                loss_list[step] = current_loss
+            epoch_loss_total += current_loss
+            avr_loss = epoch_loss_total / len(loss_list)
+            loss_dict['avr_loss'] = avr_loss
+            accelerator.backward(loss)
+            optimizer.step()
+            lr_scheduler.step()
+            optimizer.zero_grad(set_to_none=True)
+            if accelerator.sync_gradients:
+                progress_bar.update(1)
+                global_step += 1
+            if is_main_process:
+                logging_info = f'{global_step}, {normal_dist_mean}, {normal_dist_max}'
+                with open(logging_file, 'a') as f:
+                    f.write(logging_info + '\n')
+                progress_bar.set_postfix(**loss_dict)
+            normal_activator.reset()
+            controller.reset()
+            if global_step >= args.max_train_steps:
+                break
+            # ----------------------------------------------------------------------------------------------------------- #
+            # [6] epoch final
+        accelerator.wait_for_everyone()
+        if is_main_process:
+            ckpt_name = get_epoch_ckpt_name(args, "." + args.save_model_as, epoch + 1)
+            save_model(args, ckpt_name, accelerator.unwrap_model(network), save_dtype)
+            if position_embedder is not None:
+                position_embedder_base_save_dir = os.path.join(args.output_dir, 'position_embedder')
+                os.makedirs(position_embedder_base_save_dir, exist_ok=True)
+                p_save_dir = os.path.join(position_embedder_base_save_dir,
+                                          f'position_embedder_{epoch + 1}.safetensors')
+                pe_model_save(accelerator.unwrap_model(position_embedder), save_dtype, p_save_dir)
+
+    accelerator.end_training()
 
 
 if __name__ == "__main__":
