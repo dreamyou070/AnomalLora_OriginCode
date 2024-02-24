@@ -1,5 +1,5 @@
 # !/bin/bash
-port_number=50001
+port_number=50002
 pretrained_model_name_or_path="../../../pretrained_stable_diffusion/stable-diffusion-v1-5/v1-5-pruned.safetensors"
 obj_name='cookie'
 trigger_word='cookie'
@@ -7,10 +7,11 @@ bench_mark='MVTec3D-AD'
 
 layer_folder="layer_3"
 sub_folder="sub_3_up_16_32_64"
-folder_name="zero_timestep_sigma_max_100_with_dist_loss"
+folder_name="zero_timestep_sigma_max_100"
 output_dir="../../result/${bench_mark}/${obj_name}/${layer_folder}/${sub_folder}/${folder_name}"
 # --use_noise_scheduler --min_timestep 399 --max_timestep 400 \
 # --use_text_time_embedding
+# --do_dist_loss --mahalanobis_only_object --mahalanobis_normalize --dist_loss_with_max \
 
 accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_config \
  --main_process_port $port_number ../train_multi.py \
@@ -31,7 +32,6 @@ accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_config \
                     'up_blocks_1_attentions_2_transformer_blocks_0_attn2',]" \
  --start_epoch 0 --max_train_epochs 30 \
  --do_anomal_sample --do_background_masked_sample \
- --do_dist_loss --mahalanobis_only_object --mahalanobis_normalize --dist_loss_with_max \
  --do_attn_loss \
  --do_map_loss \
  --back_noise_use_gaussian --max_sigma 100 \
