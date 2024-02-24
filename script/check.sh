@@ -7,9 +7,8 @@ bench_mark='MVTec3D-AD'
 
 layer_folder="layer_3"
 sub_folder="sub_3_up_16_32_64"
-folder_name="back_noise_use_gaussian_timestep_zero_to_400"
+folder_name="test"
 output_dir="../../result/${bench_mark}/${obj_name}/${layer_folder}/${sub_folder}/${folder_name}"
-network_weights="../../result/${bench_mark}/${obj_name}/${layer_folder}/${sub_folder}/${folder_name}/models/epoch-0000010.safetensors"
 #--use_noise_scheduler --min_timestep 399 --max_timestep 400 \
 #
 
@@ -30,7 +29,6 @@ accelerate launch --config_file ../../../gpu_config/gpu_0_config \
  --trg_layer_list "['up_blocks_3_attentions_2_transformer_blocks_0_attn2',
                     'up_blocks_2_attentions_2_transformer_blocks_0_attn2',
                     'up_blocks_1_attentions_2_transformer_blocks_0_attn2',]" \
- --network_weights "${network_weights}" \
  --start_epoch 10 --max_train_epochs 20 \
  --do_anomal_sample --do_background_masked_sample \
  --do_dist_loss --mahalanobis_only_object --mahalanobis_normalize \
