@@ -417,7 +417,8 @@ if __name__ == "__main__":
     parser.add_argument("--max_perlin_scale", type=int, default=6)
     parser.add_argument("--max_sigma", type=int, default=60)
     parser.add_argument("--min_sigma", type=int, default=25)
-
+    parser.add_argument("--max_beta_scale", type=int, default=0.93)
+    parser.add_argument("--min_beta_scale", type=int, default=0.85)
     args = parser.parse_args()
     unet_passing_argument(args)
     passing_argument(args)

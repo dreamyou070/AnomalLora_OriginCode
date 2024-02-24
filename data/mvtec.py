@@ -16,12 +16,16 @@ def passing_mvtec_argument(args):
     global max_sigma
     global min_sigma
     global max_perlin_scale
+    global max_beta_scale
+    global min_beta_scale
     argument = args
     anomal_p = args.anomal_p
     back_noise_use_gaussian = args.back_noise_use_gaussian
     max_sigma = args.max_sigma # before -> 60
     min_sigma = args.min_sigma # before -> 25
     max_perlin_scale = args.max_perlin_scale
+    max_beta_scale = args.max_beta_scale
+    min_beta_scale = args.min_beta_scale
 
 class MVTecDRAEMTestDataset(Dataset):
 
@@ -116,6 +120,7 @@ class MVTecDRAEMTrainDataset(Dataset):
         if do_anomal_sample :
             assert anomaly_source_path is not None, "anomaly_source_path should be given"
 
+        print(f'Anomaly source path: {anomaly_source_path}')
         if anomaly_source_path is not None:
             self.anomaly_source_paths = []
             for ext in ["png", "jpg"]:
@@ -206,7 +211,11 @@ class MVTecDRAEMTrainDataset(Dataset):
                 if np.sum(binary_2D_mask) > anomal_p * total_object_pixel :
                     break
             blur_3D_mask = np.expand_dims(perlin_thr, axis=2)  # [512,512,3]
-            beta = torch.rand(1).numpy()[0] * beta_scale_factor
+            while True :
+                beta = torch.rand(1).numpy()[0] * beta_scale_factor
+                if max_beta_scale > beta > min_beta_scale :
+                    print(f'beta = {beta}')
+                    break
 
             # if beta is bigger, more original image
             # if beta is smaller, more anomaly image
@@ -363,7 +372,12 @@ class MVTecDRAEMTrainDataset(Dataset):
                 back_anomal_img = img
                 back_anomal_mask_torch = object_mask.unsqueeze(0) # [1, 64, 64]
 
-        input_ids, attention_mask = self.get_input_ids(self.caption) # input_ids = [77]
+        if self.tokenizer is not None :
+            input_ids, attention_mask = self.get_input_ids(self.caption) # input_ids = [77]
+        else :
+            input_ids = torch.tensor([0])
+
+
 
         return {'image': self.transform(img),               # original image
                 "object_mask": object_mask.unsqueeze(0),    # [1, 64, 64]

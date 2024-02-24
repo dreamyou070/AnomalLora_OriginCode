@@ -7,7 +7,7 @@ bench_mark='MVTec3D-AD'
 
 layer_folder="layer_3"
 sub_folder="sub_3_up_16_32_64"
-folder_name="zero_timestep_sigma_max_60_min_sigma_25_max_perlin_scale_6_beta_scale_factor_0.95"
+folder_name="zero_timestep_sigma_max_60_min_sigma_25_max_perlin_scale_6_beta_scale_factor_0.95_max_beta_scale_0.93_min_beta_scale_0.85"
 output_dir="../../result/${bench_mark}/${obj_name}/${layer_folder}/${sub_folder}/${folder_name}"
 # --use_noise_scheduler --min_timestep 399 --max_timestep 400 \
 # --use_text_time_embedding
@@ -18,7 +18,7 @@ accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_config \
  --log_with wandb \
  --output_dir ${output_dir} \
  --pretrained_model_name_or_path "${pretrained_model_name_or_path}" \
- --data_path "../../../MyData/anomaly_detection/${bench_mark}" --beta_scale_factor 0.95 \
+ --data_path "../../../MyData/anomaly_detection/${bench_mark}" --beta_scale_factor 1.0 \
  --anomal_source_path "../../../MyData/anomal_source" \
  --anomal_only_on_object \
  --anomal_p 0.03 \
@@ -35,4 +35,5 @@ accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_config \
  --do_attn_loss \
  --do_map_loss \
  --back_noise_use_gaussian --max_sigma 60 --min_sigma 25 --max_perlin_scale 6 \
- --use_noise_scheduler --min_timestep 0 --max_timestep 1
+ --use_noise_scheduler --min_timestep 0 --max_timestep 1 \
+ --max_beta_scale 0.93 --min_beta_scale 0.85

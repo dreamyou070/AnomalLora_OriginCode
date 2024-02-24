@@ -38,7 +38,7 @@ def main(args):
                     name, ext = os.path.splitext(img)
                     gt_name = f'{name}_mask{ext}'
 
-                    # [1] new folder
+                    # [1] new files
                     rgb_dir = os.path.join(defect_dir, 'rgb')
                     os.makedirs(rgb_dir, exist_ok=True)
                     gt_folder = os.path.join(defect_dir, 'gt')
@@ -48,7 +48,7 @@ def main(args):
                     origin_rgb_dir = os.path.join(defect_dir, img)
                     Image.open(origin_rgb_dir).save(os.path.join(rgb_dir, img))
 
-                    # [3] copy to rgb folder
+                    # [3] copy to rgb files
                     if 'good' not in defect :
                         Image.open(os.path.join(gt_defect_dir, gt_name)).convert("L").save(os.path.join(gt_folder, img))
                     else :
