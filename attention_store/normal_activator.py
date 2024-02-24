@@ -63,23 +63,10 @@ class NormalActivator(nn.Module):
     def collect_attention_scores(self, attn_score, anomal_position_vector,
                                  do_normal_activating = True):
 
-        def normalize_score(score):
-            score = torch.softmax(score, dim=-1)
-            """ Change Code """
-            max_value = (torch.max(score, dim=-1)[0]).unsqueeze(-1)
-            normalized_trigger_map = score / max_value
-            if argument.original_normalized_score:
-                return score
-            else :
-                score = normalized_trigger_map
-                return score
 
         # [1] preprocessing
         cls_score, trigger_score = attn_score.chunk(2, dim=-1)
         cls_score, trigger_score = cls_score.squeeze(), trigger_score.squeeze()      # head, pix_num
-
-        if self.do_normalized_score :
-            cls_score, trigger_score = normalize_score(cls_score), normalize_score(trigger_score)
 
         cls_score, trigger_score = cls_score.mean(dim=0), trigger_score.mean(dim=0)  # pix_num
         total_score = torch.ones_like(cls_score)

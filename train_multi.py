@@ -12,7 +12,7 @@ from utils.attention_control import passing_argument, register_attention_control
 from utils.accelerator_utils import prepare_accelerator
 from utils.optimizer_utils import get_optimizer, get_scheduler_fix
 from utils.model_utils import prepare_scheduler_for_custom_training, get_noise_noisy_latents_and_timesteps
-from utils.model_utils import pe_model_save
+from utils.model_utils import pe_model_save, te_model_save
 from utils.utils_loss import FocalLoss
 from data.prepare_dataset import call_dataset
 from model import call_model_package
@@ -20,8 +20,8 @@ from attention_store.normal_activator import passing_normalize_argument
 from data.mvtec import passing_mvtec_argument
 from diffusers import DDPMScheduler
 
-def main(args):
 
+def main(args):
     print(f'\n step 1. setting')
     output_dir = args.output_dir
     print(f' *** output_dir : {output_dir}')
@@ -46,13 +46,17 @@ def main(args):
 
     print(f'\n step 4. model ')
     weight_dtype, save_dtype = prepare_dtype(args)
-    text_encoder, vae, unet, network, position_embedder, text_time_embedding = call_model_package(args, weight_dtype, accelerator)
+    text_encoder, vae, unet, network, position_embedder, text_time_embedding = call_model_package(args, weight_dtype,
+                                                                                                  accelerator)
 
     print(f'\n step 5. optimizer')
     args.max_train_steps = len(train_dataloader) * args.max_train_epochs
-    trainable_params = network.prepare_optimizer_params(args.text_encoder_lr, args.unet_lr, args.learning_rate)
-    trainable_params.append({"params": position_embedder.parameters(),
-                             "lr": args.learning_rate})
+    trainable_params = network.prepare_optimizer_params(args.text_encoder_lr,
+                                                        args.unet_lr, args.learning_rate)
+    trainable_params.append({"params": position_embedder.parameters(), "lr": args.learning_rate})
+    if args.use_text_time_embedding:
+        trainable_params.append({"params": text_time_embedding.parameters(),
+                                 "lr": args.learning_rate})
     optimizer_name, optimizer_args, optimizer = get_optimizer(args, trainable_params)
 
     print(f'\n step 6. lr')
@@ -64,8 +68,13 @@ def main(args):
     normal_activator = NormalActivator(loss_focal, loss_l2, args.use_focal_loss)
 
     print(f'\n step 8. model to device')
-    unet, text_encoder, network, optimizer, train_dataloader, lr_scheduler, position_embedder = accelerator.prepare(
-        unet, text_encoder, network, optimizer, train_dataloader, lr_scheduler, position_embedder)
+    if args.use_text_time_embedding:
+        unet, text_encoder, network, optimizer, train_dataloader, lr_scheduler, position_embedder, text_time_embedding = accelerator.prepare(
+            unet, text_encoder, network, optimizer, train_dataloader, lr_scheduler, position_embedder,
+            text_time_embedding)
+    else:
+        unet, text_encoder, network, optimizer, train_dataloader, lr_scheduler = accelerator.prepare(
+            unet, text_encoder, network, optimizer, train_dataloader, lr_scheduler)
     text_encoders = transform_models_if_DDP([text_encoder])
     unet, network = transform_models_if_DDP([unet, network])
     if args.gradient_checkpointing:
@@ -103,7 +112,7 @@ def main(args):
                                     num_train_timesteps=1000,
                                     clip_sample=False)
     prepare_scheduler_for_custom_training(noise_scheduler, accelerator.device)
-    
+
     for epoch in range(args.start_epoch, args.max_train_epochs):
         epoch_loss_total = 0
         accelerator.print(f"\nepoch {epoch + 1}/{args.start_epoch + args.max_train_epochs}")
@@ -118,71 +127,31 @@ def main(args):
                 encoder_hidden_states = text_encoder(batch["input_ids"].to(device))["last_hidden_state"]
             object_position_vector = batch['object_mask'].squeeze().flatten()
             # --------------------------------------------------------------------------------------------------------- #
-            if args.do_normal_sample:
-                with torch.no_grad():
-                    latents = vae.encode(batch["image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
-                if args.use_noise_scheduler :
-                    noise, latents, timesteps = get_noise_noisy_latents_and_timesteps(noise_scheduler,
-                                                                                      latents,
-                                                                                      noise=None,
-                                                                                      min_timestep = args.min_timestep,
-                                                                                      max_timestep = args.max_timestep)
-                else :
-                    noise = torch.randn_like(latents, device=latents.device)
-
-                anomal_position_vector = torch.zeros_like(batch['object_mask'].squeeze().flatten())
-                object_normal_position_vector = torch.where((object_position_vector == 1) & (anomal_position_vector == 0), 1, 0)
-                with torch.set_grad_enabled(True):
-                    model_kwargs = {}
-                    if args.use_text_time_embedding:
-                        model_kwargs['text_time_embedding'] = text_time_embedding
-                    noise_pred = unet(latents,
-                                      0,
-                                      encoder_hidden_states,
-                                      trg_layer_list=args.trg_layer_list,
-                                      noise_type=position_embedder,
-                                      **kwargs ).sample
-
-                query_dict, attn_dict = controller.query_dict, controller.step_store
-                controller.reset()
-                for trg_layer in args.trg_layer_list:
-                    normal_activator.resize_query_features(query_dict[trg_layer][0].squeeze(0))
-                    normal_activator.resize_attn_scores(attn_dict[trg_layer][0])
-                c_query = normal_activator.generate_conjugated()
-                if args.mahalanobis_only_object :
-                    normal_activator.collect_queries(c_query,
-                                                     normal_position = object_normal_position_vector,
-                                                     anomal_position = anomal_position_vector,
-                                                     do_collect_normal=True)
-                else :
-                    normal_activator.collect_queries(c_query,
-                                                     normal_position = (1-anomal_position_vector),
-                                                     anomal_position = anomal_position_vector,
-                                                     do_collect_normal = True)
-                
-                c_attn_score = normal_activator.generate_conjugated_attn_score()
-                normal_activator.collect_attention_scores(c_attn_score, anomal_position_vector)
-                normal_activator.collect_anomal_map_loss(c_attn_score, anomal_position_vector)
-                if args.test_noise_predicting_task_loss:
-                    normal_activator.collect_noise_prediction_loss(noise_pred, noise, anomal_position_vector)
-                    
-            # --------------------------------------------------------------------------------------------------------- #
             if args.do_anomal_sample:
                 with torch.no_grad():
-                    latents = vae.encode(batch["anomal_image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
-                if args.use_noise_scheduler :
+                    latents = vae.encode(
+                        batch["anomal_image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
+                if args.use_noise_scheduler:
                     noise, latents, timesteps = get_noise_noisy_latents_and_timesteps(noise_scheduler,
                                                                                       latents,
                                                                                       noise=None,
                                                                                       min_timestep=args.min_timestep,
                                                                                       max_timestep=args.max_timestep)
-                else :
+                else:
                     noise = torch.randn_like(latents, device=latents.device)
                 anomal_position_vector = batch["anomal_mask"].squeeze().flatten()
-                object_normal_position_vector = torch.where((object_position_vector == 1) & (anomal_position_vector == 0),1,0)
+                object_normal_position_vector = torch.where(
+                    (object_position_vector == 1) & (anomal_position_vector == 0), 1, 0)
+                model_kwargs = {}
+                if args.use_text_time_embedding:
+                    model_kwargs['text_time_embedding'] = text_time_embedding
                 with torch.set_grad_enabled(True):
-                    noise_pred = unet(latents, 0, encoder_hidden_states, trg_layer_list=args.trg_layer_list,
-                         noise_type=position_embedder).sample
+                    noise_pred = unet(latents,
+                                      0,
+                                      encoder_hidden_states,
+                                      trg_layer_list=args.trg_layer_list,
+                                      noise_type=position_embedder,
+                                      **model_kwargs).sample
                 query_dict, attn_dict = controller.query_dict, controller.step_store
                 controller.reset()
                 for trg_layer in args.trg_layer_list:
@@ -207,37 +176,45 @@ def main(args):
             # --------------------------------------------------------------------------------------------------------- #
             if args.do_background_masked_sample:
                 with torch.no_grad():
-                    latents = vae.encode(batch["bg_anomal_image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
-                if args.use_noise_scheduler :
+                    latents = vae.encode(
+                        batch["bg_anomal_image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
+                if args.use_noise_scheduler:
                     noise, latents, timesteps = get_noise_noisy_latents_and_timesteps(noise_scheduler,
                                                                                       latents,
                                                                                       noise=None,
                                                                                       min_timestep=args.min_timestep,
                                                                                       max_timestep=args.max_timestep)
-                else :
+                else:
                     noise = torch.randn_like(latents, device=latents.device)
                 anomal_position_vector = batch["bg_anomal_mask"].squeeze().flatten()
                 object_normal_position_vector = torch.where(
                     (object_position_vector == 1) & (anomal_position_vector == 0), 1, 0)
+                model_kwargs = {}
+                if args.use_text_time_embedding:
+                    model_kwargs['text_time_embedding'] = text_time_embedding
                 with torch.set_grad_enabled(True):
-                    noise_pred = unet(latents, 0, encoder_hidden_states, trg_layer_list=args.trg_layer_list,
-                                      noise_type=position_embedder).sample
+                    noise_pred = unet(latents,
+                                      0,
+                                      encoder_hidden_states,
+                                      trg_layer_list=args.trg_layer_list,
+                                      noise_type=position_embedder,
+                                      **model_kwargs).sample
                 query_dict, attn_dict = controller.query_dict, controller.step_store
                 controller.reset()
                 for trg_layer in args.trg_layer_list:
                     normal_activator.resize_query_features(query_dict[trg_layer][0].squeeze(0))
                     normal_activator.resize_attn_scores(attn_dict[trg_layer][0])
                 c_query = normal_activator.generate_conjugated()
-                if args.mahalanobis_only_object :
+                if args.mahalanobis_only_object:
                     normal_activator.collect_queries(c_query,
-                                                     normal_position = object_normal_position_vector,
-                                                     anomal_position = anomal_position_vector,
+                                                     normal_position=object_normal_position_vector,
+                                                     anomal_position=anomal_position_vector,
                                                      do_collect_normal=True)
-                else :
+                else:
                     normal_activator.collect_queries(c_query,
-                                                     normal_position = (1-anomal_position_vector),
-                                                     anomal_position = anomal_position_vector,
-                                                     do_collect_normal = True)
+                                                     normal_position=(1 - anomal_position_vector),
+                                                     anomal_position=anomal_position_vector,
+                                                     do_collect_normal=True)
 
                 c_attn_score = normal_activator.generate_conjugated_attn_score()
                 normal_activator.collect_attention_scores(c_attn_score, anomal_position_vector)
@@ -268,7 +245,7 @@ def main(args):
                 map_loss = normal_activator.generate_anomal_map_loss()
                 loss += map_loss
                 loss_dict['map_loss'] = map_loss.item()
-                
+
             if args.test_noise_predicting_task_loss:
                 noise_pred_loss = normal_activator.generate_noise_prediction_loss()
                 loss += noise_pred_loss
@@ -302,6 +279,7 @@ def main(args):
                 break
             # ----------------------------------------------------------------------------------------------------------- #
             # [6] epoch final
+
         accelerator.wait_for_everyone()
         if is_main_process:
             ckpt_name = get_epoch_ckpt_name(args, "." + args.save_model_as, epoch + 1)
@@ -312,8 +290,15 @@ def main(args):
                 p_save_dir = os.path.join(position_embedder_base_save_dir,
                                           f'position_embedder_{epoch + 1}.safetensors')
                 pe_model_save(accelerator.unwrap_model(position_embedder), save_dtype, p_save_dir)
+            if args.use_text_time_embedding:
+                time_embedder_base_save_dir = os.path.join(args.output_dir, 'text_time_embedder')
+                os.makedirs(time_embedder_base_save_dir, exist_ok=True)
+                t_save_dir = os.path.join(time_embedder_base_save_dir, f'time_embedder_{epoch + 1}.safetensors')
+                te_model_save(accelerator.unwrap_model(text_time_embedding),
+                              save_dtype, t_save_dir)
 
     accelerator.end_training()
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -356,15 +341,16 @@ if __name__ == "__main__":
     parser.add_argument("--network_weights", type=str, default=None, help="pretrained weights for network")
     parser.add_argument("--network_dim", type=int, default=64, help="network dimensions (depends on each network) ")
     parser.add_argument("--network_alpha", type=float, default=4, help="alpha for LoRA weight scaling, default 1 ", )
-    parser.add_argument("--network_dropout", type=float, default=None,)
-    parser.add_argument("--network_args", type=str, default=None, nargs="*",)
-    parser.add_argument("--dim_from_weights", action="store_true",)
+    parser.add_argument("--network_dropout", type=float, default=None, )
+    parser.add_argument("--network_args", type=str, default=None, nargs="*", )
+    parser.add_argument("--dim_from_weights", action="store_true", )
     # step 5. optimizer
     parser.add_argument("--optimizer_type", type=str, default="AdamW",
-            help="AdamW , AdamW8bit, PagedAdamW8bit, PagedAdamW32bit, Lion8bit, PagedLion8bit, Lion, SGDNesterov,"
-            "SGDNesterov8bit, DAdaptation(DAdaptAdamPreprint), DAdaptAdaGrad, DAdaptAdam, DAdaptAdan, DAdaptAdanIP,"
-             "DAdaptLion, DAdaptSGD, AdaFactor", )
-    parser.add_argument("--use_8bit_adam", action="store_true", help="use 8bit AdamW optimizer(requires bitsandbytes)",)
+                        help="AdamW , AdamW8bit, PagedAdamW8bit, PagedAdamW32bit, Lion8bit, PagedLion8bit, Lion, SGDNesterov,"
+                             "SGDNesterov8bit, DAdaptation(DAdaptAdamPreprint), DAdaptAdaGrad, DAdaptAdam, DAdaptAdan, DAdaptAdanIP,"
+                             "DAdaptLion, DAdaptSGD, AdaFactor", )
+    parser.add_argument("--use_8bit_adam", action="store_true",
+                        help="use 8bit AdamW optimizer(requires bitsandbytes)", )
     parser.add_argument("--use_lion_optimizer", action="store_true",
                         help="use Lion optimizer (requires lion-pytorch)", )
     parser.add_argument("--max_grad_norm", default=1.0, type=float, help="Max gradient norm, 0 for no clipping")
@@ -390,9 +376,10 @@ if __name__ == "__main__":
     parser.add_argument("--use_noise_scheduler", action='store_true')
     parser.add_argument('--min_timestep', type=int, default=0)
     parser.add_argument('--max_timestep', type=int, default=500)
-    
+
     parser.add_argument("--save_model_as", type=str, default="safetensors",
-              choices=[None, "ckpt", "pt", "safetensors"], help="format to save the model (default is .safetensors)",)
+                        choices=[None, "ckpt", "pt", "safetensors"],
+                        help="format to save the model (default is .safetensors)", )
     parser.add_argument("--start_epoch", type=int, default=0)
     parser.add_argument("--max_train_epochs", type=int, default=None, )
     parser.add_argument("--gradient_checkpointing", action="store_true", help="enable gradient checkpointing")
@@ -416,13 +403,14 @@ if __name__ == "__main__":
     parser.add_argument('--normal_weight', type=float, default=1.0)
     parser.add_argument("--trg_layer_list", type=arg_as_list, default=[])
     parser.add_argument("--original_normalized_score", action='store_true')
-    parser.add_argument("--do_normalized_score", action='store_true')
     # [3]
     parser.add_argument("--do_map_loss", action='store_true')
     parser.add_argument("--use_focal_loss", action='store_true')
     # [4]
     parser.add_argument("--test_noise_predicting_task_loss", action='store_true')
     parser.add_argument("--back_noise_use_gaussian", action='store_true')
+    parser.add_argument("--use_text_time_embedding", action='store_true')
+
     args = parser.parse_args()
     unet_passing_argument(args)
     passing_argument(args)
