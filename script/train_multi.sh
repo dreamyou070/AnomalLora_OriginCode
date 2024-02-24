@@ -1,8 +1,8 @@
 # !/bin/bash
-port_number=50111
+port_number=50112
 pretrained_model_name_or_path="../../../pretrained_stable_diffusion/stable-diffusion-v1-5/v1-5-pruned.safetensors"
-obj_name='bottle'
-trigger_word='bottle'
+obj_name='capsule'
+trigger_word='capsule'
 bench_mark='MVTec'
 
 layer_folder="layer_3"
