@@ -1,8 +1,8 @@
 # !/bin/bash
 
-port_number=50005
-obj_name='dowel'
-caption='dowel'
+port_number=5006
+obj_name='foam'
+caption='foam'
 layer_folder="layer_3"
 sub_folder="background_masked_sample_anomal_sample_up_16_32_64"
 folder_name="attn_loss_original_normalized_score_map_loss_dist_loss_on_object_normalize_task_loss"
