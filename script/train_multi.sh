@@ -1,18 +1,18 @@
 # !/bin/bash
-port_number=50113
+port_number=50115
 pretrained_model_name_or_path="../../../pretrained_stable_diffusion/stable-diffusion-v1-5/v1-5-pruned.safetensors"
-obj_name='carpet'
-trigger_word='carpet'
+obj_name='grid'
+trigger_word='grid'
 bench_mark='MVTec'
 
 layer_folder="layer_3"
 sub_folder="up_16_32_64"
-folder_name="zero_timestep_sigma_max_60_min_sigma_25_max_perlin_scale_6_max_beta_scale_0.8_min_beta_scale_0.5_back_perlin"
+folder_name="zero_timestep_sigma_max_60_min_sigma_25_max_perlin_scale_6_max_beta_scale_0.8_min_beta_scale_0.5"
 output_dir="../../result/${bench_mark}/${obj_name}/${layer_folder}/${sub_folder}/${folder_name}"
 # --use_noise_scheduler --min_timestep 399 --max_timestep 400 \
 # --use_text_time_embedding
 # --do_dist_loss --mahalanobis_only_object --mahalanobis_normalize --dist_loss_with_max \
-# --back_noise_use_gaussian
+#
 
 accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_5_config \
  --main_process_port $port_number ../train_multi.py \
@@ -35,6 +35,6 @@ accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_5_config \
  --do_anomal_sample --do_background_masked_sample \
  --do_attn_loss \
  --do_map_loss \
- --max_sigma 60 --min_sigma 25 --max_perlin_scale 6 \
+ --back_noise_use_gaussian --max_sigma 60 --min_sigma 25 --max_perlin_scale 6 \
  --use_noise_scheduler --min_timestep 0 --max_timestep 1 \
  --max_beta_scale 0.8 --min_beta_scale 0.5
