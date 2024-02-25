@@ -1,5 +1,5 @@
 # !/bin/bash
-port_number=50117
+port_number=50116
 pretrained_model_name_or_path="../../../pretrained_stable_diffusion/stable-diffusion-v1-5/v1-5-pruned.safetensors"
 obj_name='dowel'
 trigger_word='dowel'
@@ -7,14 +7,14 @@ bench_mark='MVTec3D-AD'
 
 layer_folder="layer_3"
 sub_folder="up_16_32_64"
-folder_name="zero_timestep_sigma_max_60_min_sigma_25_max_perlin_scale_6_test_noise_predicting_task_loss_do_cls_train_dist_loss"
+folder_name="zero_timestep_sigma_max_60_min_sigma_25_max_perlin_scale_6_test_noise_predicting_task_loss_do_cls_train_dist_loss_diff_sigma_scale"
 output_dir="../../result/${bench_mark}/${obj_name}/${layer_folder}/${sub_folder}/${folder_name}"
 # --use_noise_scheduler --min_timestep 399 --max_timestep 400 \
 # --use_text_time_embedding
 # --do_dist_loss --mahalanobis_only_object --mahalanobis_normalize --dist_loss_with_max \
 #
 
-accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_config \
+accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_6_config \
  --main_process_port $port_number ../train_multi.py \
  --log_with wandb \
  --output_dir ${output_dir} \
@@ -37,5 +37,5 @@ accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_config \
  --do_attn_loss --do_cls_train \
  --do_map_loss \
  --test_noise_predicting_task_loss \
- --back_noise_use_gaussian --max_sigma 100 --min_sigma 30 --max_perlin_scale 4 \
+ --back_noise_use_gaussian --max_sigma 60 --min_sigma 25 --max_perlin_scale 6 \
  --max_beta_scale 1 --min_beta_scale 0
