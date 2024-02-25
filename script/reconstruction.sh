@@ -1,8 +1,8 @@
 # !/bin/bash
 
-port_number=50015
-obj_name='zipper'
-caption='zipper'
+port_number=50014
+obj_name='wood'
+caption='wood'
 
 layer_folder="layer_3"
 sub_folder="up_16_32_64"
