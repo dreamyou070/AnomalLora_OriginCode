@@ -144,26 +144,56 @@ def main(args):
                 anomal_folder_dir = os.path.join(test_img_folder, anomal_folder)
                 rgb_folder = os.path.join(anomal_folder_dir, 'rgb')
                 gt_folder = os.path.join(anomal_folder_dir, 'gt')
+                if args.object_crop:
+                    object_mask_folder = os.path.join(anomal_folder_dir, 'object_mask')
                 rgb_imgs = os.listdir(rgb_folder)
 
                 for rgb_img in rgb_imgs:
 
                     name, ext = os.path.splitext(rgb_img)
                     rgb_img_dir = os.path.join(rgb_folder, rgb_img)
-                    org_h, org_w = Image.open(rgb_img_dir).size
-                    img_dir = os.path.join(save_base_folder, f'{name}_org{ext}')
-                    Image.open(rgb_img_dir).resize((org_h, org_w)).save(img_dir)
-                    gt_img_dir = os.path.join(gt_folder, f'{name}.png')
+                    pil_img = Image.open(rgb_img_dir).convert('RGB')
+                    org_h, org_w = pil_img.size
 
+                    # [1] read object mask
+                    if args.object_crop :
+                        object_mask_pil  = Image.open(os.path.join(object_mask_folder, rgb_img)).convert('L')
+                        object_mask_np = np.array(object_mask_pil)
+                        h, w = object_mask_np.shape
+                        h_indexs, w_indexs = [], []
+                        for h_i in range(h):
+                            for w_i in range(w):
+                                if object_mask_np[h_i, w_i] > 0:
+                                    h_indexs.append(h_i)
+                                    w_indexs.append(w_i)
+                        h_start, h_end = min(h_indexs), max(h_indexs)
+                        w_start, w_end = min(w_indexs), max(w_indexs)
+                        input_img = pil_img.crop((w_start, h_start, w_end, h_end))
+                    else :
+                        input_img = pil_img
+                    trg_h, trg_w = input_img.size
                     if accelerator.is_main_process:
+
                         with torch.no_grad():
-                            img = load_image(rgb_img_dir, 512, 512)
+                            img = np.array(input_img.resize((512, 512)))
                             vae_latent = image2latent(img, vae, weight_dtype)
                             cls_map_pil, normal_map_pil, anomaly_map_pil = inference(vae_latent,
                                                                                      tokenizer, text_encoder, unet,
                                                                                      controller, normal_activator,
                                                                                      position_embedder,
-                                                                                     args,org_h, org_w, thred)
+                                                                                     args,
+                                                                                     trg_h, trg_w,
+                                                                                     thred)
+                            if args.object_crop :
+                                basic_cls_map_pil = Image.new('L', (org_h, org_w), 0)
+                                basic_normal_map_pil = Image.new('L', (org_h, org_w), 255)
+                                basic_anomaly_map_pil = Image.new('L', (org_h, org_w), 0)
+                                basic_cls_map_pil.paste(cls_map_pil, (w_start, h_start, w_end, h_end))
+                                basic_normal_map_pil.paste(normal_map_pil, (w_start, h_start, w_end, h_end))
+                                basic_anomaly_map_pil.paste(anomaly_map_pil, (w_start, h_start, w_end, h_end))
+                                cls_map_pil = basic_cls_map_pil
+                                normal_map_pil = basic_normal_map_pil
+                                anomaly_map_pil = basic_anomaly_map_pil
                             cls_map_pil.save(os.path.join(save_base_folder, f'{name}_cls.png'))
                             normal_map_pil.save(os.path.join(save_base_folder, f'{name}_normal.png'))
                             anomaly_map_pil.save( os.path.join(save_base_folder, f'{name}_anomal.png'))
