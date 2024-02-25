@@ -1,6 +1,6 @@
 #! /bin/bash
 
-bench_mark="MVTec"
+bench_mark="MVTec3D-AD"
 class_name="peach"
 dataset_dir="../../../MyData/anomaly_detection/${bench_mark}"
 layer_folder="layer_3"
