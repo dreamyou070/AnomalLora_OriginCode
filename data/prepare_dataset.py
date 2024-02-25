@@ -1,9 +1,12 @@
 import os
 from model.tokenizer import load_tokenizer
 from data.mvtec import MVTecDRAEMTrainDataset
+from data.mvtec_cropping import MVTecDRAEMTrainDataset_Cropping
 import torch
 
+
 def call_dataset(args) :
+
     tokenizer = load_tokenizer(args)
 
     # [1] set root data
@@ -17,6 +20,9 @@ def call_dataset(args) :
         args.anomal_source_path = os.path.join(args.data_path, f"anomal_source_{args.obj_name}")
 
     data_class = MVTecDRAEMTrainDataset
+    if args.cropping_test :
+        data_class = MVTecDRAEMTrainDataset_Cropping
+        print(f'cropping_test clss = {data_class.__class__.__name__}')
     dataset = data_class(root_dir=root_dir,
                                      anomaly_source_path=args.anomal_source_path,
                                      resize_shape=[512, 512],

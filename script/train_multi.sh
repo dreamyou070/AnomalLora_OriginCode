@@ -1,13 +1,13 @@
 # !/bin/bash
-port_number=51238
+port_number=51239
 pretrained_model_name_or_path="../../../pretrained_stable_diffusion/stable-diffusion-v1-5/v1-5-pruned.safetensors"
-obj_name='metal_nut'
-trigger_word='nut'
+obj_name='hazelnut'
+trigger_word='hazelnut'
 bench_mark='MVTec'
 
 layer_folder="layer_3"
 sub_folder="up_16_32_64"
-folder_name="sigma_max_60_min_sigma_25_max_perlin_scale_6_max_beta_scale_0.8_min_beta_scale_0.5_back_perlin"
+folder_name="sigma_max_60_min_sigma_25_max_perlin_scale_6_max_beta_scale_0.8_min_beta_scale_0.5_back_perlin_cropping_test"
 output_dir="../../result/${bench_mark}/${obj_name}/${layer_folder}/${sub_folder}/${folder_name}"
 # --use_noise_scheduler --min_timestep 399 --max_timestep 400 \
 # --use_text_time_embedding
@@ -35,4 +35,4 @@ accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_config \
  --do_attn_loss \
  --do_map_loss \
  --max_sigma 60 --min_sigma 25 --max_perlin_scale 6 \
- --max_beta_scale 0.8 --min_beta_scale 0.5
+ --max_beta_scale 0.8 --min_beta_scale 0.5 --cropping_test
