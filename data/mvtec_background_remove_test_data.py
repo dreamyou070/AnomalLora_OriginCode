@@ -73,6 +73,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--base_folder', type=str,
                         default=r'/home/dreamyou070/MyData/anomaly_detection/MVTec')
-    parser.add_argument('--trg_cat', type=str, default='tooth')
+    parser.add_argument('--trg_cat', type=str, default='metal_nut')
     args = parser.parse_args()
     main(args)
