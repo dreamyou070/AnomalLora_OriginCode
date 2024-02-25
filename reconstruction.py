@@ -223,6 +223,8 @@ def main(args):
                 os.makedirs(save_base_folder, exist_ok=True)
                 normal_folder_dir = os.path.join(train_img_folder, normal_folder)
                 rgb_folder = os.path.join(normal_folder_dir, 'rgb')
+                if args.object_crop:
+                    object_mask_folder = os.path.join(anomal_folder_dir, 'object_mask')
                 rgb_imgs = os.listdir(rgb_folder)
                 for rgb_img in rgb_imgs:
 
