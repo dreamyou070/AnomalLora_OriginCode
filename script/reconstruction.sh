@@ -1,12 +1,12 @@
 # !/bin/bash
 
 port_number=50001
-obj_name='dowel'
-caption='dowel'
+obj_name='capsule'
+caption='capsule'
 layer_folder="layer_3"
 sub_folder="up_16_32_64"
-folder_name="zero_timestep_sigma_max_60_min_sigma_25_max_perlin_scale_6_test_noise_predicting_task_loss_do_cls_train_dist_loss"
-bench_mark="MVTec3D-AD"
+folder_name="zero_timestep_sigma_max_60_min_sigma_25_max_perlin_scale_6_max_beta_scale_0.8_min_beta_scale_0.5"
+bench_mark="MVTec"
 position_embedding_layer="down_blocks_0_attentions_0_transformer_blocks_0_attn1"
 
 # 'up_blocks_2_attentions_2_transformer_blocks_0_attn2',
