@@ -22,7 +22,7 @@ accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_config \
  --data_path "../../../MyData/anomaly_detection/${bench_mark}" --beta_scale_factor 1.0 \
  --anomal_source_path "../../../MyData/anomal_source" \
  --anomal_only_on_object \
- --anomal_p 0.03 \
+ --anomal_p 0.02 \
  --trigger_word "${trigger_word}" --obj_name "${obj_name}" \
  --train_unet --train_text_encoder --d_dim 320 --latent_res 64 \
  --network_dim 64 --network_alpha 4 \
