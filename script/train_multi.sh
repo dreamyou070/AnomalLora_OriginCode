@@ -1,18 +1,18 @@
 # !/bin/bash
-port_number=51018
+port_number=51019
 pretrained_model_name_or_path="../../../pretrained_stable_diffusion/stable-diffusion-v1-5/v1-5-pruned.safetensors"
-obj_name='metal_nut'
-trigger_word='metal'
+obj_name='pill'
+trigger_word='pill'
 bench_mark='MVTec'
 
 layer_folder="layer_3"
 sub_folder="up_16_32_64"
-folder_name="sigma_max_60_min_sigma_25_max_perlin_scale_6_max_beta_scale_0.8_min_beta_scale_0.5"
+folder_name="sigma_max_60_min_sigma_25_max_perlin_scale_6_max_beta_scale_0.8_min_beta_scale_0.5_not_rot_aug"
 output_dir="../../result/${bench_mark}/${obj_name}/${layer_folder}/${sub_folder}/${folder_name}"
 # --use_noise_scheduler --min_timestep 399 --max_timestep 400 \
 # --use_text_time_embedding
 # --do_dist_loss --mahalanobis_only_object --mahalanobis_normalize --dist_loss_with_max \ # --test_noise_predicting_task_loss# --cropping_test
-
+#  --do_rot_augment
 accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_5_config \
  --main_process_port $port_number ../train_multi.py \
  --log_with wandb \
@@ -21,7 +21,7 @@ accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_5_config \
  --data_path "../../../MyData/anomaly_detection/${bench_mark}" --beta_scale_factor 1.0 \
  --anomal_source_path "../../../MyData/anomal_source" \
  --anomal_only_on_object \
- --anomal_p 0.01 \
+ --anomal_p 0.02 \
  --trigger_word "${trigger_word}" --obj_name "${obj_name}" \
  --train_unet --train_text_encoder --d_dim 320 --latent_res 64 \
  --network_dim 64 --network_alpha 4 \
@@ -34,4 +34,4 @@ accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_5_config \
  --do_attn_loss \
  --do_map_loss \
  --max_sigma 60 --min_sigma 25 --max_perlin_scale 6 \
- --max_beta_scale 0.8 --min_beta_scale 0.5 --do_rot_augment
+ --max_beta_scale 0.8 --min_beta_scale 0.5
