@@ -39,7 +39,7 @@ def main(args):
                     gt_name = f'{name}_mask{ext}'
 
                     # [1] new files
-                    rgb_dir = os.path.join(defect_dir, 'rgb')
+                    rgb_dir = os.path.join(defect_dir, 'rgb_origin')
                     os.makedirs(rgb_dir, exist_ok=True)
                     gt_folder = os.path.join(defect_dir, 'gt')
                     os.makedirs(gt_folder, exist_ok=True)
@@ -48,7 +48,7 @@ def main(args):
                     origin_rgb_dir = os.path.join(defect_dir, img)
                     Image.open(origin_rgb_dir).save(os.path.join(rgb_dir, img))
 
-                    # [3] copy to rgb files
+                    # [3] copy to rgb_origin files
                     if 'good' not in defect :
                         Image.open(os.path.join(gt_defect_dir, gt_name)).convert("L").save(os.path.join(gt_folder, img))
                     else :
@@ -61,6 +61,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--base_folder', type=str,
                         default=r'/home/dreamyou070/MyData/anomaly_detection/MVTec')
-    parser.add_argument('--trg_cat', type=str, default='capsule')
+    parser.add_argument('--trg_cat', type=str, default='tile')
     args = parser.parse_args()
     main(args)
