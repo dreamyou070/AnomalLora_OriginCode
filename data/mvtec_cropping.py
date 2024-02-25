@@ -284,6 +284,12 @@ class MVTecDRAEMTrainDataset_Cropping(Dataset):
                     w_indexs.append(w_i)
         h_start, h_end = min(h_indexs), max(h_indexs)
         w_start, w_end = min(w_indexs), max(w_indexs)
+        h_pad = 0.02 * h
+        w_pad = 0.02 * w
+        h_start = h_start - h_pad if h_start - h_pad > 0 else 0
+        h_end = h_end + h_pad if h_end + h_pad < h else h
+        w_start = w_start - w_pad if w_start - w_pad > 0 else 0
+        w_end = w_end + w_pad if w_end + w_pad < w else w
 
         object_mask_pil = object_mask_pil.crop((w_start, h_start, w_end, h_end)).resize((self.resize_shape[0],self.resize_shape[1]))
         object_mask = aug(image=(np.array(object_mask_pil))) # np.array

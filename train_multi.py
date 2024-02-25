@@ -18,6 +18,7 @@ from data.prepare_dataset import call_dataset
 from model import call_model_package
 from attention_store.normal_activator import passing_normalize_argument
 from data.mvtec import passing_mvtec_argument
+from data.mvtec_cropping import passing_mvtec_argument as passing_mvtec_argument_cropping
 from diffusers import DDPMScheduler
 
 
@@ -425,4 +426,5 @@ if __name__ == "__main__":
     passing_argument(args)
     passing_normalize_argument(args)
     passing_mvtec_argument(args)
+    passing_mvtec_argument_cropping(args)
     main(args)
