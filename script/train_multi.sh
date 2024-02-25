@@ -1,8 +1,8 @@
 # !/bin/bash
-port_number=51209
+port_number=51215
 pretrained_model_name_or_path="../../../pretrained_stable_diffusion/stable-diffusion-v1-5/v1-5-pruned.safetensors"
-obj_name='pill'
-trigger_word='pill'
+obj_name='zipper'
+trigger_word='zipper'
 bench_mark='MVTec'
 
 layer_folder="layer_3"
@@ -13,7 +13,7 @@ output_dir="../../result/${bench_mark}/${obj_name}/${layer_folder}/${sub_folder}
 # --use_text_time_embedding
 # --do_dist_loss --mahalanobis_only_object --mahalanobis_normalize --dist_loss_with_max \
 # --test_noise_predicting_task_loss
-
+#  --cropping_test
 accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_5_config \
  --main_process_port $port_number ../train_multi.py \
  --log_with wandb \
@@ -35,4 +35,4 @@ accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_5_config \
  --do_attn_loss \
  --do_map_loss \
  --max_sigma 60 --min_sigma 25 --max_perlin_scale 6 \
- --max_beta_scale 0.8 --min_beta_scale 0.5 --cropping_test
+ --max_beta_scale 0.8 --min_beta_scale 0.5
