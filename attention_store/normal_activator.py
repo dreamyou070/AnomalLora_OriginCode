@@ -32,7 +32,6 @@ class NormalActivator(nn.Module):
         self.queries = []
         self.resized_attn_scores = []
         self.noise_prediction_loss = []
-        self.global_queires = []
 
     def collect_queries(self, origin_query, normal_position, anomal_position, do_collect_normal):
 
@@ -47,24 +46,6 @@ class NormalActivator(nn.Module):
 
             elif anomal_flag == 1 :
                 self.anomal_feat_list.append(feat.unsqueeze(0))
-
-    def collect_global_queries(self, anomal_position_vector):
-
-        global_query = self.global_queires[0].squeeze() # 64, 64, 1280
-
-
-        pix_num = origin_query.shape[0]
-        for pix_idx in range(pix_num):
-            feat = origin_query[pix_idx].squeeze(0)
-            normal_flag = normal_position[pix_idx]
-            anomal_flag = anomal_position[pix_idx]
-            if normal_flag == 1:
-                if do_collect_normal:
-                    self.normal_feat_list.append(feat.unsqueeze(0))
-
-            elif anomal_flag == 1 :
-                self.anomal_feat_list.append(feat.unsqueeze(0))
-
 
 
 
@@ -227,9 +208,6 @@ class NormalActivator(nn.Module):
         resized_query_map = nn.functional.interpolate(query_map, size=(64, 64), mode='bilinear')
         resized_query = resized_query_map.permute(0, 2, 3, 1).contiguous().view(head_num, -1, dim).squeeze()
         self.resized_queries.append(resized_query) # len = 3
-
-        if res == 16 :
-            self.global_queires.append(resized_query) # 1, res, res, channel
 
 
     def resize_attn_scores(self, attn_score) :

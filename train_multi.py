@@ -218,7 +218,6 @@ def main(args):
                                                      normal_position=(1 - anomal_position_vector),
                                                      anomal_position=anomal_position_vector,
                                                      do_collect_normal=True)
-
                 c_attn_score = normal_activator.generate_conjugated_attn_score()
                 normal_activator.collect_attention_scores(c_attn_score, anomal_position_vector)
                 normal_activator.collect_anomal_map_loss(c_attn_score, anomal_position_vector)
