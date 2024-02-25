@@ -14,7 +14,7 @@ output_dir="../../result/${bench_mark}/${obj_name}/${layer_folder}/${sub_folder}
 # --do_dist_loss --mahalanobis_only_object --mahalanobis_normalize --dist_loss_with_max \
 #
 
-accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_6_config \
+accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_5_config \
  --main_process_port $port_number ../train_multi.py \
  --log_with wandb \
  --output_dir ${output_dir} \
