@@ -1,6 +1,6 @@
 #! /bin/bash
 
-class_name="carpet"
+class_name="grid"
 bench_mark="MVTec"
 dataset_dir="../../../MyData/anomaly_detection/${bench_mark}"
 layer_folder="layer_3"
