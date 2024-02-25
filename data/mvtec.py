@@ -18,6 +18,7 @@ def passing_mvtec_argument(args):
     global max_perlin_scale
     global max_beta_scale
     global min_beta_scale
+    global do_rot_augment
     argument = args
     anomal_p = args.anomal_p
     back_noise_use_gaussian = args.back_noise_use_gaussian
@@ -26,6 +27,7 @@ def passing_mvtec_argument(args):
     max_perlin_scale = args.max_perlin_scale
     max_beta_scale = args.max_beta_scale
     min_beta_scale = args.min_beta_scale
+    do_rot_augment = args.do_rot_augment
 
 class MVTecDRAEMTestDataset(Dataset):
 
@@ -126,10 +128,13 @@ class MVTecDRAEMTrainDataset(Dataset):
         self.transform = transforms.Compose([transforms.ToTensor(),
                                              transforms.Normalize([0.5], [0.5]),])
         self.use_perlin = use_perlin
-        self.rot_augmenters = [iaa.Affine(rotate=(0, 0)),
-                               iaa.Affine(rotate=(180, 180)),
-                               iaa.Affine(rotate=(90, 90)),
-                               iaa.Affine(rotate=(270, 270))]
+        if do_rot_augment :
+            self.rot_augmenters = [iaa.Affine(rotate=(0, 0)),
+                                   iaa.Affine(rotate=(180, 180)),
+                                   iaa.Affine(rotate=(90, 90)),
+                                   iaa.Affine(rotate=(270, 270))]
+        else :
+            self.rot_augmenters = [iaa.Affine(rotate=(0, 0))]
         num_repeat = len(self.rot_augmenters) # 4
         self.image_paths = [image_path for image_path in image_paths for i in range(num_repeat)]
 
