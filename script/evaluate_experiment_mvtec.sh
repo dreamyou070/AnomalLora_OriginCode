@@ -1,11 +1,11 @@
 #! /bin/bash
 
-class_name="bagel"
-dataset_cat="MVTec3D-AD"
+class_name="capsule"
+dataset_cat="MVTec"
 dataset_dir="../../../MyData/anomaly_detection/${dataset_cat}"
-sub_folder="1_3_background_masked_sample_attn_loss_dist_loss_map_loss_focal_only_zero_timestep"
-base_dir="../../result/${class_name}/${sub_folder}/reconstruction"
-
+sub_folder="up_16_32_64"
+folder_name="zero_timestep_sigma_max_60_min_sigma_25_max_perlin_scale_6_max_beta_scale_0.8_min_beta_scale_0.5"
+base_dir="../../result/${bench_mark}/${class_name}/${layer_folder}/${sub_folder}/${folder_name}/reconstruction" \
 output_dir="metrics"
 
 python ../evaluation/evaluation_code_MVTec/evaluate_experiment_2.py \
