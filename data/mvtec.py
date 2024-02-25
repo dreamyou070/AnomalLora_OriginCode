@@ -100,16 +100,16 @@ class MVTecDRAEMTrainDataset(Dataset):
                  reference_check : bool = True,
                  do_anomal_sample : bool = True) :
 
+
+        # [1] base image
         self.root_dir = root_dir
-        folders = os.listdir(root_dir)
         image_paths = []
-        for folder in folders:
-            folder_path = os.path.join(root_dir, folder)
-            rgb_folder = os.path.join(folder_path, "rgb")
-            images = os.listdir(rgb_folder)
-            for image in images:
-                image_path = os.path.join(rgb_folder, image)
-                image_paths.append(image_path)
+        folder_path = os.path.join(root_dir, 'good')
+        rgb_folder = os.path.join(folder_path, "rgb")
+        images = os.listdir(rgb_folder)
+        for image in images:
+            image_path = os.path.join(rgb_folder, image)
+            image_paths.append(image_path)
 
         self.resize_shape=resize_shape
         if do_anomal_sample :
@@ -148,6 +148,11 @@ class MVTecDRAEMTrainDataset(Dataset):
         self.beta_scale_factor = beta_scale_factor
 
         self.reference_check = reference_check
+        # [2] background image
+        background_dir = os.path.join(root_dir, "background")
+        imgs = os.listdir(background_dir)
+        self.background_dirs = [os.path.join(background_dir, img) for img in imgs]
+
 
     def __len__(self):
         if len(self.anomaly_source_paths) > 0 :
@@ -308,7 +313,11 @@ class MVTecDRAEMTrainDataset(Dataset):
                                                            anomaly_source_img, # 512
                                                            beta_scale_factor=self.beta_scale_factor,
                                                            object_position=object_position) # [512,512,3], [512,512]
-        background_img = (img * 0).astype(img.dtype)
+        # [4.2] background img
+        background_idx = idx % len(self.background_dirs)
+        background_dir = self.background_dirs[background_idx]
+        background_img = self.load_image(background_dir, self.resize_shape[0], self.resize_shape[1])
+
         if argument.back_noise_use_gaussian :
             back_anomal_img, back_anomal_mask_torch = self.gaussian_augment_image(img,
                                                                                   aug(image=background_img),

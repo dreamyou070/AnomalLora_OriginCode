@@ -11,7 +11,7 @@ def main(args):
 
     print(f'\n step 2. dataset')
     obj_name = args.obj_name
-    root_dir = f'train_1'
+    root_dir = '/home/dreamyou070/MyData/anomaly_detection/MVTec/transistor/train_1'
     num_images = len(os.listdir(root_dir))
     print(f'num_images: {num_images}')
     args.anomaly_source_path = f'anomal_source'
@@ -19,17 +19,17 @@ def main(args):
 
     dataset = MVTecDRAEMTrainDataset_Cropping(root_dir=root_dir,
                                               anomaly_source_path=args.anomaly_source_path,
-                                     resize_shape=[512, 512],
-                                     tokenizer = None ,
-                                     caption=obj_name,
-                                     use_perlin=True,
-                                     anomal_only_on_object=True,
-                                     anomal_training=True,
-                                     latent_res=64,
-                                     kernel_size=args.kernel_size,
-                                     beta_scale_factor=args.beta_scale_factor,
-                                     reference_check=False,
-                                     do_anomal_sample=True)
+                                              resize_shape=[512, 512],
+                                              tokenizer = None ,
+                                              caption=obj_name,
+                                              use_perlin=True,
+                                              anomal_only_on_object=True,
+                                              anomal_training=True,
+                                              latent_res=64,
+                                              kernel_size=args.kernel_size,
+                                              beta_scale_factor=args.beta_scale_factor,
+                                              reference_check=False,
+                                              do_anomal_sample=True)
 
     train_dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=True)
     beta_scale_factor = args.beta_scale_factor
@@ -78,8 +78,9 @@ if __name__ == "__main__":
     parser.add_argument('--output_dir', type=str, default='output')
     # step 2. dataset
     parser.add_argument('--data_path', type=str, default=r'../../../MyData/anomaly_detection/MVTec3D-AD')
-    parser.add_argument('--obj_name', type=str, default='foam')
-    parser.add_argument('--anomaly_source_path', type=str)
+    parser.add_argument('--obj_name', type=str, default='transistor')
+    parser.add_argument('--anomaly_source_path', type=str,
+                        default=r'/home/dreamyou070/MyData/anomal_source')
     parser.add_argument('--trigger_word', type=str)
     # ------------------------------------------------------------------------------------ #
     parser.add_argument('--kernel_size', type=int, default=5)
@@ -87,7 +88,7 @@ if __name__ == "__main__":
     parser.add_argument("--latent_res", type=int, default=64)
     parser.add_argument("--beta_scale_factor", type=float, default=1)
     parser.add_argument("--anomal_p", type=float, default=0.03)
-    parser.add_argument("--back_noise_use_gaussian", action='store_true')
+    parser.add_argument("--back_noise_use_gaussian", action='store_true') # True
     parser.add_argument("--max_perlin_scale", type=int, default=6)
     parser.add_argument("--max_sigma", type=int, default=60)
     parser.add_argument("--min_sigma", type=int, default=25)
