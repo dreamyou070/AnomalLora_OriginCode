@@ -1,8 +1,8 @@
 # !/bin/bash
-port_number=50007
+port_number=51238
 pretrained_model_name_or_path="../../../pretrained_stable_diffusion/stable-diffusion-v1-5/v1-5-pruned.safetensors"
-obj_name='leather'
-trigger_word='leather'
+obj_name='metal_nut'
+trigger_word='nut'
 bench_mark='MVTec'
 
 layer_folder="layer_3"
@@ -12,9 +12,9 @@ output_dir="../../result/${bench_mark}/${obj_name}/${layer_folder}/${sub_folder}
 # --use_noise_scheduler --min_timestep 399 --max_timestep 400 \
 # --use_text_time_embedding
 # --do_dist_loss --mahalanobis_only_object --mahalanobis_normalize --dist_loss_with_max \
-# --test_noise_predicting_task_loss \
+# --test_noise_predicting_task_loss
 
-accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_config \
+accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_config \
  --main_process_port $port_number ../train_multi.py \
  --log_with wandb \
  --output_dir ${output_dir} \
