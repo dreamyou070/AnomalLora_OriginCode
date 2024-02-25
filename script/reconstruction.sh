@@ -1,12 +1,12 @@
 # !/bin/bash
 
 port_number=50013
-obj_name='capsule'
-caption='capsule'
+obj_name='leather'
+caption='leather'
 
 layer_folder="layer_3"
 sub_folder="up_16_32_64"
-folder_name="sigma_max_60_min_sigma_25_max_perlin_scale_6_max_beta_scale_0.8_min_beta_scale_0.5_not_rot_aug"
+folder_name="sigma_max_60_min_sigma_25_max_perlin_scale_6_max_beta_scale_0.8_min_beta_scale_0.5_back_perlin"
 bench_mark="MVTec"
 position_embedding_layer="down_blocks_0_attentions_0_transformer_blocks_0_attn1"
 
@@ -23,4 +23,4 @@ accelerate launch --config_file ../../../gpu_config/gpu_0_config \
                                     'up_blocks_2_attentions_2_transformer_blocks_0_attn2',
                                     'up_blocks_1_attentions_2_transformer_blocks_0_attn2',]" \
  --d_dim 320 --use_position_embedder --position_embedding_layer ${position_embedding_layer} \
- --threds [0.5]
+ --threds [0.3,0.4,0.6,0.7,0.8,0.9]
