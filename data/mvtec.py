@@ -95,28 +95,21 @@ class MVTecDRAEMTrainDataset(Dataset):
                  latent_res : int = 64,
                  kernel_size : int = 5,
                  beta_scale_factor : float = 0.8,
-                 bgrm_test : bool = True,
                  reference_check : bool = True,
                  do_anomal_sample : bool = True) :
-
-        self.bgrm_test = bgrm_test
 
         self.root_dir = root_dir
         folders = os.listdir(root_dir)
         image_paths = []
         for folder in folders:
             folder_path = os.path.join(root_dir, folder)
-            if self.bgrm_test:
-                rgb_folder = os.path.join(folder_path, "rgb")
-            else :
-                rgb_folder = os.path.join(folder_path, "rgb_origin")
+            rgb_folder = os.path.join(folder_path, "rgb")
             images = os.listdir(rgb_folder)
             for image in images:
                 image_path = os.path.join(rgb_folder, image)
                 image_paths.append(image_path)
 
         self.resize_shape=resize_shape
-
         if do_anomal_sample :
             assert anomaly_source_path is not None, "anomaly_source_path should be given"
 
@@ -281,12 +274,7 @@ class MVTecDRAEMTrainDataset(Dataset):
         name, class_folder = self.get_img_name(img_path)
 
         # [2] background
-        if self.bgrm_test :
-            background_dir = None
-        else :
-            parent, name = os.path.split(img_path)
-            parent, _ = os.path.split(parent)
-            background_dir = os.path.join(parent, f"background/{name}")
+        background_dir = None
 
         anomal_name = 'no'
         if self.reference_check :
@@ -330,10 +318,7 @@ class MVTecDRAEMTrainDataset(Dataset):
                     anomal_img, anomal_mask_torch = self.augment_image(img,anomaly_source_img,
                                                                        beta_scale_factor=self.beta_scale_factor,
                                                                        object_position=object_position) # [512,512,3], [512,512]
-                    if self.bgrm_test:
-                        background_img = (img * 0).astype(img.dtype)
-                    else :
-                        background_img = self.load_image(background_dir, self.resize_shape[0], self.resize_shape[1],type='RGB')
+                    background_img = (img * 0).astype(img.dtype)
 
                     if argument.back_noise_use_gaussian :
                         back_anomal_img, back_anomal_mask_torch = self.gaussian_augment_image(img,
@@ -349,10 +334,7 @@ class MVTecDRAEMTrainDataset(Dataset):
                                                          self.resize_shape[1])
                     anomal_img, anomal_mask_torch = self.augment_image(img, anomaly_source_img,
                                                                        beta_scale_factor=self.beta_scale_factor, object_position=None)
-                    if self.bgrm_test:
-                        background_img = (img * 0).astype(img.dtype)
-                    else:
-                        background_img = self.load_image(background_dir, self.resize_shape[0], self.resize_shape[1],type='RGB')
+                    background_img = (img * 0).astype(img.dtype)
                     back_anomal_img, back_anomal_mask_torch = self.gaussian_augment_image(img, aug(image=background_img),
                                                                                           object_position=None)
             else :
