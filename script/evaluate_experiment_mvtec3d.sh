@@ -4,8 +4,8 @@ bench_mark="MVTec3D-AD"
 class_name="dowel"
 dataset_dir="../../../MyData/anomaly_detection/${bench_mark}"
 layer_folder="layer_3"
-sub_folder="sub_3_up_16_32_64"
-folder_name="zero_timestep_sigma_max_60_min_sigma_25_max_perlin_scale_6"
+sub_folder="up_16_32_64"
+folder_name="zero_timestep_sigma_max_60_min_sigma_25_max_perlin_scale_6_test_noise_predicting_task_loss_do_cls_train_dist_loss"
 output_dir="metrics"
 
 
