@@ -26,7 +26,7 @@ def main(args):
             images = os.listdir(train_good_dir)
 
 
-            origin_folder = os.path.join(train_good_dir, 'rgb')
+            origin_folder = os.path.join(train_good_dir, 'rgb_origin')
             os.makedirs(origin_folder, exist_ok=True)
             mask_dir = os.path.join(train_good_dir, 'object_mask')
             os.makedirs(mask_dir, exist_ok=True)
@@ -54,6 +54,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--base_folder', type=str,
                         default=r'/home/dreamyou070/MyData/anomaly_detection/MVTec')
-    parser.add_argument('--trg_cat', type=str, default='leather')
+    parser.add_argument('--trg_cat', type=str, default='tile')
     args = parser.parse_args()
     main(args)
