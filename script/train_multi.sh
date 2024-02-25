@@ -1,8 +1,8 @@
 # !/bin/bash
-port_number=51007
+port_number=51014
 pretrained_model_name_or_path="../../../pretrained_stable_diffusion/stable-diffusion-v1-5/v1-5-pruned.safetensors"
-obj_name='tile'
-trigger_word='tile'
+obj_name='wood'
+trigger_word='wood'
 bench_mark='MVTec'
 
 layer_folder="layer_3"
