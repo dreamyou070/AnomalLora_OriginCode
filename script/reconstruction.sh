@@ -1,8 +1,8 @@
 # !/bin/bash
 
-port_number=50013
-obj_name='toothbrush'
-caption='toothbrush'
+port_number=50012
+obj_name='tile'
+caption='tile'
 
 layer_folder="layer_3"
 sub_folder="up_16_32_64"
