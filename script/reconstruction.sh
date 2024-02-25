@@ -1,12 +1,12 @@
 # !/bin/bash
 
 port_number=50011
-obj_name='hazelnut'
-caption='hazelnut'
+obj_name='bottle'
+caption='bottle'
 
 layer_folder="layer_3"
 sub_folder="up_16_32_64"
-folder_name="sigma_max_60_min_sigma_25_max_perlin_scale_6_max_beta_scale_0.8_min_beta_scale_0.5_back_perlin_cropping_test_anomal_p_0.01"
+folder_name="sigma_max_60_min_sigma_25_max_perlin_scale_6_max_beta_scale_0.8_min_beta_scale_0.5_back_perlin_cropping_test_anomal_p_0.01_new_code"
 bench_mark="MVTec"
 position_embedding_layer="down_blocks_0_attentions_0_transformer_blocks_0_attn1"
 
