@@ -31,7 +31,7 @@ def main(args):
                 defect_dir = os.path.join(test_dir, f'{defect}')
 
                 # [1] new files
-                rgb_dir = os.path.join(defect_dir, 'rgb')
+                rgb_dir = os.path.join(defect_dir, 'rgb_origin')
                 origin_folder = os.path.join(defect_dir, 'rgb_origin')
                 os.makedirs(origin_folder, exist_ok=True)
                 sub_folder = os.path.join(defect_dir, 'rgb_remove_background')

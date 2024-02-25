@@ -17,7 +17,7 @@ def main(args):
 
             train_ex_dir = os.path.join(cat_dir, 'train_ex')
             print(f'train_ex_dir: {train_ex_dir}')
-            train_ex_rgb_dir = os.path.join(train_ex_dir, 'rgb')
+            train_ex_rgb_dir = os.path.join(train_ex_dir, 'rgb_origin')
             train_ex_gt_dir = os.path.join(train_ex_dir, 'gt')
             train_ex_mask_dir = os.path.join(train_ex_dir, 'mask')
             folders = os.listdir(train_ex_rgb_dir)

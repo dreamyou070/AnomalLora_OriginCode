@@ -5,42 +5,38 @@ import numpy as np
 import os
 from PIL import Image
 from data.mvtec import passing_mvtec_argument, MVTecDRAEMTrainDataset
+from data.mvtec_cropping import passing_mvtec_argument, MVTecDRAEMTrainDataset_Cropping
 
 def main(args):
 
     print(f'\n step 2. dataset')
     obj_name = args.obj_name
-    root_dir = f'/home/dreamyou070/MyData/anomaly_detection/MVTec3D-AD/{obj_name}/train_1'
+    root_dir = f'train_1'
     num_images = len(os.listdir(root_dir))
     print(f'num_images: {num_images}')
-    args.anomaly_source_path = f'/home/dreamyou070/MyData/anomal_source'
-    tokenizer = load_tokenizer(args)
-    dataset = MVTecDRAEMTrainDataset(root_dir=root_dir,
-                                     anomaly_source_path=args.anomaly_source_path,
+    args.anomaly_source_path = f'anomal_source'
+    #tokenizer = load_tokenizer(args)
+
+    dataset = MVTecDRAEMTrainDataset_Cropping(root_dir=root_dir,
+                                              anomaly_source_path=args.anomaly_source_path,
                                      resize_shape=[512, 512],
-                                     tokenizer=tokenizer,
+                                     tokenizer = None ,
                                      caption=obj_name,
                                      use_perlin=True,
                                      anomal_only_on_object=True,
                                      anomal_training=True,
                                      latent_res=64,
-                                     perlin_max_scale=args.perlin_max_scale,
                                      kernel_size=args.kernel_size,
                                      beta_scale_factor=args.beta_scale_factor,
-                                     bgrm_test=True,
                                      reference_check=False,
                                      do_anomal_sample=True)
 
-
-
-
     train_dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=True)
     beta_scale_factor = args.beta_scale_factor
-    check_base_dir = f'/home/dreamyou070/data_check/{obj_name}/beta_scale_factor_{beta_scale_factor}_anomal_p_{args.anomal_p}'
+    check_base_dir = f'dataset_check_folder/{obj_name}/beta_scale_factor_{beta_scale_factor}_anomal_p_{args.anomal_p}'
     os.makedirs(check_base_dir, exist_ok=True)
 
     for sample in train_dataloader :
-
         name = sample['image_name'][0]
         save_name = sample['anomal_name'][0]
 
@@ -75,23 +71,6 @@ def main(args):
         pil_anomaly_mask = Image.fromarray(pil_anomaly_mask)
         pil_anomaly_mask.save(os.path.join(check_base_dir, f'{save_name}_backgrounded_mask.png'))
 
-        """   
-        
-        return {'image': self.transform(img),               # original image
-                "object_mask": object_mask.unsqueeze(0),    # [1, 64, 64]
-                'anomal_image': self.transform(anomal_img),
-                "anomal_mask": anomal_mask_torch,
-                'bg_anomal_image': self.transform(back_anomal_img),          # masked image
-                'bg_anomal_mask': back_anomal_mask_torch,
-                'idx': idx,
-                'input_ids': input_ids.squeeze(0),
-                'caption': self.caption,
-                'image_name' : name,
-                'anomal_name' : anomal_name,}
-
-
-        """
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # step 1. setting
@@ -106,14 +85,16 @@ if __name__ == "__main__":
     parser.add_argument('--kernel_size', type=int, default=5)
     parser.add_argument("--anomal_only_on_object", action='store_true')
     parser.add_argument("--latent_res", type=int, default=64)
-    parser.add_argument("--beta_scale_factor", type=float, default=0.95)
-    parser.add_argument("--anomal_p", type=float, default=0.04)
+    parser.add_argument("--beta_scale_factor", type=float, default=1)
+    parser.add_argument("--anomal_p", type=float, default=0.03)
     parser.add_argument("--back_noise_use_gaussian", action='store_true')
     parser.add_argument("--max_perlin_scale", type=int, default=6)
     parser.add_argument("--max_sigma", type=int, default=60)
     parser.add_argument("--min_sigma", type=int, default=25)
-
+    parser.add_argument("--max_beta_scale", type=float, default=0.8)
+    parser.add_argument("--min_beta_scale", type=float, default=0.5)
     # step 3. preparing accelerator')
     args = parser.parse_args()
     passing_mvtec_argument(args)
     main(args)
+

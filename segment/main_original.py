@@ -26,7 +26,7 @@ def main(args):
             cat_dir = os.path.join(base_folder, f'{cat}')
             train_good_dir = os.path.join(cat_dir, 'train/good')
 
-            train_rgb_dir = os.path.join(train_good_dir, 'rgb')
+            train_rgb_dir = os.path.join(train_good_dir, 'rgb_origin')
             train_object_mask_dir = os.path.join(train_good_dir, 'object_mask')
             os.makedirs(train_object_mask_dir, exist_ok=True)
 

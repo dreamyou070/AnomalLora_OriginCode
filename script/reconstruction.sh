@@ -1,8 +1,8 @@
 # !/bin/bash
 
-port_number=50022
-obj_name='hazelnut'
-caption='hazelnut'
+port_number=50015
+obj_name='zipper'
+caption='zipper'
 
 layer_folder="layer_3"
 sub_folder="up_16_32_64"
@@ -23,4 +23,4 @@ accelerate launch --config_file ../../../gpu_config/gpu_0_config \
                                     'up_blocks_2_attentions_2_transformer_blocks_0_attn2',
                                     'up_blocks_1_attentions_2_transformer_blocks_0_attn2',]" \
  --d_dim 320 --use_position_embedder --position_embedding_layer ${position_embedding_layer} \
- --threds [0.5] --object_crop
+ --threds [0.5]

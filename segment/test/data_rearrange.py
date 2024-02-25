@@ -22,7 +22,7 @@ def main(args):
             os.makedirs(train_ex_dir, exist_ok=True)
             train_good_dir = os.path.join(train_dir, 'good')
 
-            train_ex_rgb_dir = os.path.join(train_ex_dir, 'rgb')
+            train_ex_rgb_dir = os.path.join(train_ex_dir, 'rgb_origin')
             os.makedirs(train_ex_rgb_dir, exist_ok=True)
             train_ex_gt_dir = os.path.join(train_ex_dir, 'gt')
             os.makedirs(train_ex_gt_dir, exist_ok=True)
@@ -32,7 +32,7 @@ def main(args):
             train_ex_good_gt_dir = os.path.join(train_ex_gt_dir, 'good')
             os.makedirs(train_ex_good_gt_dir, exist_ok=True)
 
-            train_good_rgb_dir = os.path.join(train_good_dir, 'rgb')
+            train_good_rgb_dir = os.path.join(train_good_dir, 'rgb_origin')
             images = os.listdir(train_good_rgb_dir)
 
             train_good_num = len(images)
@@ -48,7 +48,7 @@ def main(args):
             # ---------------------------------------------------------------------------------------- #
             validation_dir = os.path.join(cat_dir, 'validation')
             validation_good_dir = os.path.join(validation_dir, 'good')
-            validation_good_rgb_dir = os.path.join(validation_good_dir, 'rgb')
+            validation_good_rgb_dir = os.path.join(validation_good_dir, 'rgb_origin')
             images = os.listdir(validation_good_rgb_dir)
             val_good_num = len(images)
             for image in images:
@@ -70,7 +70,7 @@ def main(args):
             for defect in defets:
                 if 'good' not in defect:
                     org_defect_dir = os.path.join(test_dir, defect)
-                    org_defect_rgb_dir = os.path.join(org_defect_dir, 'rgb')
+                    org_defect_rgb_dir = os.path.join(org_defect_dir, 'rgb_origin')
                     org_defect_gt_dir = os.path.join(org_defect_dir, 'gt')
 
                     train_defect_rgb_dir = os.path.join(train_ex_rgb_dir, defect)

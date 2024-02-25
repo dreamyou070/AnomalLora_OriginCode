@@ -26,7 +26,7 @@ def parse_user_arguments():
 
     parser.add_argument('--metrics_folder',
                         default="./metrics/",
-                        help="""Path to the folder that contains the evaluation
+                        help="""Path to the files that contains the evaluation
                                 results.""")
 
     return parser.parse_args()
@@ -38,7 +38,7 @@ def extract_table_rows(metrics_folder, metric):
     evaluated experiment.
 
     Args:
-        metrics_folder: Base folder that contains evaluation results.
+        metrics_folder: Base files that contains evaluation results.
         metric:         Name of the metric to be extracted. Choose between
                         'au_pro' for localization and
                         'au_roc' for classification.
