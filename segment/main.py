@@ -52,11 +52,17 @@ def main(args):
 
                 # [2]
                 h, w, c = np_img.shape
-                input_point = np.array([[0, 0],])
-                                        #[int(h/2),int(w/2)]])
-                input_label = np.array([1,1]) # 1 indicates a foreground point
+                start_h, end_h = int(h / 5), int(h * 4 / 5)
+                start_w, end_w = int(w / 5), int(w * 4 / 5)
+
+                #input_point = np.array([[0, 0],])
+                #input_label = np.array([1,1]) # 1 indicates a foreground point
                 input_label = np.array([1])  # 1 indicates a foreground point
-                masks, scores, logits = predictor.predict(point_coords=input_point,
+
+                #masks, scores, logits = predictor.predict(point_coords=input_point,
+                #                                          point_labels=input_label,
+                #                                          multimask_output=True, )
+                masks, scores, logits = predictor.predict(box = [start_h, end_h, start_w, end_w],
                                                           point_labels=input_label,
                                                           multimask_output=True, )
                 for i, (mask, score) in enumerate(zip(masks, scores)):
