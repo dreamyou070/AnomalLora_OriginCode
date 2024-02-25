@@ -1,11 +1,11 @@
 #! /bin/bash
 
 bench_mark="MVTec3D-AD"
-class_name="foam"
+class_name="bootle"
 dataset_dir="../../../MyData/anomaly_detection/${bench_mark}"
 layer_folder="layer_3"
 sub_folder="up_16_32_64"
-folder_name="zero_timestep_sigma_max_60_min_sigma_25_max_perlin_scale_6_beta_scale_factor_0.95_max_beta_scale_0.93_min_beta_scale_0.85"
+folder_name="sigma_max_60_min_sigma_25_max_perlin_scale_6_max_beta_scale_0.8_min_beta_scale_0.5_back_perlin_cropping_test_anomal_p_0.01_new_code"
 output_dir="metrics"
 
 python ../evaluation/evaluation_code_MVTec3D-AD/evaluate_experiment.py \
