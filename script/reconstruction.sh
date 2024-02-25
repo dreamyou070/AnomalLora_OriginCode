@@ -1,8 +1,8 @@
 # !/bin/bash
 
-port_number=50014
-obj_name='wood'
-caption='wood'
+port_number=50013
+obj_name='transistor'
+caption='transistor'
 
 layer_folder="layer_3"
 sub_folder="up_16_32_64"
