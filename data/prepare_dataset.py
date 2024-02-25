@@ -15,6 +15,10 @@ def call_dataset(args) :
     else:
         root_dir = os.path.join(args.data_path, f'{args.obj_name}/train')
 
+    if args.cropping_test:
+        root_dir = os.path.join(args.data_path, f'{args.obj_name}/train_cropping')
+
+
     # [2] set anomaly source path
     if args.use_small_anomal:
         args.anomal_source_path = os.path.join(args.data_path, f"anomal_source_{args.obj_name}")
