@@ -18,15 +18,12 @@ def call_dataset(args) :
     if args.cropping_test:
         root_dir = os.path.join(args.data_path, f'{args.obj_name}/train_cropping')
 
-
     # [2] set anomaly source path
     if args.use_small_anomal:
         args.anomal_source_path = os.path.join(args.data_path, f"anomal_source_{args.obj_name}")
 
     data_class = MVTecDRAEMTrainDataset
-    if args.cropping_test :
-        data_class = MVTecDRAEMTrainDataset_Cropping
-        print(f'cropping_test clss = {data_class.__class__.__name__}')
+
     dataset = data_class(root_dir=root_dir,
                                      anomaly_source_path=args.anomal_source_path,
                                      resize_shape=[512, 512],
