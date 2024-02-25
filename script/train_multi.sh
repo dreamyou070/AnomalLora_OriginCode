@@ -1,5 +1,5 @@
 # !/bin/bash
-port_number=51239
+port_number=51240
 pretrained_model_name_or_path="../../../pretrained_stable_diffusion/stable-diffusion-v1-5/v1-5-pruned.safetensors"
 obj_name='hazelnut'
 trigger_word='hazelnut'
@@ -7,14 +7,14 @@ bench_mark='MVTec'
 
 layer_folder="layer_3"
 sub_folder="up_16_32_64"
-folder_name="sigma_max_60_min_sigma_25_max_perlin_scale_6_max_beta_scale_0.8_min_beta_scale_0.5_back_perlin_cropping_test"
+folder_name="sigma_max_60_min_sigma_25_max_perlin_scale_6_max_beta_scale_0.8_min_beta_scale_0.5_back_perlin_cropping_test_anomal_p_0.01"
 output_dir="../../result/${bench_mark}/${obj_name}/${layer_folder}/${sub_folder}/${folder_name}"
 # --use_noise_scheduler --min_timestep 399 --max_timestep 400 \
 # --use_text_time_embedding
 # --do_dist_loss --mahalanobis_only_object --mahalanobis_normalize --dist_loss_with_max \
 # --test_noise_predicting_task_loss
 
-accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_config \
+accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_5_config \
  --main_process_port $port_number ../train_multi.py \
  --log_with wandb \
  --output_dir ${output_dir} \
