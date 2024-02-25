@@ -1,8 +1,8 @@
 # !/bin/bash
 
-port_number=50012
-obj_name='capsule'
-caption='capsule'
+port_number=50013
+obj_name='hazelnut'
+caption='hazelnut'
 
 layer_folder="layer_3"
 sub_folder="up_16_32_64"
