@@ -168,12 +168,20 @@ def main(args):
                                     w_indexs.append(w_i)
                         h_start, h_end = min(h_indexs), max(h_indexs)
                         w_start, w_end = min(w_indexs), max(w_indexs)
+
+                        h_pad = 0.02 * h
+                        w_pad = 0.02 * w
+                        h_start = h_start - h_pad if h_start - h_pad > 0 else 0
+                        h_end = h_end + h_pad if h_end + h_pad < h else h
+                        w_start = w_start - w_pad if w_start - w_pad > 0 else 0
+                        w_end = w_end + w_pad if w_end + w_pad < w else w
+
                         input_img = pil_img.crop((w_start, h_start, w_end, h_end))
                     else :
                         input_img = pil_img
                     trg_h, trg_w = input_img.size
-                    if accelerator.is_main_process:
 
+                    if accelerator.is_main_process:
                         with torch.no_grad():
                             img = np.array(input_img.resize((512, 512)))
                             vae_latent = image2latent(img, vae, weight_dtype)
@@ -198,12 +206,14 @@ def main(args):
                             normal_map_pil.save(os.path.join(save_base_folder, f'{name}_normal.png'))
                             anomaly_map_pil.save( os.path.join(save_base_folder, f'{name}_anomal.png'))
                             anomaly_map_pil.save(os.path.join(answer_anomal_folder, f'{name}.tiff'))
+                    controller.reset()
+                    normal_activator.reset()
+                    # [2] gt save
+                    if 'good' not in anomal_folder:
                         gt_img_save_dir = os.path.join(save_base_folder, f'{name}_gt.png')
-                        gt_img_dir = os.path.join(gt_folder, rgb_img)
-                        Image.open(gt_img_dir).resize((org_h, org_w)).save(gt_img_save_dir)
-                        controller.reset()
-                        normal_activator.reset()
-
+                        Image.open(os.path.join(gt_folder, rgb_img)).resize((org_h, org_w)).save(gt_img_save_dir)
+                    # [3] original save
+                    Image.open(rgb_img_dir).convert('RGB').save(os.path.join(save_base_folder, rgb_img))
             # ---------------------------------------------------------------------------------------------------------
             # [2] train path
             train_img_folder = os.path.join(parent, 'train')
@@ -232,8 +242,17 @@ def main(args):
                                 if object_mask_np[h_i, w_i] > 0:
                                     h_indexs.append(h_i)
                                     w_indexs.append(w_i)
+
                         h_start, h_end = min(h_indexs), max(h_indexs)
                         w_start, w_end = min(w_indexs), max(w_indexs)
+
+                        h_pad = 0.02 * h
+                        w_pad = 0.02 * w
+                        h_start = h_start - h_pad if h_start - h_pad > 0 else 0
+                        h_end = h_end + h_pad if h_end + h_pad < h else h
+                        w_start = w_start - w_pad if w_start - w_pad > 0 else 0
+                        w_end = w_end + w_pad if w_end + w_pad < w else w
+
                         input_img = pil_img.crop((w_start, h_start, w_end, h_end))
                     else :
                         input_img = pil_img
@@ -264,8 +283,7 @@ def main(args):
                             normal_map_pil.save(os.path.join(save_base_folder, f'{name}_normal.png'))
                             anomaly_map_pil.save( os.path.join(save_base_folder, f'{name}_anomal.png'))
                             anomaly_map_pil.save(os.path.join(answer_anomal_folder, f'{name}.tiff'))
-                        controller.reset()
-                        normal_activator.reset()
+                        Image.open(rgb_img_dir).convert('RGB').save(os.path.join(save_base_folder, rgb_img))
         print(f'Model To Original')
         for k in raw_state_dict_orig.keys():
             raw_state_dict[k] = raw_state_dict_orig[k]
