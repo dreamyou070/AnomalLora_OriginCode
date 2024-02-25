@@ -1,6 +1,6 @@
 # !/bin/bash
 
-port_number=50012
+port_number=50013
 obj_name='capsule'
 caption='capsule'
 
