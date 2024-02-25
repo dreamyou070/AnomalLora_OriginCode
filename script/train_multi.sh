@@ -23,7 +23,6 @@ accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_5_config \
  --anomal_source_path "../../../MyData/anomal_source" \
  --anomal_only_on_object \
  --anomal_p 0.04 \
- --bgrm_test \
  --trigger_word "${trigger_word}" --obj_name "${obj_name}" \
  --train_unet --train_text_encoder --d_dim 320 --latent_res 64 \
  --network_dim 64 --network_alpha 4 \

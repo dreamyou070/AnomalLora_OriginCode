@@ -322,7 +322,6 @@ if __name__ == "__main__":
     parser.add_argument("--latent_res", type=int, default=64)
     parser.add_argument("--use_small_anomal", action='store_true')
     parser.add_argument("--beta_scale_factor", type=float, default=0.8)
-    parser.add_argument("--bgrm_test", action='store_true')
     parser.add_argument("--anomal_p", type=float, default=0.04)
     # step 3. preparing accelerator
     parser.add_argument("--mixed_precision", type=str, default="no", choices=["no", "fp16", "bf16"], )
