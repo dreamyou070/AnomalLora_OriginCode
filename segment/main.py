@@ -63,7 +63,7 @@ def main(args):
                 #                                          point_labels=input_label,
                 #                                          multimask_output=True, )
 
-                masks, scores, logits = predictor.predict(box = np.array(start_h, end_h, start_w, end_w),
+                masks, scores, logits = predictor.predict(box = np.array([start_h, end_h, start_w, end_w]),
                                                           point_labels=input_label,
                                                           multimask_output=True, )
                 for i, (mask, score) in enumerate(zip(masks, scores)):
