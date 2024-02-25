@@ -51,6 +51,30 @@ def inference(latent,
 
     return cls_map_pil, normal_map_pil, anomaly_map_pil
 
+
+def generate_object_point(object_mask_pil):
+    object_mask_np = np.array(object_mask_pil)
+    h, w = object_mask_np.shape
+    h_indexs, w_indexs = [], []
+    for h_i in range(h):
+        for w_i in range(w):
+            if object_mask_np[h_i, w_i] > 0:
+                h_indexs.append(h_i)
+                w_indexs.append(w_i)
+
+    h_start, h_end = min(h_indexs), max(h_indexs)
+    w_start, w_end = min(w_indexs), max(w_indexs)
+
+    h_pad = 0.02 * h
+    w_pad = 0.02 * w
+    h_start = h_start - h_pad if h_start - h_pad > 0 else 0
+    h_end = h_end + h_pad if h_end + h_pad < h else h
+    w_start = w_start - w_pad if w_start - w_pad > 0 else 0
+    w_end = w_end + w_pad if w_end + w_pad < w else w
+    h_start, h_end, w_start, w_end = int(h_start), int(h_end), int(w_start), int(w_end)
+
+    return h_start, h_end, w_start, w_end
+
 def main(args):
 
     print(f'\n step 1. accelerator')
@@ -157,30 +181,12 @@ def main(args):
 
                     # [1] read object mask
                     if args.object_crop :
-                        object_mask_pil  = Image.open(os.path.join(object_mask_folder, rgb_img)).convert('L')
-                        object_mask_np = np.array(object_mask_pil)
-                        h, w = object_mask_np.shape
-                        h_indexs, w_indexs = [], []
-                        for h_i in range(h):
-                            for w_i in range(w):
-                                if object_mask_np[h_i, w_i] > 0:
-                                    h_indexs.append(h_i)
-                                    w_indexs.append(w_i)
-                        h_start, h_end = min(h_indexs), max(h_indexs)
-                        w_start, w_end = min(w_indexs), max(w_indexs)
-
-                        h_pad = 0.02 * h
-                        w_pad = 0.02 * w
-                        h_start = h_start - h_pad if h_start - h_pad > 0 else 0
-                        h_end = h_end + h_pad if h_end + h_pad < h else h
-                        w_start = w_start - w_pad if w_start - w_pad > 0 else 0
-                        w_end = w_end + w_pad if w_end + w_pad < w else w
-
+                        object_mask_pil = Image.open(os.path.join(object_mask_folder, rgb_img)).convert('L')
+                        h_start, h_end, w_start, w_end = generate_object_point(object_mask_pil)
                         input_img = pil_img.crop((w_start, h_start, w_end, h_end))
                     else :
                         input_img = pil_img
                     trg_h, trg_w = input_img.size
-
                     if accelerator.is_main_process:
                         with torch.no_grad():
                             img = np.array(input_img.resize((512, 512)))
@@ -235,26 +241,8 @@ def main(args):
 
                     # [1] read object mask
                     if args.object_crop :
-                        object_mask_pil  = Image.open(os.path.join(object_mask_folder, rgb_img)).convert('L')
-                        object_mask_np = np.array(object_mask_pil)
-                        h, w = object_mask_np.shape
-                        h_indexs, w_indexs = [], []
-                        for h_i in range(h):
-                            for w_i in range(w):
-                                if object_mask_np[h_i, w_i] > 0:
-                                    h_indexs.append(h_i)
-                                    w_indexs.append(w_i)
-
-                        h_start, h_end = min(h_indexs), max(h_indexs)
-                        w_start, w_end = min(w_indexs), max(w_indexs)
-
-                        h_pad = 0.02 * h
-                        w_pad = 0.02 * w
-                        h_start = h_start - h_pad if h_start - h_pad > 0 else 0
-                        h_end = h_end + h_pad if h_end + h_pad < h else h
-                        w_start = w_start - w_pad if w_start - w_pad > 0 else 0
-                        w_end = w_end + w_pad if w_end + w_pad < w else w
-
+                        object_mask_pil = Image.open(os.path.join(object_mask_folder, rgb_img)).convert('L')
+                        h_start, h_end, w_start, w_end = generate_object_point(object_mask_pil)
                         input_img = pil_img.crop((w_start, h_start, w_end, h_end))
                     else :
                         input_img = pil_img
