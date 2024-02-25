@@ -131,18 +131,16 @@ def main(args):
             answer_base_folder = os.path.join(thred_folder, f'scoring/{args.obj_name}/test')
             os.makedirs(answer_base_folder, exist_ok=True)
 
+            # [1] test path
             test_img_folder = args.data_path
             parent, test_folder = os.path.split(test_img_folder)
-            train_img_folder = os.path.join(parent, 'train')
+
             anomal_folders = os.listdir(test_img_folder)
             for anomal_folder in anomal_folders:
-
                 answer_anomal_folder = os.path.join(answer_base_folder, anomal_folder)
                 os.makedirs(answer_anomal_folder, exist_ok=True)
-
                 save_base_folder = os.path.join(check_base_folder, anomal_folder)
                 os.makedirs(save_base_folder, exist_ok=True)
-
                 anomal_folder_dir = os.path.join(test_img_folder, anomal_folder)
                 rgb_folder = os.path.join(anomal_folder_dir, 'rgb')
                 gt_folder = os.path.join(anomal_folder_dir, 'gt')
@@ -175,7 +173,9 @@ def main(args):
                         controller.reset()
                         normal_activator.reset()
 
-
+            # ---------------------------------------------------------------------------------------------------------
+            # [2] train path
+            train_img_folder = os.path.join(parent, 'train')
             normal_folder = os.listdir(train_img_folder)
             for normal_folder in normal_folder:
                 save_base_folder = os.path.join(check_base_folder, f'train_{normal_folder}')
@@ -203,7 +203,6 @@ def main(args):
                             anomaly_map_pil.save(os.path.join(save_base_folder, f'{name}_anomaly.png'))
                         controller.reset()
                         normal_activator.reset()
-
         print(f'Model To Original')
         for k in raw_state_dict_orig.keys():
             raw_state_dict[k] = raw_state_dict_orig[k]
