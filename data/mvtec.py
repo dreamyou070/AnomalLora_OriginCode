@@ -208,6 +208,7 @@ class MVTecDRAEMTrainDataset(Dataset):
                     break
             blur_3D_mask = np.expand_dims(perlin_thr, axis=2)  # [512,512,3]
             while True :
+                # more beta means sensetive
                 beta = torch.rand(1).numpy()[0] * beta_scale_factor
                 if max_beta_scale > beta > min_beta_scale :
                     break
