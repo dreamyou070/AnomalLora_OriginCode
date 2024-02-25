@@ -113,7 +113,7 @@ def main(args):
 
         # [3] files
         parent, _ = os.path.split(args.network_folder)
-        recon_base_folder = os.path.join(parent, 'reconstruction_infer_without_crop')
+        recon_base_folder = os.path.join(parent, 'reconstruction_infer_with_crop')
         os.makedirs(recon_base_folder, exist_ok=True)
         lora_base_folder = os.path.join(recon_base_folder, f'lora_epoch_{lora_epoch}')
         os.makedirs(lora_base_folder, exist_ok=True)
