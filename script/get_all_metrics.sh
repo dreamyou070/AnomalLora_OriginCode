@@ -1,6 +1,6 @@
 #! /bin/bash
 
-bench_mark="MVTec3D-AD"
+bench_mark="MVTec"
 class_name="leather"
 layer_folder="layer_3"
 sub_folder="up_16_32_64"
