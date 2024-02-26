@@ -103,7 +103,7 @@ def main(args):
     loss_list = []
     controller = AttentionStore()
     register_attention_control(unet, controller)
-    
+
     for epoch in range(args.start_epoch, args.max_train_epochs):
         epoch_loss_total = 0
         accelerator.print(f"\nepoch {epoch + 1}/{args.start_epoch + args.max_train_epochs}")

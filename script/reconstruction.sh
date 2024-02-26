@@ -1,12 +1,12 @@
 # !/bin/bash
 
-port_number=51413
-obj_name='transistor'
-caption='transistor'
+port_number=51515
+obj_name='zipper'
+caption='zipper'
 
 layer_folder="layer_3"
 sub_folder="up_16_32_64"
-folder_name="sigma_max_60_min_sigma_25_max_perlin_scale_6_max_beta_scale_0.7_min_beta_scale_0.4_not_rot_not_backnoise"
+folder_name="sigma_max_60_min_sigma_25_max_perlin_scale_6_max_beta_scale_0.6_min_beta_scale_0_not_rot"
 bench_mark="MVTec"
 position_embedding_layer="down_blocks_0_attentions_0_transformer_blocks_0_attn1"
 
