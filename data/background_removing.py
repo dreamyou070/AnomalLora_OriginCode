@@ -12,16 +12,9 @@ os.makedirs(object_folder, exist_ok=True)
 images = os.listdir(rgb_folder)
 api_key = 'iuUxT3T8g4BeqasbkP5EPghZ'
 rmbg = RemoveBg(api_key, "error.log")
-trg_function = rmbg.remove_background_from_img_file
-help(trg_function)
-"""
 
 for image in images:
     img_dir = os.path.join(rgb_folder, image)
-    
-    rmbg.remove_background_from_img_file(img_file_path = img_dir,
-                                         new_file_name=os.path.join(object_folder, image))
-    rmbg.close()
+    rmbg.remove_background_from_img_file(img_file_path = img_dir)
     print(f'processed {image}')
-    break
-"""
+    
