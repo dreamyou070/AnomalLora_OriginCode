@@ -299,6 +299,7 @@ class MVTecDRAEMTrainDataset(Dataset):
             anomal_mask_torch = torch.tensor(np.where(anomal_np > 0.5, 1, 0))
             back_anomal_img = img
             back_anomal_mask_torch = anomal_mask_torch
+
         else :
             # [4] augment image (pseudo anomal)
             anomal_dir = None
@@ -322,9 +323,10 @@ class MVTecDRAEMTrainDataset(Dataset):
                                                                beta_scale_factor=self.beta_scale_factor,
                                                                object_position=object_position) # [512,512,3], [512,512]
             # [4.2] background img
-            background_idx = idx % len(self.background_dirs)
-            background_dir = self.background_dirs[background_idx]
-            background_img = self.load_image(background_dir, self.resize_shape[0], self.resize_shape[1])
+            #background_idx = idx % len(self.background_dirs)
+            #background_dir = self.background_dirs[background_idx]
+            #background_img = self.load_image(background_dir, self.resize_shape[0], self.resize_shape[1])
+            background_img = img * 0
 
             if argument.back_noise_use_gaussian :
                 back_anomal_img, back_anomal_mask_torch = self.gaussian_augment_image(img,
