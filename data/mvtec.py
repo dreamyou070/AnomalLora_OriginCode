@@ -283,6 +283,15 @@ class MVTecDRAEMTrainDataset(Dataset):
         img_name = os.path.split(img_path)[-1]
         img = self.load_image(img_path, self.resize_shape[0], self.resize_shape[1])  # np.array,
         img = aug(image=img)
+        name, class_folder = self.get_img_name(img_path)
+
+        # [2] background
+        object_mask_dir = self.get_object_mask_dir(img_path)
+        object_img = self.load_image(object_mask_dir, self.latent_res, self.latent_res, type='L')
+        object_img = aug(image=object_img)
+        object_mask_np = np.where((np.array(object_img, np.uint8) / 255) == 0, 0, 1)  # object = 1
+        object_mask = torch.tensor(object_mask_np)  # shape = [64,64], 0 = background, 1 = object
+
         if 'miss' in img_name:
             anomal_map_dir = os.path.join(self.background_dir,img_name)
             anomal_img = img
@@ -291,16 +300,6 @@ class MVTecDRAEMTrainDataset(Dataset):
             back_anomal_img = img
             back_anomal_mask_torch = anomal_mask_torch
         else :
-
-            name, class_folder = self.get_img_name(img_path)
-
-            # [2] background
-            object_mask_dir = self.get_object_mask_dir(img_path)
-            object_img = self.load_image(object_mask_dir, self.latent_res, self.latent_res, type='L')
-            object_img = aug(image=object_img)
-            object_mask_np = np.where((np.array(object_img, np.uint8) / 255) == 0, 0, 1) # object = 1
-            object_mask = torch.tensor(object_mask_np) # shape = [64,64], 0 = background, 1 = object
-
             # [4] augment image (pseudo anomal)
             anomal_dir = None
             if len(self.anomaly_source_paths) > 0:
