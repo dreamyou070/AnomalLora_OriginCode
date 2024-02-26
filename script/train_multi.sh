@@ -7,7 +7,7 @@ bench_mark='MVTec'
 
 layer_folder="layer_3"
 sub_folder="up_16_32_64"
-folder_name="rotating_test"
+folder_name="rotating_20240226"
 output_dir="../../result/${bench_mark}/${obj_name}/${layer_folder}/${sub_folder}/${folder_name}"
 
 accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_5_config \

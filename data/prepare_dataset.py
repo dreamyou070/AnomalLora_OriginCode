@@ -24,8 +24,6 @@ def call_dataset(args) :
                          anomal_only_on_object=args.anomal_only_on_object,
                          anomal_training=True,
                          latent_res=args.latent_res,
-                         kernel_size=args.kernel_size,
-                         beta_scale_factor=args.beta_scale_factor,
                          do_anomal_sample =args.do_anomal_sample,)
     dataloader = torch.utils.data.DataLoader(dataset,
                                              batch_size=args.batch_size,

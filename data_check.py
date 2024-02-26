@@ -11,22 +11,19 @@ def main(args):
 
     print(f'\n step 2. dataset')
     obj_name = args.obj_name
-    root_dir = '/home/dreamyou070/MyData/anomaly_detection/MVTec/metal_nut/train_1'
+    root_dir = f'/home/dreamyou070/MyData/anomaly_detection/MVTec/{obj_name}/train_object_detector'
     num_images = len(os.listdir(root_dir))
     print(f'num_images: {num_images}')
     args.anomaly_source_path = '/home/dreamyou070/MyData/anomal_source'
-    #tokenizer = load_tokenizer(args)
-
     dataset = MVTecDRAEMTrainDataset_Cropping(root_dir=root_dir,
                                               anomaly_source_path=args.anomaly_source_path,
                                               resize_shape=[512, 512],
-                                              tokenizer = None ,
+                                              tokenizer = None,
                                               caption=obj_name,
                                               use_perlin=True,
                                               anomal_only_on_object=True,
                                               anomal_training=True,
                                               latent_res=64,
-                                              reference_check=False,
                                               do_anomal_sample=True)
 
     train_dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=True)
@@ -58,16 +55,16 @@ def main(args):
         pil_anomaly_mask = Image.fromarray(pil_anomaly_mask)
         pil_anomaly_mask.save(os.path.join(check_base_dir, f'{save_name}_anomal_aug_mask.png'))
 
-        merged_src = sample['bg_anomal_image'].squeeze()
+        merged_src = sample['rotate_image'].squeeze()
         np_merged_src = np.array(((merged_src + 1) / 2) * 255).astype(np.uint8).transpose(1, 2, 0)
         pil_merged_src = Image.fromarray(np_merged_src)
-        pil_merged_src.save(os.path.join(check_base_dir, f'{save_name}_backgrounded.png'))
+        pil_merged_src.save(os.path.join(check_base_dir, f'{save_name}_rotate.png'))
 
-        anomaly_mask = sample['bg_anomal_mask']
+        anomaly_mask = sample['rotate_mask']
         np_anomaly_mask = anomaly_mask.squeeze().numpy()
         pil_anomaly_mask = (np_anomaly_mask * 255).astype(np.uint8)
         pil_anomaly_mask = Image.fromarray(pil_anomaly_mask)
-        pil_anomaly_mask.save(os.path.join(check_base_dir, f'{save_name}_backgrounded_mask.png'))
+        pil_anomaly_mask.save(os.path.join(check_base_dir, f'{save_name}_rotate_mask.png'))
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -75,7 +72,7 @@ if __name__ == "__main__":
     parser.add_argument('--seed', type=int, default=42)
     parser.add_argument('--output_dir', type=str, default='output')
     parser.add_argument('--data_path', type=str, default=r'../../../MyData/anomaly_detection/MVTec3D-AD')
-    parser.add_argument('--obj_name', type=str, default='metal_nut')
+    parser.add_argument('--obj_name', type=str, default='transistor')
     parser.add_argument('--anomaly_source_path', type=str,default=r'/home/dreamyou070/MyData/anomal_source')
     parser.add_argument('--trigger_word', type=str)
     # ------------------------------------------------------------------------------------ #
