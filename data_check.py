@@ -11,10 +11,10 @@ def main(args):
 
     print(f'\n step 2. dataset')
     obj_name = args.obj_name
-    root_dir = '/home/dreamyou070/MyData/anomaly_detection/MVTec/transistor/train_1'
+    root_dir = '/home/dreamyou070/MyData/anomaly_detection/MVTec/metal_nut/train_1'
     num_images = len(os.listdir(root_dir))
     print(f'num_images: {num_images}')
-    args.anomaly_source_path = f'anomal_source'
+    args.anomaly_source_path = '/home/dreamyou070/MyData/anomal_source'
     #tokenizer = load_tokenizer(args)
 
     dataset = MVTecDRAEMTrainDataset_Cropping(root_dir=root_dir,
@@ -94,6 +94,11 @@ if __name__ == "__main__":
     parser.add_argument("--min_sigma", type=int, default=25)
     parser.add_argument("--max_beta_scale", type=float, default=0.8)
     parser.add_argument("--min_beta_scale", type=float, default=0.5)
+    parser.add_argument("--max_perlin_scale", type=int, default=6)
+
+    parser.add_argument("--do_rot_augment", action='store_true')
+    parser.add_argument("--use_white_background", action='store_true')
+
     # step 3. preparing accelerator')
     args = parser.parse_args()
     passing_mvtec_argument(args)
