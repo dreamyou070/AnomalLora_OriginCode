@@ -25,7 +25,6 @@ accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_5_config \
                     'up_blocks_2_attentions_2_transformer_blocks_0_attn2',
                     'up_blocks_1_attentions_2_transformer_blocks_0_attn2',]" \
  --start_epoch 0 --max_train_epochs 30 \
- --do_attn_loss --do_map_loss \
- --do_rot_augment \
+ --do_attn_loss --do_map_loss --do_object_detection --do_rot_augment \
  --max_sigma 60 --min_sigma 25 --max_perlin_scale 6 \
  --max_beta_scale 0.6 --min_beta_scale 0
