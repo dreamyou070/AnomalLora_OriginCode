@@ -186,13 +186,13 @@ class MVTecDRAEMTrainDataset(Dataset):
                 # smoothing
                 perlin_thr = cv2.GaussianBlur(perlin_thr, (3,3), 0)
                 # only on object
+                total_object_pixel = int(self.resize_shape[0] * self.resize_shape[1])
                 if object_position is not None:
                     total_object_pixel = np.sum(object_position)
                     perlin_thr = perlin_thr * object_position
                 binary_2D_mask = (np.where(perlin_thr == 0, 0, 1)).astype(np.float32)  # [512,512,3]
-                if object_position is not None:
-                    if np.sum(binary_2D_mask) > anomal_p * total_object_pixel :
-                        break
+                if np.sum(binary_2D_mask) > anomal_p * total_object_pixel :
+                    break
             blur_3D_mask = np.expand_dims(perlin_thr, axis=2)  # [512,512,3]
             while True :
                 # [1] how transparent the noise

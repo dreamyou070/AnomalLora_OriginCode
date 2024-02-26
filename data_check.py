@@ -20,7 +20,7 @@ def main(args):
                                               tokenizer = None,
                                               caption=obj_name,
                                               use_perlin=True,
-                                              anomal_only_on_object=True,
+                                              anomal_only_on_object=False,
                                               anomal_training=True,
                                               latent_res=64,
                                               do_anomal_sample=True)
