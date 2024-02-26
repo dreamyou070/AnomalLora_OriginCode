@@ -302,16 +302,18 @@ class MVTecDRAEMTrainDataset(Dataset):
                                                                anomaly_source_img, # 512
                                                                beta_scale_factor=self.beta_scale_factor,
                                                                object_position=object_position) # [512,512,3], [512,512]
-        # [4] background
-        background_img = img * 0
-        if argument.back_noise_use_gaussian:
-            back_anomal_img, back_anomal_mask_torch = self.gaussian_augment_image(img,
-                                                                                  aug(image=background_img),
-                                                                                  object_position=object_position)
-        else:
-            back_anomal_img, back_anomal_mask_torch = self.augment_image(img, aug(image=background_img),
-                                                                         beta_scale_factor=self.beta_scale_factor,
-                                                                         object_position=object_position)
+            """
+            # [4] background
+            background_img = img * 0        
+            if argument.back_noise_use_gaussian:
+                back_anomal_img, back_anomal_mask_torch = self.gaussian_augment_image(img,
+                                                                                      aug(image=background_img),
+                                                                                      object_position=object_position)
+            else:
+                back_anomal_img, back_anomal_mask_torch = self.augment_image(img, aug(image=background_img),
+                                                                             beta_scale_factor=self.beta_scale_factor,
+                                                                             object_position=object_position)
+            """
         # [5] rotate image
         rorate_angle = 180
         rotate_img = Image.open(img_path).resize((self.resize_shape[0],self.resize_shape[1])).rotate(rorate_angle) # PIL image
@@ -319,8 +321,8 @@ class MVTecDRAEMTrainDataset(Dataset):
 
         sub_mask_pil = Image.open(object_mask_dir).convert('L').resize((self.latent_res, self.latent_res)).rotate(rorate_angle)
         sub_mask_np = np.array(sub_mask_pil)
-        final_mask = np.where((object_mask_np + sub_mask_np) > 0, 255, 0)
-        print(f'final_mask : {final_mask.shape}')
+        final_mask = np.where((object_mask_np + sub_mask_np) > 0, 255, 0) / 255
+        rotate_mask = torch.tensor(final_mask)  # shape = [64,64], 0 = background, 1 = object
 
         if self.tokenizer is not None :
             input_ids, attention_mask = self.get_input_ids(self.caption) # input_ids = [77]
@@ -329,10 +331,16 @@ class MVTecDRAEMTrainDataset(Dataset):
 
         return {'image': self.transform(img),               # original image
                 "object_mask": object_mask.unsqueeze(0),    # [1, 64, 64]
+
                 'anomal_image': self.transform(anomal_img),
                 "anomal_mask": anomal_mask_torch,
-                'bg_anomal_image': self.transform(back_anomal_img),          # masked image
-                'bg_anomal_mask': back_anomal_mask_torch,
+
+                #'bg_anomal_image': self.transform(back_anomal_img),          # masked image
+                #'bg_anomal_mask': back_anomal_mask_torch,
+
+                'rotate_image': self.transform(rotate_np),
+                'rotate_mask' : rotate_mask.unsqueeze(0),
+
                 'idx': idx,
                 'input_ids': input_ids.squeeze(0),
                 'caption': self.caption,
