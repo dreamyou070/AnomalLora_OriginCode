@@ -282,7 +282,7 @@ class MVTecDRAEMTrainDataset(Dataset):
         # [3] anomaly
         anomal_img = img
         anomal_mask_torch = object_mask
-
+        anomal_name = 'none'
         if len(self.anomaly_source_paths) > 0:
             anomal_src_idx = idx % len(self.anomaly_source_paths)
             anomal_dir = self.anomaly_source_paths[anomal_src_idx]
@@ -290,7 +290,6 @@ class MVTecDRAEMTrainDataset(Dataset):
             name = name.split('.')[0]
             anomal_class = os.path.split(parent)[1]
             anomal_name = f'{anomal_class}_{name}'
-
             object_position = None
             if self.anomal_only_on_object:
                 object_img_aug = aug(image=self.load_image(object_mask_dir, self.resize_shape[0], self.resize_shape[1], type='L') )
