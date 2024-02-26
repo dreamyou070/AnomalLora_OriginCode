@@ -1,12 +1,12 @@
 # !/bin/bash
 
-port_number=51414
-obj_name='wood'
-caption='wood'
+port_number=51010
+obj_name='screw'
+caption='screw'
 
 layer_folder="layer_3"
 sub_folder="up_16_32_64"
-folder_name="sigma_max_60_min_sigma_25_max_perlin_scale_6_max_beta_scale_0.6_min_beta_scale_0_not_rot"
+folder_name="sigma_max_60_min_sigma_25_max_perlin_scale_6_max_beta_scale_0.7_min_beta_scale_0.4"
 bench_mark="MVTec"
 position_embedding_layer="down_blocks_0_attentions_0_transformer_blocks_0_attn1"
 
