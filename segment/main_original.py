@@ -52,8 +52,8 @@ def main(args):
 
                 # [2]
                 h, w, c = np_img.shape
-                input_point = np.array([[0, 0]])
-                input_label = np.array([1])
+                input_point = np.array([[0, 0],[int(h/2), int(w/2)]])
+                input_label = np.array([1,1])
                 masks, scores, logits = predictor.predict(point_coords=input_point,
                                                           point_labels=input_label,
                                                           multimask_output=True, )
@@ -69,6 +69,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--base_folder', type=str,
                         default=r'/home/dreamyou070/MyData/anomaly_detection/MVTec')
-    parser.add_argument('--trg_cat', type=str, default='transistor')
+    parser.add_argument('--trg_cat', type=str, default='metal_nut')
     args = parser.parse_args()
     main(args)
