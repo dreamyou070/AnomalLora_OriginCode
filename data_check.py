@@ -5,7 +5,6 @@ import numpy as np
 import os
 from PIL import Image
 from data.mvtec import passing_mvtec_argument, MVTecDRAEMTrainDataset
-from data.mvtec_cropping import passing_mvtec_argument, MVTecDRAEMTrainDataset_Cropping
 
 def main(args):
 
@@ -15,7 +14,7 @@ def main(args):
     num_images = len(os.listdir(root_dir))
     print(f'num_images: {num_images}')
     args.anomaly_source_path = '/home/dreamyou070/MyData/anomal_source'
-    dataset = MVTecDRAEMTrainDataset_Cropping(root_dir=root_dir,
+    dataset = MVTecDRAEMTrainDataset(root_dir=root_dir,
                                               anomaly_source_path=args.anomaly_source_path,
                                               resize_shape=[512, 512],
                                               tokenizer = None,
