@@ -97,9 +97,7 @@ class MVTecDRAEMTrainDataset(Dataset):
                  latent_res : int = 64,
                  kernel_size : int = 5,
                  beta_scale_factor : float = 0.8,
-                 reference_check : bool = True,
                  do_anomal_sample : bool = True) :
-
 
         # [1] base image
         self.root_dir = root_dir
@@ -115,7 +113,6 @@ class MVTecDRAEMTrainDataset(Dataset):
         if do_anomal_sample :
             assert anomaly_source_path is not None, "anomaly_source_path should be given"
 
-        print(f'Anomaly source path: {anomaly_source_path}')
         if anomaly_source_path is not None:
             self.anomaly_source_paths = []
             for ext in ["png", "jpg"]:
@@ -138,20 +135,11 @@ class MVTecDRAEMTrainDataset(Dataset):
         num_repeat = len(self.rot_augmenters) # 4
         self.image_paths = [image_path for image_path in image_paths for i in range(num_repeat)]
 
-        print(f' img num = {len(self.image_paths)}')
-        print(f' anomal img num = {len(self.anomaly_source_paths)}')
-
         self.anomal_only_on_object = anomal_only_on_object
         self.anomal_training = anomal_training
         self.latent_res = latent_res
         self.kernel_size = kernel_size
         self.beta_scale_factor = beta_scale_factor
-
-        self.reference_check = reference_check
-        # [2] background image
-        self.background_dir = os.path.join(root_dir, "background")
-
-
 
     def __len__(self):
         if len(self.anomaly_source_paths) > 0 :
@@ -160,7 +148,6 @@ class MVTecDRAEMTrainDataset(Dataset):
             return len(self.image_paths)
 
     def torch_to_pil(self, torch_img):
-
         # torch_img = [3, H, W], from -1 to 1
         np_img = np.array(((torch_img + 1) / 2) * 255).astype(np.uint8).transpose(1, 2, 0)
         pil = Image.fromarray(np_img)
@@ -292,25 +279,15 @@ class MVTecDRAEMTrainDataset(Dataset):
         object_mask_np = np.where((np.array(object_img, np.uint8) / 255) == 0, 0, 1)  # object = 1
         object_mask = torch.tensor(object_mask_np)  # shape = [64,64], 0 = background, 1 = object
 
-        if 'miss' in img_name:
-            anomal_map_dir = os.path.join(self.background_dir,img_name)
-            anomal_img = img
-            anomal_np = np.array(Image.open(anomal_map_dir).convert('L').resize((self.latent_res, self.latent_res))) / 255
-            anomal_mask_torch = torch.tensor(np.where(anomal_np > 0.5, 1, 0))
-            back_anomal_img = img
-            back_anomal_mask_torch = anomal_mask_torch
-            anomal_name = 'miss'
-
-        else :
-            # [4] augment image (pseudo anomal)
-            anomal_dir = None
-            if len(self.anomaly_source_paths) > 0:
-                anomal_src_idx = idx % len(self.anomaly_source_paths)
-                anomal_dir = self.anomaly_source_paths[anomal_src_idx]
-                parent, name = os.path.split(anomal_dir)
-                name = name.split('.')[0]
-                anomal_class = os.path.split(parent)[1]
-                anomal_name = f'{anomal_class}_{name}'
+        # [3] anomaly
+        anomal_dir = None
+        if len(self.anomaly_source_paths) > 0:
+            anomal_src_idx = idx % len(self.anomaly_source_paths)
+            anomal_dir = self.anomaly_source_paths[anomal_src_idx]
+            parent, name = os.path.split(anomal_dir)
+            name = name.split('.')[0]
+            anomal_class = os.path.split(parent)[1]
+            anomal_name = f'{anomal_class}_{name}'
 
             object_position = None
             if self.anomal_only_on_object:
@@ -323,20 +300,20 @@ class MVTecDRAEMTrainDataset(Dataset):
                                                                anomaly_source_img, # 512
                                                                beta_scale_factor=self.beta_scale_factor,
                                                                object_position=object_position) # [512,512,3], [512,512]
-            # [4.2] background img
-            #background_idx = idx % len(self.background_dirs)
-            #background_dir = self.background_dirs[background_idx]
-            #background_img = self.load_image(background_dir, self.resize_shape[0], self.resize_shape[1])
-            background_img = img * 0
+        else :
+            anomal_img = img
+            anomal_mask_torch = object_mask
 
-            if argument.back_noise_use_gaussian :
-                back_anomal_img, back_anomal_mask_torch = self.gaussian_augment_image(img,
-                                                                                      aug(image=background_img),
-                                                                                      object_position = object_position)
-            else :
-                back_anomal_img, back_anomal_mask_torch = self.augment_image(img, aug(image=background_img),
-                                                                             beta_scale_factor=self.beta_scale_factor,
-                                                                             object_position=object_position)
+        # [4] background
+        background_img = img * 0
+        if argument.back_noise_use_gaussian :
+            back_anomal_img, back_anomal_mask_torch = self.gaussian_augment_image(img,
+                                                                                  aug(image=background_img),
+                                                                                  object_position = object_position)
+        else :
+            back_anomal_img, back_anomal_mask_torch = self.augment_image(img, aug(image=background_img),
+                                                                         beta_scale_factor=self.beta_scale_factor,
+                                                                         object_position=object_position)
         if self.tokenizer is not None :
             input_ids, attention_mask = self.get_input_ids(self.caption) # input_ids = [77]
         else :
