@@ -195,8 +195,9 @@ class MVTecDRAEMTrainDataset(Dataset):
                     total_object_pixel = np.sum(object_position)
                     perlin_thr = perlin_thr * object_position
                 binary_2D_mask = (np.where(perlin_thr == 0, 0, 1)).astype(np.float32)  # [512,512,3]
-                if np.sum(binary_2D_mask) > anomal_p * total_object_pixel :
-                    break
+                if object_position is not None:
+                    if np.sum(binary_2D_mask) > anomal_p * total_object_pixel :
+                        break
             blur_3D_mask = np.expand_dims(perlin_thr, axis=2)  # [512,512,3]
             while True :
                 # more beta means sensetive
@@ -315,6 +316,14 @@ class MVTecDRAEMTrainDataset(Dataset):
             back_anomal_img, back_anomal_mask_torch = self.augment_image(img, aug(image=background_img),
                                                                          beta_scale_factor=self.beta_scale_factor,
                                                                          object_position=object_position)
+        # [5] rotate image
+
+        #rotate_img = Image.open(img_path).rotate(180)
+        #sub_mask = np.array(Image.open(mask_dir).convert('L').rotate(rotate_angle))
+        #sub_mask_np = np.array(sub_mask)
+        #final_mask = np.where((mask_np + sub_mask_np) > 0, 255, 0)
+
+
 
 
         if self.tokenizer is not None :
