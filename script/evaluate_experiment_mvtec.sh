@@ -1,7 +1,7 @@
 #! /bin/bash
 
 bench_mark="MVTec"
-class_name="wood"
+class_name="zipper"
 dataset_dir="../../../MyData/anomaly_detection/${bench_mark}"
 layer_folder="layer_3"
 sub_folder="up_16_32_64"
