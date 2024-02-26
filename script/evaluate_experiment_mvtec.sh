@@ -5,7 +5,7 @@ class_name="zipper"
 dataset_dir="../../../MyData/anomaly_detection/${bench_mark}"
 layer_folder="layer_3"
 sub_folder="up_16_32_64"
-folder_name="sigma_max_60_min_sigma_25_max_perlin_scale_6_max_beta_scale_0.7_min_beta_scale_0.4"
+folder_name="sigma_max_60_min_sigma_25_max_perlin_scale_6_max_beta_scale_0.6_min_beta_scale_0_not_rot"
 
 base_dir="../../result/${bench_mark}/${class_name}/${layer_folder}/${sub_folder}/${folder_name}/reconstruction" \
 output_dir="metrics"
