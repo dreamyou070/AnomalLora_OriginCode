@@ -94,7 +94,6 @@ if __name__ == "__main__":
     parser.add_argument("--min_sigma", type=int, default=25)
     parser.add_argument("--max_beta_scale", type=float, default=0.8)
     parser.add_argument("--min_beta_scale", type=float, default=0.5)
-    parser.add_argument("--max_perlin_scale", type=int, default=6)
 
     parser.add_argument("--do_rot_augment", action='store_true')
     parser.add_argument("--use_white_background", action='store_true')
