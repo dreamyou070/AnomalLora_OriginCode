@@ -177,7 +177,7 @@ class MVTecDRAEMTrainDataset(Dataset):
                 perlin_scalex = 2 ** (torch.randint(min_perlin_scale, max_perlin_scale, (1,)).numpy()[0])
                 perlin_scaley = 2 ** (torch.randint(min_perlin_scale, max_perlin_scale, (1,)).numpy()[0])
                 perlin_noise = rand_perlin_2d_np((self.resize_shape[0], self.resize_shape[1]), (perlin_scalex, perlin_scaley))
-                threshold = 0.5
+                threshold = 0.3
                 perlin_thr = np.where(perlin_noise > threshold, np.ones_like(perlin_noise), np.zeros_like(perlin_noise))
                 # smoothing
                 perlin_thr = cv2.GaussianBlur(perlin_thr, (3,3), 0)
