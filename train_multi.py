@@ -178,7 +178,7 @@ def main(args):
                 if args.test_noise_predicting_task_loss:
                     normal_activator.collect_noise_prediction_loss(noise_pred, noise, anomal_position_vector)
             # --------------------------------------------------------------------------------------------------------- #
-            """
+
             if args.do_background_masked_sample:
                 with torch.no_grad():
                     latents = vae.encode(
@@ -225,7 +225,7 @@ def main(args):
                 normal_activator.collect_anomal_map_loss(c_attn_score, anomal_position_vector)
                 if args.test_noise_predicting_task_loss:
                     normal_activator.collect_noise_prediction_loss(noise_pred, noise, anomal_position_vector)
-            """
+
             if args.do_rotate_anomal_sample:
                 with torch.no_grad():
                     latents = vae.encode(batch["rotate_image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
@@ -454,6 +454,8 @@ if __name__ == "__main__":
     parser.add_argument("--min_beta_scale", type=float, default=0.85)
     parser.add_argument("--cropping_test", action='store_true')
     parser.add_argument("--do_rot_augment", action='store_true')
+    parser.add_argument("--use_white_background", action='store_true')
+    parser.add_argument("--gaussian_scale_factor", type=float, default=0.6)
     args = parser.parse_args()
     unet_passing_argument(args)
     passing_argument(args)

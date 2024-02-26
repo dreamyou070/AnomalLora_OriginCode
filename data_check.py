@@ -33,7 +33,7 @@ def main(args):
 
     train_dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=True)
     beta_scale_factor = args.beta_scale_factor
-    check_base_dir = f'dataset_check_folder/{obj_name}/beta_scale_factor_{beta_scale_factor}_anomal_p_{args.anomal_p}'
+    check_base_dir = f'/home/dreamyou070/dataset_check_folder/{obj_name}/beta_scale_factor_{beta_scale_factor}_anomal_p_{args.anomal_p}'
     os.makedirs(check_base_dir, exist_ok=True)
 
     for sample in train_dataloader :
@@ -76,11 +76,9 @@ if __name__ == "__main__":
     # step 1. setting
     parser.add_argument('--seed', type=int, default=42)
     parser.add_argument('--output_dir', type=str, default='output')
-    # step 2. dataset
     parser.add_argument('--data_path', type=str, default=r'../../../MyData/anomaly_detection/MVTec3D-AD')
-    parser.add_argument('--obj_name', type=str, default='transistor')
-    parser.add_argument('--anomaly_source_path', type=str,
-                        default=r'/home/dreamyou070/MyData/anomal_source')
+    parser.add_argument('--obj_name', type=str, default='metal_nut')
+    parser.add_argument('--anomaly_source_path', type=str,default=r'/home/dreamyou070/MyData/anomal_source')
     parser.add_argument('--trigger_word', type=str)
     # ------------------------------------------------------------------------------------ #
     parser.add_argument('--kernel_size', type=int, default=5)
@@ -97,7 +95,7 @@ if __name__ == "__main__":
 
     parser.add_argument("--do_rot_augment", action='store_true')
     parser.add_argument("--use_white_background", action='store_true')
-
+    parser.add_argument("--gaussian_scale_factor", type=float, default=0.6)
     # step 3. preparing accelerator')
     args = parser.parse_args()
     passing_mvtec_argument(args)
