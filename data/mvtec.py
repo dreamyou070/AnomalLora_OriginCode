@@ -280,7 +280,7 @@ class MVTecDRAEMTrainDataset(Dataset):
         object_mask = torch.tensor(object_mask_np)  # shape = [64,64], 0 = background, 1 = object
 
         # [3] anomaly
-        anomal_dir = None
+        object_position = None
         if len(self.anomaly_source_paths) > 0:
             anomal_src_idx = idx % len(self.anomaly_source_paths)
             anomal_dir = self.anomaly_source_paths[anomal_src_idx]
@@ -300,20 +300,23 @@ class MVTecDRAEMTrainDataset(Dataset):
                                                                anomaly_source_img, # 512
                                                                beta_scale_factor=self.beta_scale_factor,
                                                                object_position=object_position) # [512,512,3], [512,512]
+
         else :
             anomal_img = img
             anomal_mask_torch = object_mask
 
         # [4] background
         background_img = img * 0
-        if argument.back_noise_use_gaussian :
+        if argument.back_noise_use_gaussian:
             back_anomal_img, back_anomal_mask_torch = self.gaussian_augment_image(img,
                                                                                   aug(image=background_img),
-                                                                                  object_position = object_position)
-        else :
+                                                                                  object_position=object_position)
+        else:
             back_anomal_img, back_anomal_mask_torch = self.augment_image(img, aug(image=background_img),
                                                                          beta_scale_factor=self.beta_scale_factor,
                                                                          object_position=object_position)
+
+
         if self.tokenizer is not None :
             input_ids, attention_mask = self.get_input_ids(self.caption) # input_ids = [77]
         else :
