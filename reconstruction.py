@@ -229,57 +229,59 @@ def main(args):
             # [2] train path
             if not args.object_crop:
                 train_img_folder = os.path.join(parent, 'train')
-                normal_folder = os.listdir(train_img_folder)
-                for normal_folder in normal_folder:
-                    save_base_folder = os.path.join(check_base_folder, f'train_{normal_folder}')
-                    os.makedirs(save_base_folder, exist_ok=True)
-                    normal_folder_dir = os.path.join(train_img_folder, normal_folder)
-                    rgb_folder = os.path.join(normal_folder_dir, 'rgb')
-                    if args.object_crop:
-                        object_mask_folder = os.path.join(anomal_folder_dir, 'object_mask')
-                    rgb_imgs = os.listdir(rgb_folder)
-                    for rgb_img in rgb_imgs:
 
-                        name, ext = os.path.splitext(rgb_img)
-                        rgb_img_dir = os.path.join(rgb_folder, rgb_img)
-                        pil_img = Image.open(rgb_img_dir).convert('RGB')
-                        org_h, org_w = pil_img.size
+                save_base_folder = os.path.join(check_base_folder, f'train_good')
+                os.makedirs(save_base_folder, exist_ok=True)
 
-                        # [1] read object mask
-                        if args.object_crop :
-                            object_mask_pil = Image.open(os.path.join(object_mask_folder, rgb_img)).convert('L')
-                            h_start, h_end, w_start, w_end = generate_object_point(object_mask_pil)
-                            input_img = pil_img.crop((w_start, h_start, w_end, h_end))
-                        else :
-                            input_img = pil_img
-                        trg_h, trg_w = input_img.size
-                        if accelerator.is_main_process:
+                normal_folder_dir = os.path.join(train_img_folder, 'good')
+                rgb_folder = os.path.join(normal_folder_dir, 'rgb')
 
-                            with torch.no_grad():
-                                img = np.array(input_img.resize((512, 512)))
-                                vae_latent = image2latent(img, vae, weight_dtype)
-                                cls_map_pil, normal_map_pil, anomaly_map_pil = inference(vae_latent,
-                                                                                         tokenizer, text_encoder, unet,
-                                                                                         controller, normal_activator,
-                                                                                         position_embedder,
-                                                                                         args,
-                                                                                         trg_h, trg_w,
-                                                                                         thred)
-                                if args.object_crop :
-                                    basic_cls_map_pil = Image.new('L', (org_h, org_w), 0)
-                                    basic_normal_map_pil = Image.new('L', (org_h, org_w), 255)
-                                    basic_anomaly_map_pil = Image.new('L', (org_h, org_w), 0)
-                                    basic_cls_map_pil.paste(cls_map_pil, (w_start, h_start, w_end, h_end))
-                                    basic_normal_map_pil.paste(normal_map_pil, (w_start, h_start, w_end, h_end))
-                                    basic_anomaly_map_pil.paste(anomaly_map_pil, (w_start, h_start, w_end, h_end))
-                                    cls_map_pil = basic_cls_map_pil
-                                    normal_map_pil = basic_normal_map_pil
-                                    anomaly_map_pil = basic_anomaly_map_pil
-                                cls_map_pil.save(os.path.join(save_base_folder, f'{name}_cls.png'))
-                                normal_map_pil.save(os.path.join(save_base_folder, f'{name}_normal.png'))
-                                anomaly_map_pil.save( os.path.join(save_base_folder, f'{name}_anomal.png'))
-                                anomaly_map_pil.save(os.path.join(answer_anomal_folder, f'{name}.tiff'))
-                            Image.open(rgb_img_dir).convert('RGB').save(os.path.join(save_base_folder, rgb_img))
+                if args.object_crop:
+                    object_mask_folder = os.path.join(anomal_folder_dir, 'object_mask')
+
+                rgb_imgs = os.listdir(rgb_folder)
+                for rgb_img in rgb_imgs:
+
+                    name, ext = os.path.splitext(rgb_img)
+                    rgb_img_dir = os.path.join(rgb_folder, rgb_img)
+                    pil_img = Image.open(rgb_img_dir).convert('RGB')
+                    org_h, org_w = pil_img.size
+
+                    # [1] read object mask
+                    if args.object_crop :
+                        object_mask_pil = Image.open(os.path.join(object_mask_folder, rgb_img)).convert('L')
+                        h_start, h_end, w_start, w_end = generate_object_point(object_mask_pil)
+                        input_img = pil_img.crop((w_start, h_start, w_end, h_end))
+                    else :
+                        input_img = pil_img
+                    trg_h, trg_w = input_img.size
+                    if accelerator.is_main_process:
+
+                        with torch.no_grad():
+                            img = np.array(input_img.resize((512, 512)))
+                            vae_latent = image2latent(img, vae, weight_dtype)
+                            cls_map_pil, normal_map_pil, anomaly_map_pil = inference(vae_latent,
+                                                                                     tokenizer, text_encoder, unet,
+                                                                                     controller, normal_activator,
+                                                                                     position_embedder,
+                                                                                     args,
+                                                                                     trg_h, trg_w,
+                                                                                     thred)
+                            if args.object_crop :
+                                basic_cls_map_pil = Image.new('L', (org_h, org_w), 0)
+                                basic_normal_map_pil = Image.new('L', (org_h, org_w), 255)
+                                basic_anomaly_map_pil = Image.new('L', (org_h, org_w), 0)
+                                basic_cls_map_pil.paste(cls_map_pil, (w_start, h_start, w_end, h_end))
+                                basic_normal_map_pil.paste(normal_map_pil, (w_start, h_start, w_end, h_end))
+                                basic_anomaly_map_pil.paste(anomaly_map_pil, (w_start, h_start, w_end, h_end))
+                                cls_map_pil = basic_cls_map_pil
+                                normal_map_pil = basic_normal_map_pil
+                                anomaly_map_pil = basic_anomaly_map_pil
+                            cls_map_pil.save(os.path.join(save_base_folder, f'{name}_cls.png'))
+                            normal_map_pil.save(os.path.join(save_base_folder, f'{name}_normal.png'))
+                            anomaly_map_pil.save( os.path.join(save_base_folder, f'{name}_anomal.png'))
+                            anomaly_map_pil.save(os.path.join(answer_anomal_folder, f'{name}.tiff'))
+                        Image.open(rgb_img_dir).convert('RGB').save(os.path.join(save_base_folder, rgb_img))
         print(f'Model To Original')
         for k in raw_state_dict_orig.keys():
             raw_state_dict[k] = raw_state_dict_orig[k]
