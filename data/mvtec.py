@@ -299,6 +299,7 @@ class MVTecDRAEMTrainDataset(Dataset):
             anomal_mask_torch = torch.tensor(np.where(anomal_np > 0.5, 1, 0))
             back_anomal_img = img
             back_anomal_mask_torch = anomal_mask_torch
+            anomal_name = 'miss'
 
         else :
             # [4] augment image (pseudo anomal)
