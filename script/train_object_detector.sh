@@ -15,8 +15,6 @@ accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_5_config \
  --output_dir ${output_dir} \
  --pretrained_model_name_or_path "${pretrained_model_name_or_path}" \
  --data_path "../../../MyData/anomaly_detection/${bench_mark}" --beta_scale_factor 1.0 \
- --anomal_only_on_object \
- --anomal_p 0.01 \
  --trigger_word "${trigger_word}" --obj_name "${obj_name}" \
  --train_unet --train_text_encoder --d_dim 320 --latent_res 64 \
  --network_dim 64 --network_alpha 4 \
