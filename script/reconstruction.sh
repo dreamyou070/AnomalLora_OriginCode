@@ -1,11 +1,11 @@
 # !/bin/bash
 
-port_number=51010
+port_number=51012
 obj_name='transistor'
 caption='transistor'
 layer_folder="layer_3"
 sub_folder="up_16_32_64"
-folder_name="rotating_test"
+folder_name="object_detector"
 bench_mark="MVTec"
 position_embedding_layer="down_blocks_0_attentions_0_transformer_blocks_0_attn1"
 
