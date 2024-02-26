@@ -12,7 +12,6 @@ import imgaug.augmenters as iaa
 def passing_mvtec_argument(args):
     global argument
     global anomal_p
-    global back_noise_use_gaussian
     global max_sigma
     global min_sigma
     global max_perlin_scale
@@ -21,7 +20,6 @@ def passing_mvtec_argument(args):
     global do_rot_augment
     argument = args
     anomal_p = args.anomal_p
-    back_noise_use_gaussian = args.back_noise_use_gaussian
     max_sigma = args.max_sigma # before -> 60
     min_sigma = args.min_sigma # before -> 25
     max_perlin_scale = args.max_perlin_scale
@@ -86,7 +84,8 @@ class MVTecDRAEMTestDataset(Dataset):
 
 class MVTecDRAEMTrainDataset(Dataset):
 
-    def __init__(self, root_dir,
+    def __init__(self,
+                 root_dir,
                  anomaly_source_path,
                  resize_shape=None,
                  tokenizer=None,
@@ -95,8 +94,6 @@ class MVTecDRAEMTrainDataset(Dataset):
                  anomal_only_on_object : bool = True,
                  anomal_training : bool = False,
                  latent_res : int = 64,
-                 kernel_size : int = 5,
-                 beta_scale_factor : float = 0.8,
                  do_anomal_sample : bool = True) :
 
         # [1] base image
@@ -138,8 +135,6 @@ class MVTecDRAEMTrainDataset(Dataset):
         self.anomal_only_on_object = anomal_only_on_object
         self.anomal_training = anomal_training
         self.latent_res = latent_res
-        self.kernel_size = kernel_size
-        self.beta_scale_factor = beta_scale_factor
 
     def __len__(self):
         if len(self.anomaly_source_paths) > 0 :
@@ -174,19 +169,19 @@ class MVTecDRAEMTrainDataset(Dataset):
         attention_mask = tokenizer_output.attention_mask
         return input_ids, attention_mask
 
-    def augment_image(self, image, anomaly_source_img, beta_scale_factor, object_position):
+    def augment_image(self, image, anomaly_source_img,
+                      min_perlin_scale, max_perlin_scale,
+                      min_beta_scale, max_beta_scale,
+                      object_position):
 
         # [2] perlin noise
         while True :
             while True :
-                # big perlin scale means smaller noise
-                min_perlin_scale = 0
+                # [1] size of noise :big perlin scale means smaller noise
                 perlin_scalex = 2 ** (torch.randint(min_perlin_scale, max_perlin_scale, (1,)).numpy()[0])
                 perlin_scaley = 2 ** (torch.randint(min_perlin_scale, max_perlin_scale, (1,)).numpy()[0])
                 perlin_noise = rand_perlin_2d_np((self.resize_shape[0], self.resize_shape[1]), (perlin_scalex, perlin_scaley))
                 threshold = 0.5
-                #perlin_thr = np.where(perlin_noise > threshold, np.ones_like(perlin_noise), np.zeros_like(perlin_noise))
-                # 0 and more than 0.5
                 perlin_thr = np.where(perlin_noise > threshold, np.ones_like(perlin_noise), np.zeros_like(perlin_noise))
                 # smoothing
                 perlin_thr = cv2.GaussianBlur(perlin_thr, (3,3), 0)
@@ -200,10 +195,11 @@ class MVTecDRAEMTrainDataset(Dataset):
                         break
             blur_3D_mask = np.expand_dims(perlin_thr, axis=2)  # [512,512,3]
             while True :
-                # more beta means sensetive
-                beta = torch.rand(1).numpy()[0] * beta_scale_factor
+                # [1] how transparent the noise
+                beta = torch.rand(1).numpy()[0]
                 if max_beta_scale > beta > min_beta_scale :
                     break
+            # big beta = transparent
             A = beta * image + (1 - beta) * anomaly_source_img.astype(np.float32) # merged
             augmented_image = (image * (1 - blur_3D_mask) + A * blur_3D_mask).astype(np.float32)
             anomal_img = np.array(Image.fromarray(augmented_image.astype(np.uint8)), np.uint8)
@@ -213,39 +209,6 @@ class MVTecDRAEMTrainDataset(Dataset):
                 break
 
         return anomal_img, anomal_mask_torch
-
-    def gaussian_augment_image(self, image, back_img, object_position):
-        while True :
-            while True:
-                end_num = self.resize_shape[0] # 512
-                x = np.arange(0, end_num, 1, float)
-                y = np.arange(0, end_num, 1, float)[:, np.newaxis]
-                x_0 = torch.randint(int(end_num / 4), int(3 * end_num / 4), (1,)).item()
-                y_0 = torch.randint(int(end_num / 4), int(3 * end_num / 4), (1,)).item()
-                # if sigmal big -> big circle
-                # if sigmal small -> small circle
-                sigma = torch.randint(min_sigma, max_sigma, (1,)).item()
-
-                result = np.exp(-4 * np.log(2) * ((x - x_0) ** 2 + (y - y_0) ** 2) / sigma ** 2)  # 0 ~ 1
-                result_thr = np.where(result < 0.5, 0, 1).astype(np.float32)
-                result_thr = cv2.GaussianBlur(result_thr, (5,5), 0)
-                if object_position is not None:
-                    total_object_pixel = np.sum(object_position)
-                    blur_2D_mask = (result_thr * object_position).astype(np.float32)
-                binary_2D_mask = (np.where(blur_2D_mask == 0, 0, 1)).astype(np.float32)  # [512,512,3]
-                if np.sum(binary_2D_mask) > anomal_p * total_object_pixel :
-                    break
-            blur_3D_mask = np.expand_dims(blur_2D_mask, axis=2)  # [512,512,3]
-            A = back_img.astype(np.float32)  # merged
-            augmented_image = (image * (1 - blur_3D_mask) + A * blur_3D_mask).astype(np.float32)
-
-            anomal_img = np.array(Image.fromarray(augmented_image.astype(np.uint8)), np.uint8)
-
-            binary_2d_pil = Image.fromarray((binary_2D_mask * 255).astype(np.uint8)).convert('L').resize((64, 64))
-            anomal_mask_torch = torch.where((torch.tensor(np.array(binary_2d_pil)) / 255) > 0.5, 1, 0)
-            if anomal_mask_torch.sum() > 0:
-                break
-        return anomal_img,anomal_mask_torch
 
     def load_image(self, image_path, trg_h, trg_w, type='RGB'):
         image = Image.open(image_path)
@@ -299,20 +262,21 @@ class MVTecDRAEMTrainDataset(Dataset):
             anomaly_source_img = self.load_image(self.anomaly_source_paths[anomal_src_idx], self.resize_shape[0], self.resize_shape[1])
             anomal_img, anomal_mask_torch = self.augment_image(img, # 512
                                                                anomaly_source_img, # 512
-                                                               beta_scale_factor=self.beta_scale_factor,
+                                                               argument.anomal_min_perlin_scale, argument.anomal_max_perlin_scale,
+                                                               argument.anomal_min_beta_scale, argument.anomal_max_beta_scale,
                                                                object_position=object_position) # [512,512,3], [512,512]
-            """
+
             # [4] background
-            background_img = img * 0        
-            if argument.back_noise_use_gaussian:
-                back_anomal_img, back_anomal_mask_torch = self.gaussian_augment_image(img,
-                                                                                      aug(image=background_img),
-                                                                                      object_position=object_position)
-            else:
-                back_anomal_img, back_anomal_mask_torch = self.augment_image(img, aug(image=background_img),
-                                                                             beta_scale_factor=self.beta_scale_factor,
-                                                                             object_position=object_position)
-            """
+            if argument.use_white_background :
+                background_img = np.ones_like(img) * 255
+            else :
+                background_img = img * 0
+            back_anomal_img, back_anomal_mask_torch = self.augment_image(img,
+                                                                         aug(image=background_img),
+                                                                         argument.back_min_perlin_scale, argument.back_max_perlin_scale,
+                                                                         argument.back_min_beta_scale, argument.back_max_beta_scale,
+                                                                         object_position=object_position)
+
         # [5] rotate image
         rorate_angle = 180
         rotate_img = Image.open(img_path).resize((self.resize_shape[0],self.resize_shape[1])).rotate(rorate_angle) # PIL image
@@ -334,8 +298,8 @@ class MVTecDRAEMTrainDataset(Dataset):
                 'anomal_image': self.transform(anomal_img),
                 "anomal_mask": anomal_mask_torch,
 
-                #'bg_anomal_image': self.transform(back_anomal_img),          # masked image
-                #'bg_anomal_mask': back_anomal_mask_torch,
+                'bg_anomal_image': self.transform(back_anomal_img),          # masked image
+                'bg_anomal_mask': back_anomal_mask_torch,
 
                 'rotate_image': self.transform(rotate_np),
                 'rotate_mask' : rotate_mask.unsqueeze(0),
