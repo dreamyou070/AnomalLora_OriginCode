@@ -1,13 +1,13 @@
 # !/bin/bash
-port_number=51414
+port_number=51111
 pretrained_model_name_or_path="../../../pretrained_stable_diffusion/stable-diffusion-v1-5/v1-5-pruned.safetensors"
-obj_name='transistor'
-trigger_word='transistor'
+obj_name='pill'
+trigger_word='pill'
 bench_mark='MVTec'
 
 layer_folder="layer_3"
 sub_folder="up_16_32_64"
-folder_name="rotating_1"
+folder_name="test_2"
 output_dir="../../result/${bench_mark}/${obj_name}/${layer_folder}/${sub_folder}/${folder_name}"
 
 accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_5_config \
@@ -31,6 +31,8 @@ accelerate launch --config_file ../../../gpu_config/gpu_0_1_2_3_4_5_config \
                     'up_blocks_2_attentions_2_transformer_blocks_0_attn2',
                     'up_blocks_1_attentions_2_transformer_blocks_0_attn2',]" \
  --start_epoch 0 --max_train_epochs 30 \
- --do_background_masked_sample --do_rotate_anomal_sample \
+ --do_background_masked_sample --do_anomal_sample \
  --do_attn_loss \
  --do_map_loss
+
+

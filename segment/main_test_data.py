@@ -3,7 +3,14 @@ import argparse, os
 from PIL import Image
 import numpy as np
 from segment_anything import SamAutomaticMaskGenerator
+from rembg import remove
 
+def remove_background(input_path, output_path):
+    with open(input_path, 'rb') as i:
+        with open(output_path, 'wb') as o:
+            input = i.read()
+            output = remove(input)
+            o.write(output)
 
 def main(args):
 
@@ -29,21 +36,34 @@ def main(args):
 
             for defect_folder in defects_folders:
                 defect_dir = os.path.join(test_dir, f'{defect_folder}')
-                images = os.listdir(defect_dir)
 
                 rgb_org_folder = os.path.join(defect_dir, 'rgb_org')
-                os.makedirs(rgb_org_folder, exist_ok=True)
-                object_mask_folder = os.path.join(defect_dir, 'object_mask')
+                images = os.listdir(rgb_org_folder)
+
+                backremove_sub_folder = os.path.join(defect_dir, 'backremove_sub')
+                os.makedirs(backremove_sub_folder, exist_ok=True)
+
+
+                object_mask_folder = os.path.join(defect_dir, 'object_mask_second')
                 os.makedirs(object_mask_folder, exist_ok=True)
-                rgb_folder = os.path.join(defect_dir, 'rgb')
-                os.makedirs(rgb_folder, exist_ok=True)
+                mask_1_folder = os.path.join(object_mask_folder, 'mask_1')
+                os.makedirs(mask_1_folder, exist_ok=True)
+                mask_2_folder = os.path.join(object_mask_folder, 'mask_2')
+                os.makedirs(mask_2_folder, exist_ok=True)
+                mask_3_folder = os.path.join(object_mask_folder, 'mask_3')
+                os.makedirs(mask_3_folder, exist_ok=True)
 
                 for image in images:
 
-                    img_dir = os.path.join(defect_dir, image)
-                    pil_img = Image.open(img_dir).convert('RGB')
-                    org_h, org_w = pil_img.size
+                    # [1] background remove
+                    img_dir = os.path.join(rgb_org_folder, image)
+                    sub_dir = os.path.join(backremove_sub_folder, image)
+                    remove_background(img_dir, sub_dir)
+                    Image.open(sub_dir).convert('RGB').save(sub_dir)
 
+                    # [2] segment anything
+                    pil_img = Image.open(sub_dir).convert('RGB')
+                    org_h, org_w = pil_img.size
                     np_img = np.array(pil_img)
 
                     # [1] setting the image
@@ -58,24 +78,24 @@ def main(args):
                                                               point_labels=input_label,
                                                               multimask_output=True, )
                     for i, (mask, score) in enumerate(zip(masks, scores)):
-                        if i == 1 :
-                            np_mask = (mask * 1)
-                            np_mask = np.where(np_mask == 1, 0, 1) * 255
-                            sam_result_pil = Image.fromarray(np_mask.astype(np.uint8))
-                            sam_result_pil = sam_result_pil.resize((org_h, org_w))
-                            mask_save_dir = os.path.join(object_mask_folder, image)
-                            sam_result_pil.save(mask_save_dir)
+                        np_mask = (mask * 1)
+                        np_mask = np.where(np_mask == 1, 0, 1) * 255
+                        sam_result_pil = Image.fromarray(np_mask.astype(np.uint8))
+                        sam_result_pil = sam_result_pil.resize((org_h, org_w))
+                        mask_save_dir = os.path.join(object_mask_folder, f'mask_{i+1}/{image}')
+                        sam_result_pil.save(mask_save_dir)
+
                     # [2]
-                    os.rename(img_dir, os.path.join(rgb_org_folder, image))
+                    #os.rename(img_dir, os.path.join(rgb_org_folder, image))
 
                     # [3]
-                    org_np = np.array(pil_img)
-                    mask = np.array(Image.open(mask_save_dir).convert('L'))
-                    mask = np.where(mask > 0, 1, 0)  # .expand_dims(2).repeat(3, axis=2)
-                    mask = mask[:, :, np.newaxis].repeat(3, axis=2)
-                    new_img = org_np * mask
-                    new_img = Image.fromarray(new_img.astype(np.uint8))
-                    new_img.save(os.path.join(rgb_folder, image))
+                    #org_np = np.array(pil_img)
+                    #mask = np.array(Image.open(mask_save_dir).convert('L'))
+                    #mask = np.where(mask > 0, 1, 0)  # .expand_dims(2).repeat(3, axis=2)
+                    #mask = mask[:, :, np.newaxis].repeat(3, axis=2)
+                    #new_img = org_np * mask
+                    #new_img = Image.fromarray(new_img.astype(np.uint8))
+                    #new_img.save(os.path.join(rgb_folder, image))
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
