@@ -268,12 +268,11 @@ class MVTecDRAEMTrainDataset(Dataset):
         # [1] base
         img_idx = idx % len(self.image_paths)
         img_path = self.image_paths[img_idx]
-        img_name = os.path.split(img_path)[-1]
         img = self.load_image(img_path, self.resize_shape[0], self.resize_shape[1])  # np.array,
         img = aug(image=img)
         name, class_folder = self.get_img_name(img_path)
 
-        # [2] background
+        # [2] object mask dir
         object_mask_dir = self.get_object_mask_dir(img_path)
         object_img = self.load_image(object_mask_dir, self.latent_res, self.latent_res, type='L')
         object_img = aug(image=object_img)
@@ -281,7 +280,9 @@ class MVTecDRAEMTrainDataset(Dataset):
         object_mask = torch.tensor(object_mask_np)  # shape = [64,64], 0 = background, 1 = object
 
         # [3] anomaly
-        object_position = None
+        anomal_img = img
+        anomal_mask_torch = object_mask
+
         if len(self.anomaly_source_paths) > 0:
             anomal_src_idx = idx % len(self.anomaly_source_paths)
             anomal_dir = self.anomaly_source_paths[anomal_src_idx]
@@ -301,11 +302,6 @@ class MVTecDRAEMTrainDataset(Dataset):
                                                                anomaly_source_img, # 512
                                                                beta_scale_factor=self.beta_scale_factor,
                                                                object_position=object_position) # [512,512,3], [512,512]
-
-        else :
-            anomal_img = img
-            anomal_mask_torch = object_mask
-
         # [4] background
         background_img = img * 0
         if argument.back_noise_use_gaussian:
@@ -317,14 +313,14 @@ class MVTecDRAEMTrainDataset(Dataset):
                                                                          beta_scale_factor=self.beta_scale_factor,
                                                                          object_position=object_position)
         # [5] rotate image
+        rorate_angle = 180
+        rotate_img = Image.open(img_path).resize((self.resize_shape[0],self.resize_shape[1])).rotate(rorate_angle) # PIL image
+        rotate_np = np.array(rotate_img) # np.array
 
-        #rotate_img = Image.open(img_path).rotate(180)
-        #sub_mask = np.array(Image.open(mask_dir).convert('L').rotate(rotate_angle))
-        #sub_mask_np = np.array(sub_mask)
-        #final_mask = np.where((mask_np + sub_mask_np) > 0, 255, 0)
-
-
-
+        sub_mask_pil = Image.open(object_mask_dir).convert('L').resize((self.latent_res, self.latent_res)).rotate(rorate_angle)
+        sub_mask_np = np.array(sub_mask_pil)
+        final_mask = np.where((object_mask_np + sub_mask_np) > 0, 255, 0)
+        print(f'final_mask : {final_mask.shape}')
 
         if self.tokenizer is not None :
             input_ids, attention_mask = self.get_input_ids(self.caption) # input_ids = [77]

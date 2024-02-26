@@ -121,6 +121,8 @@ def main(args):
 
         for step, batch in enumerate(train_dataloader):
 
+            print(f'step = {step}')
+
             device = accelerator.device
             loss = torch.tensor(0.0, dtype=weight_dtype, device=accelerator.device)
             loss_dict = {}
@@ -163,13 +165,11 @@ def main(args):
 
             loss = loss.to(weight_dtype)
             current_loss = loss.detach().item()
-
             if epoch == args.start_epoch:
                 loss_list.append(current_loss)
             else:
                 epoch_loss_total -= loss_list[step]
                 loss_list[step] = current_loss
-
             epoch_loss_total += current_loss
             avr_loss = epoch_loss_total / len(loss_list)
             loss_dict['avr_loss'] = avr_loss
@@ -181,17 +181,12 @@ def main(args):
                 progress_bar.update(1)
                 global_step += 1
             if is_main_process:
-                logging_info = f'{global_step}, {normal_dist_mean}, {normal_dist_max}'
-                with open(logging_file, 'a') as f:
-                    f.write(logging_info + '\n')
                 progress_bar.set_postfix(**loss_dict)
             normal_activator.reset()
             controller.reset()
             if global_step >= args.max_train_steps:
                 break
-            # ----------------------------------------------------------------------------------------------------------- #
-            # [6] epoch final
-
+        # [6] epoch final
         accelerator.wait_for_everyone()
         if is_main_process:
             ckpt_name = get_epoch_ckpt_name(args, "." + args.save_model_as, epoch + 1)
@@ -209,7 +204,6 @@ def main(args):
                 te_model_save(accelerator.unwrap_model(text_time_embedding),
                               save_dtype, t_save_dir)
     accelerator.end_training()
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
