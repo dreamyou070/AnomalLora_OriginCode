@@ -128,22 +128,20 @@ def main(args):
                 encoder_hidden_states = text_encoder(batch["input_ids"].to(device))["last_hidden_state"]
             with torch.no_grad():
                 latents = vae.encode(batch["image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
-            object_position_vector = batch["object_mask"].squeeze().flatten()
+            object_position_vector = batch["object_mask"].squeeze().flatten() # background = 0, object = 1
             with torch.set_grad_enabled(True):
                 unet(latents,0,encoder_hidden_states,trg_layer_list=args.trg_layer_list,noise_type=position_embedder)
             query_dict, attn_dict = controller.query_dict, controller.step_store
             controller.reset()
             for trg_layer in args.trg_layer_list:
                 normal_activator.resize_query_features(query_dict[trg_layer][0].squeeze(0))
-                normal_activator.resize_attn_scores(attn_dict[trg_layer][0])
+                normal_activator.resize_attn_scores(attn_dict[trg_layer][0]) # attention
             c_attn_score = normal_activator.generate_conjugated_attn_score()
             normal_activator.collect_attention_scores(c_attn_score, 1 - object_position_vector)
             normal_activator.collect_anomal_map_loss(c_attn_score, 1 - object_position_vector)
 
             # ----------------------------------------------------------------------------------------------------------
             # [5] backprop
-            dist_loss, normal_dist_mean, normal_dist_max = normal_activator.generate_mahalanobis_distance_loss()
-
             if args.do_attn_loss:
                 normal_cls_loss, normal_trigger_loss, anomal_cls_loss, anomal_trigger_loss = normal_activator.generate_attention_loss()
                 if type(anomal_cls_loss) == float:
