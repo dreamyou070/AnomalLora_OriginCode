@@ -52,8 +52,8 @@ def main(args):
 
                 # [2]
                 h, w, c = np_img.shape
-                input_point = np.array([[0, 0],[int(h/2), int(w/2)]])
-                input_label = np.array([1,1])
+                input_point = np.array([[int(h/2), int(w/2)]])
+                input_label = np.array([1])
                 masks, scores, logits = predictor.predict(point_coords=input_point,
                                                           point_labels=input_label,
                                                           multimask_output=True, )
