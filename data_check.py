@@ -26,8 +26,6 @@ def main(args):
                                               anomal_only_on_object=True,
                                               anomal_training=True,
                                               latent_res=64,
-                                              kernel_size=args.kernel_size,
-                                              beta_scale_factor=args.beta_scale_factor,
                                               reference_check=False,
                                               do_anomal_sample=True)
 
@@ -81,21 +79,22 @@ if __name__ == "__main__":
     parser.add_argument('--anomaly_source_path', type=str,default=r'/home/dreamyou070/MyData/anomal_source')
     parser.add_argument('--trigger_word', type=str)
     # ------------------------------------------------------------------------------------ #
-    parser.add_argument('--kernel_size', type=int, default=5)
     parser.add_argument("--anomal_only_on_object", action='store_true')
     parser.add_argument("--latent_res", type=int, default=64)
-    parser.add_argument("--beta_scale_factor", type=float, default=1)
     parser.add_argument("--anomal_p", type=float, default=0.03)
-    parser.add_argument("--back_noise_use_gaussian", action='store_true') # True
-    parser.add_argument("--max_perlin_scale", type=int, default=6)
-    parser.add_argument("--max_sigma", type=int, default=60)
-    parser.add_argument("--min_sigma", type=int, default=25)
-    parser.add_argument("--max_beta_scale", type=float, default=0.8)
-    parser.add_argument("--min_beta_scale", type=float, default=0.5)
+
+    parser.add_argument("--anomal_min_perlin_scale", type=int, default=0)
+    parser.add_argument("--anomal_max_perlin_scale", type=int, default=3)
+    parser.add_argument("--anomal_min_beta_scale", type=float, default=0.5)
+    parser.add_argument("--anomal_max_beta_scale", type=float, default=0.8)
+
+    parser.add_argument("--back_min_perlin_scale", type=int, default=0)
+    parser.add_argument("--back_max_perlin_scale", type=int, default=3)
+    parser.add_argument("--back_min_beta_scale", type=float, default=0.6)
+    parser.add_argument("--back_max_beta_scale", type=float, default=0.9)
 
     parser.add_argument("--do_rot_augment", action='store_true')
     parser.add_argument("--use_white_background", action='store_true')
-    parser.add_argument("--gaussian_scale_factor", type=float, default=0.6)
     # step 3. preparing accelerator')
     args = parser.parse_args()
     passing_mvtec_argument(args)
