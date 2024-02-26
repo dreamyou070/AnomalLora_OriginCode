@@ -205,7 +205,7 @@ def main(args):
                             normal_position = np.where(normal_np > 0, 1, 0)
                             normal_position = np.expand_dims(normal_position, axis=2).repeat(3, axis=2)
                             back_removed_img = np.array(input_img) * normal_position
-                            back_removed_img_pil = Image.fromarray(back_removed_img).convert('RGB')
+                            back_removed_img_pil = Image.fromarray(back_removed_img.astype(np.uint8)).convert('RGB')
                             back_removed_img_pil.save(os.path.join(save_base_folder, f'{name}_back_removed{ext}'))
                     controller.reset()
                     normal_activator.reset()
