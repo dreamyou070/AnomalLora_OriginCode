@@ -26,27 +26,22 @@ def main(args):
             cat_dir = os.path.join(base_folder, f'{cat}')
             test_dir = os.path.join(cat_dir, 'test')
             defects_folders = os.listdir(test_dir)
-            for defects_folder in defects_folders:
-                defects_dir = os.path.join(test_dir, f'{defects_folder}')
 
-                rgb_folder = os.path.join(defects_dir, 'rgb')
-                object_mask_folder = os.path.join(defects_dir, 'object_mask')
+            for defect_folder in defects_folders:
+                defect_dir = os.path.join(test_dir, f'{defect_folder}')
+                images = os.listdir(defect_dir)
+
+                rgb_org_folder = os.path.join(defect_dir, 'rgb_org')
+                os.makedirs(rgb_org_folder, exist_ok=True)
+                object_mask_folder = os.path.join(defect_dir, 'object_mask')
                 os.makedirs(object_mask_folder, exist_ok=True)
-
-                images = os.listdir(rgb_folder)
-
-                dir1 = os.path.join(object_mask_folder, 'mask_1')
-                dir2 = os.path.join(object_mask_folder, 'mask_2')
-                dir3 = os.path.join(object_mask_folder, 'mask_3')
-                os.makedirs(dir1, exist_ok=True)
-                os.makedirs(dir2, exist_ok=True)
-                os.makedirs(dir3, exist_ok=True)
-
+                rgb_folder = os.path.join(defect_dir, 'rgb')
+                os.makedirs(rgb_folder, exist_ok=True)
 
                 for image in images:
 
-                    img_dir = os.path.join(rgb_folder, image)
-                    pil_img = Image.open(img_dir)
+                    img_dir = os.path.join(defect_dir, image)
+                    pil_img = Image.open(img_dir).convert('RGB')
                     org_h, org_w = pil_img.size
 
                     np_img = np.array(pil_img)
@@ -63,17 +58,29 @@ def main(args):
                                                               point_labels=input_label,
                                                               multimask_output=True, )
                     for i, (mask, score) in enumerate(zip(masks, scores)):
-                        np_mask = (mask * 1)
-                        np_mask = np.where(np_mask == 1, 0, 1) * 255
-                        sam_result_pil = Image.fromarray(np_mask.astype(np.uint8))
-                        sam_result_pil = sam_result_pil.resize((org_h, org_w))
-                        save_dir = os.path.join(object_mask_folder, f'mask_{i+1}/{image}')
-                        sam_result_pil.save(save_dir)
+                        if i == 1 :
+                            np_mask = (mask * 1)
+                            np_mask = np.where(np_mask == 1, 0, 1) * 255
+                            sam_result_pil = Image.fromarray(np_mask.astype(np.uint8))
+                            sam_result_pil = sam_result_pil.resize((org_h, org_w))
+                            mask_save_dir = os.path.join(object_mask_folder, image)
+                            sam_result_pil.save(mask_save_dir)
+                    # [2]
+                    os.rename(img_dir, os.path.join(rgb_org_folder, image))
+
+                    # [3]
+                    org_np = np.array(pil_img)
+                    mask = np.array(Image.open(mask_save_dir).convert('L'))
+                    mask = np.where(mask > 0, 1, 0)  # .expand_dims(2).repeat(3, axis=2)
+                    mask = mask[:, :, np.newaxis].repeat(3, axis=2)
+                    new_img = org_np * mask
+                    new_img = Image.fromarray(new_img.astype(np.uint8))
+                    new_img.save(os.path.join(rgb_folder, image))
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--base_folder', type=str,
                         default=r'/home/dreamyou070/MyData/anomaly_detection/MVTec')
-    parser.add_argument('--trg_cat', type=str, default='bottle')
+    parser.add_argument('--trg_cat', type=str, default='screw')
     args = parser.parse_args()
     main(args)

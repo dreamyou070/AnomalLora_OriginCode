@@ -12,19 +12,10 @@ import imgaug.augmenters as iaa
 def passing_mvtec_argument(args):
     global argument
     global anomal_p
-    global max_sigma
-    global min_sigma
-    global max_perlin_scale
-    global max_beta_scale
-    global min_beta_scale
     global do_rot_augment
+
     argument = args
     anomal_p = args.anomal_p
-    max_sigma = args.max_sigma # before -> 60
-    min_sigma = args.min_sigma # before -> 25
-    max_perlin_scale = args.max_perlin_scale
-    max_beta_scale = args.max_beta_scale
-    min_beta_scale = args.min_beta_scale
     do_rot_augment = args.do_rot_augment
 
 class MVTecDRAEMTestDataset(Dataset):
@@ -136,6 +127,11 @@ class MVTecDRAEMTrainDataset(Dataset):
         self.anomal_training = anomal_training
         self.latent_res = latent_res
 
+        background_base_dir = os.path.join(folder_path, "background")
+        self.background_paths = []
+        for ext in ["png", "jpg"]:
+            self.background_paths.extend(sorted(glob.glob(background_base_dir + f"/*.{ext}")))
+
     def __len__(self):
         if len(self.anomaly_source_paths) > 0 :
             return max(len(self.image_paths), len(self.anomaly_source_paths))
@@ -172,7 +168,7 @@ class MVTecDRAEMTrainDataset(Dataset):
     def augment_image(self, image, anomaly_source_img,
                       min_perlin_scale, max_perlin_scale,
                       min_beta_scale, max_beta_scale,
-                      object_position):
+                      object_position, trg_beta):
 
         # [2] perlin noise
         while True :
@@ -194,11 +190,16 @@ class MVTecDRAEMTrainDataset(Dataset):
                 if np.sum(binary_2D_mask) > anomal_p * total_object_pixel :
                     break
             blur_3D_mask = np.expand_dims(perlin_thr, axis=2)  # [512,512,3]
-            while True :
-                # [1] how transparent the noise
-                beta = torch.rand(1).numpy()[0]
-                if max_beta_scale > beta > min_beta_scale :
-                    break
+
+            if trg_beta is None :
+                while True :
+                    # [1] how transparent the noise
+                    beta = torch.rand(1).numpy()[0]
+                    if max_beta_scale > beta > min_beta_scale :
+                        break
+            else:
+                beta = trg_beta
+
             # big beta = transparent
             A = beta * image + (1 - beta) * anomaly_source_img.astype(np.float32) # merged
             augmented_image = (image * (1 - blur_3D_mask) + A * blur_3D_mask).astype(np.float32)
@@ -264,18 +265,19 @@ class MVTecDRAEMTrainDataset(Dataset):
                                                                anomaly_source_img, # 512
                                                                argument.anomal_min_perlin_scale, argument.anomal_max_perlin_scale,
                                                                argument.anomal_min_beta_scale, argument.anomal_max_beta_scale,
-                                                               object_position=object_position) # [512,512,3], [512,512]
+                                                               object_position=object_position,
+                                                               trg_beta = argument.anomal_trg_beta) # [512,512,3], [512,512]
 
             # [4] background
-            if argument.use_white_background :
-                background_img = np.ones_like(img) * 255
-            else :
-                background_img = img * 0
+            back_idx = idx % len(self.background_paths)
+            back_path = self.background_paths[back_idx]
+            background_img = self.load_image(back_path, self.resize_shape[0], self.resize_shape[1])
             back_anomal_img, back_anomal_mask_torch = self.augment_image(img,
                                                                          aug(image=background_img),
                                                                          argument.back_min_perlin_scale, argument.back_max_perlin_scale,
                                                                          argument.back_min_beta_scale, argument.back_max_beta_scale,
-                                                                         object_position=object_position)
+                                                                         object_position=object_position,
+                                                                         trg_beta=argument.back_trg_beta)  # [512,512,3], [512,512]
 
         # [5] rotate image
         rorate_angle = 180

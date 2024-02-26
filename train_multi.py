@@ -11,16 +11,12 @@ from utils import get_epoch_ckpt_name, save_model, prepare_dtype, arg_as_list
 from utils.attention_control import passing_argument, register_attention_control
 from utils.accelerator_utils import prepare_accelerator
 from utils.optimizer_utils import get_optimizer, get_scheduler_fix
-from utils.model_utils import prepare_scheduler_for_custom_training, get_noise_noisy_latents_and_timesteps
 from utils.model_utils import pe_model_save, te_model_save
 from utils.utils_loss import FocalLoss
 from data.prepare_dataset import call_dataset
 from model import call_model_package
 from attention_store.normal_activator import passing_normalize_argument
 from data.mvtec import passing_mvtec_argument
-from data.mvtec_cropping import passing_mvtec_argument as passing_mvtec_argument_cropping
-from diffusers import DDPMScheduler
-
 
 def main(args):
     print(f'\n step 1. setting')
@@ -47,17 +43,13 @@ def main(args):
 
     print(f'\n step 4. model ')
     weight_dtype, save_dtype = prepare_dtype(args)
-    text_encoder, vae, unet, network, position_embedder, text_time_embedding = call_model_package(args, weight_dtype,
-                                                                                                  accelerator)
+    text_encoder, vae, unet, network, position_embedder = call_model_package(args, weight_dtype, accelerator)
 
     print(f'\n step 5. optimizer')
     args.max_train_steps = len(train_dataloader) * args.max_train_epochs
     trainable_params = network.prepare_optimizer_params(args.text_encoder_lr,
                                                         args.unet_lr, args.learning_rate)
     trainable_params.append({"params": position_embedder.parameters(), "lr": args.learning_rate})
-    if args.use_text_time_embedding:
-        trainable_params.append({"params": text_time_embedding.parameters(),
-                                 "lr": args.learning_rate})
     optimizer_name, optimizer_args, optimizer = get_optimizer(args, trainable_params)
 
     print(f'\n step 6. lr')
@@ -69,13 +61,8 @@ def main(args):
     normal_activator = NormalActivator(loss_focal, loss_l2, args.use_focal_loss)
 
     print(f'\n step 8. model to device')
-    if args.use_text_time_embedding:
-        unet, text_encoder, network, optimizer, train_dataloader, lr_scheduler, position_embedder, text_time_embedding = accelerator.prepare(
-            unet, text_encoder, network, optimizer, train_dataloader, lr_scheduler, position_embedder,
-            text_time_embedding)
-    else:
-        unet, text_encoder, network, optimizer, train_dataloader, lr_scheduler, position_embedder = accelerator.prepare(
-            unet, text_encoder, network, optimizer, train_dataloader, lr_scheduler, position_embedder,)
+    unet, text_encoder, network, optimizer, train_dataloader, lr_scheduler, position_embedder = accelerator.prepare(
+        unet, text_encoder, network, optimizer, train_dataloader, lr_scheduler, position_embedder,)
 
     text_encoders = transform_models_if_DDP([text_encoder])
     unet, network = transform_models_if_DDP([unet, network])
@@ -108,12 +95,6 @@ def main(args):
         with open(logging_file, 'a') as f:
             f.write(logging_info + '\n')
 
-    noise_scheduler = DDPMScheduler(beta_start=0.00085,
-                                    beta_end=0.012,
-                                    beta_schedule="scaled_linear",
-                                    num_train_timesteps=1000,
-                                    clip_sample=False)
-    prepare_scheduler_for_custom_training(noise_scheduler, accelerator.device)
 
     for epoch in range(args.start_epoch, args.max_train_epochs):
         epoch_loss_total = 0
@@ -133,20 +114,11 @@ def main(args):
                 with torch.no_grad():
                     latents = vae.encode(
                         batch["anomal_image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
-                if args.use_noise_scheduler:
-                    noise, latents, timesteps = get_noise_noisy_latents_and_timesteps(noise_scheduler,
-                                                                                      latents,
-                                                                                      noise=None,
-                                                                                      min_timestep=args.min_timestep,
-                                                                                      max_timestep=args.max_timestep)
-                else:
-                    noise = torch.randn_like(latents, device=latents.device)
+                noise = torch.randn_like(latents, device=latents.device)
                 anomal_position_vector = batch["anomal_mask"].squeeze().flatten()
                 object_normal_position_vector = torch.where(
                     (object_position_vector == 1) & (anomal_position_vector == 0), 1, 0)
                 model_kwargs = {}
-                if args.use_text_time_embedding:
-                    model_kwargs['text_time_embedding'] = text_time_embedding
                 with torch.set_grad_enabled(True):
                     noise_pred = unet(latents,
                                       0,
@@ -178,25 +150,14 @@ def main(args):
                 if args.test_noise_predicting_task_loss:
                     normal_activator.collect_noise_prediction_loss(noise_pred, noise, anomal_position_vector)
             # --------------------------------------------------------------------------------------------------------- #
-
             if args.do_background_masked_sample:
                 with torch.no_grad():
                     latents = vae.encode(
                         batch["bg_anomal_image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
-                if args.use_noise_scheduler:
-                    noise, latents, timesteps = get_noise_noisy_latents_and_timesteps(noise_scheduler,
-                                                                                      latents,
-                                                                                      noise=None,
-                                                                                      min_timestep=args.min_timestep,
-                                                                                      max_timestep=args.max_timestep)
-                else:
-                    noise = torch.randn_like(latents, device=latents.device)
                 anomal_position_vector = batch["bg_anomal_mask"].squeeze().flatten()
                 object_normal_position_vector = torch.where(
                     (object_position_vector == 1) & (anomal_position_vector == 0), 1, 0)
                 model_kwargs = {}
-                if args.use_text_time_embedding:
-                    model_kwargs['text_time_embedding'] = text_time_embedding
                 with torch.set_grad_enabled(True):
                     noise_pred = unet(latents,
                                       0,
@@ -226,6 +187,7 @@ def main(args):
                 if args.test_noise_predicting_task_loss:
                     normal_activator.collect_noise_prediction_loss(noise_pred, noise, anomal_position_vector)
 
+            # --------------------------------------------------------------------------------------------------------- #
             if args.do_rotate_anomal_sample:
                 with torch.no_grad():
                     latents = vae.encode(batch["rotate_image"].to(dtype=weight_dtype)).latent_dist.sample() * args.vae_scale_factor
@@ -325,12 +287,7 @@ def main(args):
                 p_save_dir = os.path.join(position_embedder_base_save_dir,
                                           f'position_embedder_{epoch + 1}.safetensors')
                 pe_model_save(accelerator.unwrap_model(position_embedder), save_dtype, p_save_dir)
-            if args.use_text_time_embedding:
-                time_embedder_base_save_dir = os.path.join(args.output_dir, 'text_time_embedder')
-                os.makedirs(time_embedder_base_save_dir, exist_ok=True)
-                t_save_dir = os.path.join(time_embedder_base_save_dir, f'time_embedder_{epoch + 1}.safetensors')
-                te_model_save(accelerator.unwrap_model(text_time_embedding),
-                              save_dtype, t_save_dir)
+
 
     accelerator.end_training()
 
@@ -379,8 +336,8 @@ if __name__ == "__main__":
     parser.add_argument("--dim_from_weights", action="store_true", )
     # step 5. optimizer
     parser.add_argument("--optimizer_type", type=str, default="AdamW",
-                        help="AdamW , AdamW8bit, PagedAdamW8bit, PagedAdamW32bit, Lion8bit, PagedLion8bit, Lion, SGDNesterov,"
-                             "SGDNesterov8bit, DAdaptation(DAdaptAdamPreprint), DAdaptAdaGrad, DAdaptAdam, DAdaptAdan, DAdaptAdanIP,"
+                 help="AdamW , AdamW8bit, PagedAdamW8bit, PagedAdamW32bit, Lion8bit, PagedLion8bit, Lion, SGDNesterov,"
+                "SGDNesterov8bit, DAdaptation(DAdaptAdamPreprint), DAdaptAdaGrad, DAdaptAdam, DAdaptAdan, DAdaptAdanIP,"
                              "DAdaptLion, DAdaptSGD, AdaFactor", )
     parser.add_argument("--use_8bit_adam", action="store_true",
                         help="use 8bit AdamW optimizer(requires bitsandbytes)", )
@@ -424,7 +381,6 @@ if __name__ == "__main__":
     parser.add_argument("--do_anomal_sample", action='store_true')
     parser.add_argument("--do_background_masked_sample", action='store_true')
     parser.add_argument("--do_rotate_anomal_sample", action='store_true')
-
     # [1]
     parser.add_argument("--do_dist_loss", action='store_true')
     parser.add_argument("--mahalanobis_only_object", action='store_true')
@@ -443,23 +399,23 @@ if __name__ == "__main__":
     parser.add_argument("--use_focal_loss", action='store_true')
     # [4]
     parser.add_argument("--test_noise_predicting_task_loss", action='store_true')
-    parser.add_argument("--back_noise_use_gaussian", action='store_true')
-    parser.add_argument("--use_text_time_embedding", action='store_true')
     parser.add_argument("--dist_loss_with_max", action='store_true')
-
-    parser.add_argument("--max_perlin_scale", type=int, default=6)
-    parser.add_argument("--max_sigma", type=int, default=60)
-    parser.add_argument("--min_sigma", type=int, default=25)
-    parser.add_argument("--max_beta_scale", type=float, default=0.93)
-    parser.add_argument("--min_beta_scale", type=float, default=0.85)
-    parser.add_argument("--cropping_test", action='store_true')
+    # -----------------------------------------------------------------------------------------------------------------
+    parser.add_argument("--anomal_min_perlin_scale", type=int, default=0)
+    parser.add_argument("--anomal_max_perlin_scale", type=int, default=3)
+    parser.add_argument("--anomal_min_beta_scale", type=float, default=0.5)
+    parser.add_argument("--anomal_max_beta_scale", type=float, default=0.8)
+    parser.add_argument("--back_min_perlin_scale", type=int, default=0)
+    parser.add_argument("--back_max_perlin_scale", type=int, default=3)
+    parser.add_argument("--back_min_beta_scale", type=float, default=0.6)
+    parser.add_argument("--back_max_beta_scale", type=float, default=0.9)
     parser.add_argument("--do_rot_augment", action='store_true')
-    parser.add_argument("--use_white_background", action='store_true')
-    parser.add_argument("--gaussian_scale_factor", type=float, default=0.6)
+    parser.add_argument("--anomal_trg_beta", type=float)
+    parser.add_argument("--back_trg_beta", type=float)
+    # -----------------------------------------------------------------------------------------------------------------
     args = parser.parse_args()
     unet_passing_argument(args)
     passing_argument(args)
     passing_normalize_argument(args)
     passing_mvtec_argument(args)
-    passing_mvtec_argument_cropping(args)
     main(args)
