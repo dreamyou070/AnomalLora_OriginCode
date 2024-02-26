@@ -103,25 +103,12 @@ def main(args):
     loss_list = []
     controller = AttentionStore()
     register_attention_control(unet, controller)
-    if is_main_process:
-        logging_info = f"'step', 'normal dist mean', 'normal dist max'"
-        with open(logging_file, 'a') as f:
-            f.write(logging_info + '\n')
-
-    noise_scheduler = DDPMScheduler(beta_start=0.00085,
-                                    beta_end=0.012,
-                                    beta_schedule="scaled_linear",
-                                    num_train_timesteps=1000,
-                                    clip_sample=False)
-    prepare_scheduler_for_custom_training(noise_scheduler, accelerator.device)
-
+    
     for epoch in range(args.start_epoch, args.max_train_epochs):
         epoch_loss_total = 0
         accelerator.print(f"\nepoch {epoch + 1}/{args.start_epoch + args.max_train_epochs}")
 
         for step, batch in enumerate(train_dataloader):
-
-            print(f'step = {step}')
 
             device = accelerator.device
             loss = torch.tensor(0.0, dtype=weight_dtype, device=accelerator.device)
